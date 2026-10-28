@@ -1,0 +1,52 @@
+rules_version = '2';
+// Regras do mural Frete Rápido.
+// Publicar em: Firebase → Firestore Database → Regras → colar tudo → Publicar.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function logado() { return request.auth != null && request.auth.token.email_verified == true; }
+    function email() { return request.auth.token.email.lower(); }
+    function admin() { return logado() && email() == 'brunolemosxd@gmail.com'; }
+    function caminhoPerfil() { return /databases/$(database)/documents/usuarios/$(email()); }
+    function membro() { return admin() || (logado() && exists(caminhoPerfil()) && get(caminhoPerfil()).data.ativo == true); }
+    function pode(p) { return admin() || (membro() && get(caminhoPerfil()).data.perms.get(p, false) == true); }
+    function mudou() { return request.resource.data.diff(resource.data).affectedKeys(); }
+
+    // Cadastro do pessoal: só o Bruno mexe; cada um pode ler o próprio
+    match /usuarios/{id} {
+      allow read: if admin() || (logado() && id == email());
+      allow write: if admin();
+    }
+
+    // Lista de nomes dos vendedores que aparece no formulário
+    match /config/{id} {
+      allow read: if membro();
+      allow write: if admin();
+    }
+
+    match /entregas/{id} {
+      allow read: if membro();
+      allow create: if pode('lancar') && request.resource.data.criadoPorUid == request.auth.uid;
+      allow update: if pode('editarTodas')
+        || (pode('lancar') && resource.data.criadoPorUid == request.auth.uid && request.resource.data.criadoPorUid == request.auth.uid)
+        || (pode('marcar') && mudou().hasOnly(['status', 'obs', 'data', 'postits', 'atualizadoEm']))
+        || (membro() && mudou().hasOnly(['postits', 'atualizadoEm']));
+      allow delete: if pode('apagar');
+    }
+
+    // Foto grande da nota de cada entrega (a miniatura fica na própria entrega)
+    match /fotos/{id} {
+      allow read: if membro();
+      allow create, update: if pode('lancar') || pode('editarTodas');
+      allow delete: if pode('apagar') || pode('editarTodas');
+    }
+
+    // Pasta "Produtos que vão com outras notas"
+    match /notasjuntas/{id} {
+      allow read: if membro();
+      allow create: if pode('pasta') && request.resource.data.porUid == request.auth.uid;
+      allow update: if pode('pasta') && mudou().hasOnly(['texto']);
+      allow delete: if pode('pasta') || pode('apagar');
+    }
+  }
+}

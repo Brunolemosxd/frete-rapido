@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f5fae">
+<title>Painel Frete Rápido</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Painel do administrador: abas Pessoas, Valores e Ajustes */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --fg:#17212b; --muted:#5d6b78; --line:#d5dce3; --grid:#e6ebf0;
+  --accent:#1f5fae; --accent-fg:#ffffff; --bar:#1f5fae;
+  --ok:#2f855a; --ok-bg:#e3f4ea; --bad:#c53030; --bad-bg:#fbe7e7; --pend:#b7791f; --pend-bg:#fdf3e1;
+  --shadow:0 1px 2px rgba(23,33,43,.08),0 4px 14px rgba(23,33,43,.06);
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#10161c; --surface:#18212a; --fg:#e7edf2; --muted:#97a6b3; --line:#2a3642; --grid:#222d38;
+  --accent:#5b9bec; --accent-fg:#0b1520; --bar:#5b9bec;
+  --ok:#5fcf8f; --ok-bg:#12301f; --bad:#f07171; --bad-bg:#3a1717; --pend:#f0b450; --pend-bg:#33270f;
+  --shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10161c; --surface:#18212a; --fg:#e7edf2; --muted:#97a6b3; --line:#2a3642; --grid:#222d38;
+  --accent:#5b9bec; --accent-fg:#0b1520; --bar:#5b9bec;
+  --ok:#5fcf8f; --ok-bg:#12301f; --bad:#f07171; --bad-bg:#3a1717; --pend:#f0b450; --pend-bg:#33270f;
+  --shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-block:12px 4px;max-width:900px;margin:0 auto}
+h1{font-family:var(--display);font-weight:700;font-size:26px;margin:0;text-transform:uppercase}
+h1 span{color:var(--accent)}
+.usr{display:flex;gap:12px;font-size:13px;color:var(--muted)}
+.usr a,.usr button{color:var(--accent);font-weight:600;background:none;border:0;padding:0;font-size:13px;text-decoration:none}
+.tabs{display:flex;gap:6px;padding-block:8px 10px;max-width:900px;margin:0 auto}
+.tab{border:1.5px solid var(--line);background:var(--bg);border-radius:99px;padding:8px 16px;font-weight:600;font-size:15px}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+main{padding-block:16px 60px;max-width:900px;margin:0 auto;display:grid;gap:16px}
+h2{font-family:var(--display);font-size:22px;margin:0;text-transform:uppercase}
+.card{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:14px;display:grid;gap:10px}
+.muted{color:var(--muted);font-size:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sp{flex:1}
+.btn{border-radius:12px;padding:11px 16px;font-weight:600;font-size:15px;background:var(--bg);border:1.5px solid var(--line)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn.bad{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn.danger{color:var(--bad);background:transparent;border-color:var(--bad)}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.5}
+.pessoa{display:flex;gap:12px;align-items:center}
+.pessoa .nm{font-weight:600;font-size:17px}
+.pessoa .em{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.pill{border-radius:99px;padding:2px 9px;font-weight:600;font-size:12px;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+.p-ok{background:var(--ok-bg);color:var(--ok)} .p-bad{background:var(--bad-bg);color:var(--bad)} .p-fn{background:var(--bg);color:var(--fg);border:1px solid var(--line)}
+.field{display:grid;gap:7px}
+.lbl,.field>label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+input[type=text],input[type=email],input[type=month]{width:100%;font:inherit;font-size:16px;padding:11px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg)}
+input.err{border-color:var(--bad)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1.5px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 14px;font-weight:600;font-size:15px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:8px 0;font-size:15px}
+.chk input{width:22px;height:22px;margin:0;flex:0 0 auto;accent-color:var(--accent)}
+.scrim{position:fixed;inset:0;background:rgba(10,16,22,.5);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:560px;max-height:92%;overflow-y:auto;border-radius:20px 20px 0 0;padding:16px max(16px,env(safe-area-inset-left,0px)) calc(20px + env(safe-area-inset-bottom,0px));display:grid;gap:14px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:30;font-size:14px;max-width:calc(100% - 32px);text-align:center}
+/* números grandes */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.kpi{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;display:grid;gap:2px}
+.kpi .k{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.kpi .v{font-family:var(--display);font-size:clamp(20px,6vw,28px);overflow-wrap:anywhere;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:13px;color:var(--muted)}
+/* gráfico */
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:220px;overflow:visible}
+.chart .ax{font-size:11px;fill:var(--muted);font-variant-numeric:tabular-nums}
+.chart .gl{stroke:var(--grid);stroke-width:1}
+.chart .bar{fill:var(--bar)}
+.chart .hit{fill:transparent;cursor:pointer}
+.chart .hit:hover+.bar,.chart .bar.on{opacity:.75}
+.tip{position:absolute;pointer-events:none;background:var(--fg);color:var(--bg);font-size:13px;padding:6px 9px;border-radius:8px;white-space:nowrap;transform:translate(-50%,-100%);z-index:2}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+td.n,th.n{text-align:right}
+.tblwrap{overflow-x:auto}
+.hbar{height:6px;border-radius:0 4px 4px 0;background:var(--bar);min-width:2px;margin:4px 0 0 auto}
+details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:4px 0}
+.login{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
+.login .box{width:100%;max-width:380px;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:28px 20px;display:grid;gap:16px;text-align:center}
+.login p{margin:0;color:var(--muted)}
+.login a{color:var(--accent);font-weight:600}
+</style>
+</head>
+<body>
+<div class="login" id="login" hidden>
+  <div class="box">
+    <h1>Painel <span>Frete Rápido</span></h1>
+    <p id="loginMsg">Entre com a conta Google do administrador.</p>
+    <button type="button" class="btn pri" id="gentrar">Entrar com Google</button>
+    <button type="button" class="btn ghost" id="lsair" hidden>Entrar com outra conta</button>
+    <a href="./">Voltar para o mural</a>
+  </div>
+</div>
+
+<div id="app" hidden>
+<header>
+  <div class="wrap">
+    <div class="top"><h1>Painel <span>Frete Rápido</span></h1><div class="usr"><a href="./">Mural</a><button type="button" id="usair">Sair</button></div></div>
+    <div class="tabs" role="tablist"><button class="tab" role="tab" data-t="pessoas">Pessoas</button><button class="tab" role="tab" data-t="valores">Valores</button><button class="tab" role="tab" data-t="ajustes">Ajustes</button></div>
+  </div>
+</header>
+<main class="wrap">
+  <section id="t-pessoas" class="grid" style="display:grid;gap:12px">
+    <div class="row"><h2>Pessoas</h2><span class="sp"></span><button type="button" class="btn pri" id="novaP">+ Cadastrar pessoa</button></div>
+    <p class="muted" style="margin:0">Só entra no mural quem estiver aqui com o acesso liberado. Cada pessoa entra com o Gmail dela.</p>
+    <div id="listaP" style="display:grid;gap:10px"></div>
+  </section>
+
+  <section id="t-valores" style="display:grid;gap:14px" hidden>
+    <div class="row"><h2>Valores</h2><span class="sp"></span><input type="month" id="mes" aria-label="Mês" style="width:auto"></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="card">
+      <div><strong>Fretes entregues por dia</strong><div class="muted">Toque numa barra para ver o valor do dia</div></div>
+      <div class="chart" id="chart"></div>
+      <details><summary>Ver os números de cada dia</summary><div class="tblwrap" id="tabDias"></div></details>
+    </div>
+    <div class="card">
+      <div><strong>Por pessoa</strong><div class="muted">Quem lançou, quem pagou frete e quem pôs a mais, no mês</div></div>
+      <div class="tblwrap" id="tabPessoas"></div>
+    </div>
+  </section>
+
+  <section id="t-ajustes" style="display:grid;gap:14px" hidden>
+    <h2>Ajustes</h2>
+    <div class="card">
+      <strong>Fotos antigas</strong>
+      <p class="muted" style="margin:0">As fotos com mais de 60 dias são apagadas sozinhas quando você abre o mural ou o painel (uma vez por dia). As entregas continuam; só as fotos grandes somem.</p>
+      <div><button type="button" class="btn" id="limpar">Apagar agora as fotos antigas</button></div>
+    </div>
+  </section>
+</main>
+</div>
+<div id="sheetRoot"></div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="comum.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const real=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const realCurto=n=>'R$ '+Math.round(n).toLocaleString('pt-BR');
+function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2800)}
+function erro(e){toast(e?.code==='permission-denied'?'Sem permissão. Confira se as regras do Firestore foram publicadas.':'Não consegui salvar. Confira a internet e tente de novo.')}
+let pessoas=[],pararP=null;
+
+/* ---------- abas ---------- */
+let aba='pessoas';
+function mostrarAba(t){aba=t;document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===t));
+  for(const k of ['pessoas','valores','ajustes'])$('#t-'+k).hidden=k!==t;
+  if(t==='valores')carregarValores()}
+document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(b)mostrarAba(b.dataset.t)});
+
+/* ---------- folhas ---------- */
+function abrirSheet(html,onMount){const r=$('#sheetRoot');r.innerHTML=`<div class="scrim"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;
+  const sc=r.firstChild;sc.addEventListener('click',e=>{if(e.target===sc)fechar()});onMount&&onMount(sc.firstChild)}
+function fechar(){$('#sheetRoot').innerHTML=''}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')fechar()});
+
+/* ---------- pessoas ---------- */
+function renderPessoas(){
+  const l=[...pessoas].sort((a,b)=>(b.ativo===true)-(a.ativo===true)||String(a.nome).localeCompare(String(b.nome)));
+  $('#listaP').innerHTML=l.length?l.map(p=>`<div class="card"><div class="pessoa"><div style="flex:1;min-width:0">
+      <div class="nm">${esc(p.nome)}</div><div class="em">${esc(p.id)}</div>
+      <div class="row" style="gap:6px;margin-top:6px"><span class="pill p-fn">${esc(FUNCOES[p.funcao]?.nome||'Personalizado')}</span><span class="pill ${p.ativo?'p-ok':'p-bad'}">${p.ativo?'Acesso liberado':'Bloqueado'}</span></div></div>
+      <button type="button" class="btn" data-ed="${esc(p.id)}">Editar</button></div></div>`).join('')
+    :'<div class="card muted">Ninguém cadastrado ainda. Toque em <b>+ Cadastrar pessoa</b>.</div>';
+}
+$('#listaP').addEventListener('click',e=>{const b=e.target.closest('[data-ed]');if(b)abrirPessoa(pessoas.find(p=>p.id===b.dataset.ed))});
+$('#novaP').addEventListener('click',()=>abrirPessoa(null));
+
+function abrirPessoa(ed){
+  const st=ed?{...ed,perms:{...(ed.perms||{})}}:{id:'',nome:'',funcao:'vendedor',perms:{...FUNCOES.vendedor.perms},ativo:true,naLista:true};
+  abrirSheet(`<h2>${ed?'Editar pessoa':'Cadastrar pessoa'}</h2>
+    <div class="field"><label for="pe">Gmail da pessoa</label><input type="email" id="pe" autocomplete="off" placeholder="nome@gmail.com" ${ed?'disabled':''}></div>
+    <div class="field"><label for="pn">Nome que aparece no mural</label><input type="text" id="pn" autocomplete="off" placeholder="Ex.: Júlio"></div>
+    <div class="field"><span class="lbl">Função</span><div class="chips" id="pf">${Object.entries(FUNCOES).map(([k,f])=>`<button type="button" class="chip" data-f="${k}">${f.nome}</button>`).join('')}</div>
+      <span class="muted">Escolher a função marca as permissões abaixo. Depois você pode ajustar uma por uma.</span></div>
+    <div class="field"><span class="lbl">O que pode fazer</span><div id="pp">${Object.entries(PERMS).map(([k,t])=>`<label class="chk"><input type="checkbox" data-p="${k}"><span>${t}</span></label>`).join('')}</div></div>
+    <div class="field"><span class="lbl">Lista de vendedores</span><label class="chk"><input type="checkbox" id="pl"><span>Aparece nas opções "Frete por conta do vendedor" e "Vendedor pôs a mais"</span></label></div>
+    <div class="field"><span class="lbl">Acesso</span><label class="chk"><input type="checkbox" id="pa"><span>Acesso liberado (desmarque para bloquear)</span></label></div>
+    ${ed?'<button type="button" class="btn danger" id="prem">Remover esta pessoa</button>':''}
+    <div class="actions"><button type="button" class="btn ghost" data-x>Cancelar</button><button type="button" class="btn pri" id="psave">Salvar</button></div>`,
+  s=>{
+    const q=x=>s.querySelector(x);
+    q('#pe').value=st.id;q('#pn').value=st.nome||'';
+    const sync=()=>{
+      s.querySelectorAll('#pf .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.f===st.funcao));
+      s.querySelectorAll('#pp [data-p]').forEach(c=>c.checked=st.perms[c.dataset.p]===true);
+      q('#pl').checked=st.naLista!==false;q('#pa').checked=st.ativo===true;
+    };sync();
+    q('#pf').addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(!b)return;st.funcao=b.dataset.f;st.perms={...FUNCOES[st.funcao].perms};st.naLista=st.funcao!=='entregador';sync()});
+    q('#pp').addEventListener('change',e=>{const c=e.target.closest('[data-p]');if(!c)return;st.perms[c.dataset.p]=c.checked;
+      // se ficou diferente do padrão da função, vira "personalizado"
+      const f=FUNCOES[st.funcao];if(f&&Object.keys(PERMS).some(k=>!!f.perms[k]!==!!st.perms[k]))st.funcao='personalizado';sync()});
+    q('#pl').addEventListener('change',e=>st.naLista=e.target.checked);
+    q('#pa').addEventListener('change',e=>st.ativo=e.target.checked);
+    s.addEventListener('input',e=>e.target.classList?.remove('err'));
+    q('[data-x]').addEventListener('click',fechar);
+    q('#prem')?.addEventListener('click',()=>confirmarRemover(ed));
+    q('#psave').addEventListener('click',async()=>{
+      const email=(ed?ed.id:q('#pe').value).trim().toLowerCase(),nome=q('#pn').value.trim();
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){q('#pe').classList.add('err');toast('Coloque o Gmail da pessoa.');return}
+      if(email===ADMIN_EMAIL){q('#pe').classList.add('err');toast('Esse é o seu e-mail: você já entra como administrador.');return}
+      if(!ed&&pessoas.some(p=>p.id===email)){q('#pe').classList.add('err');toast('Esse Gmail já está cadastrado.');return}
+      if(!nome){q('#pn').classList.add('err');toast('Coloque o nome da pessoa.');return}
+      const btn=q('#psave');btn.disabled=true;btn.textContent='Salvando…';
+      try{
+        const perms=Object.fromEntries(Object.keys(PERMS).map(k=>[k,st.perms[k]===true]));
+        await db.collection('usuarios').doc(email).set({nome,funcao:st.funcao,perms,ativo:st.ativo===true,naLista:st.naLista!==false,atualizadoEm:Date.now()});
+        const outros=pessoas.filter(p=>p.id!==email);await atualizarEquipe([...outros,{id:email,nome,ativo:st.ativo===true,naLista:st.naLista!==false}]);
+        fechar();toast(ed?'Pessoa atualizada':'Pessoa cadastrada. Agora ela já pode entrar com esse Gmail.');
+      }catch(e){erro(e);btn.disabled=false;btn.textContent='Salvar'}
+    });
+  });
+}
+function confirmarRemover(p){
+  abrirSheet(`<h2>Remover ${esc(p.nome)}?</h2><p class="muted" style="margin:0">Ela não entra mais no mural. As entregas que ela lançou continuam lá.</p>
+    <div class="actions"><button type="button" class="btn ghost" data-x>Cancelar</button><button type="button" class="btn bad" data-ok>Remover</button></div>`,
+  s=>s.addEventListener('click',async ev=>{
+    if(ev.target.closest('[data-x]'))abrirPessoa(p);
+    if(ev.target.closest('[data-ok]')){try{await db.collection('usuarios').doc(p.id).delete();await atualizarEquipe(pessoas.filter(x=>x.id!==p.id));fechar();toast('Pessoa removida')}catch(e){erro(e)}}
+  }));
+}
+// nomes que aparecem no formulário do mural
+function atualizarEquipe(lista){
+  const vendedores=[...new Set(lista.filter(p=>p.ativo&&p.naLista!==false).map(p=>p.nome))].sort((a,b)=>a.localeCompare(b));
+  return db.collection('config').doc('equipe').set({vendedores,atualizadoEm:Date.now()});
+}
+
+/* ---------- valores ---------- */
+function mesAtual(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+$('#mes').value=mesAtual();
+$('#mes').addEventListener('change',carregarValores);
+let dadosMes=null;
+async function carregarValores(){
+  const m=$('#mes').value||mesAtual(),[y,mm]=m.split('-').map(Number),fim=new Date(y,mm,0).getDate();
+  $('#kpis').innerHTML='<div class="muted">Carregando…</div>';$('#chart').innerHTML='';$('#tabPessoas').innerHTML='';$('#tabDias').innerHTML='';
+  try{
+    const snap=await db.collection('entregas').where('data','>=',m+'-01').where('data','<=',m+'-'+String(fim).padStart(2,'0')).get();
+    dadosMes={m,fim,l:snap.docs.map(d=>({id:d.id,status:'pendente',...d.data()}))};renderValores();
+  }catch(e){$('#kpis').innerHTML='<div class="muted">Não consegui carregar os valores. Confira a internet.</div>'}
+}
+function renderValores(){
+  const {m,fim,l}=dadosMes,num=v=>Number(v)||0;
+  const ent=l.filter(e=>e.status==='entregue'),soma=(a,f)=>a.reduce((s,e)=>s+f(e),0);
+  const tEnt=soma(ent,e=>num(e.frete)),tLanc=soma(l,e=>num(e.frete));
+  const conta=l.filter(e=>e.fretePor),mais=l.filter(e=>e.aMaisPor);
+  const nomeMes=new Date(m+'-15T12:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  $('#kpis').innerHTML=[
+    ['Fretes entregues',real(tEnt),`${ent.length} entrega${ent.length===1?'':'s'} em ${nomeMes}`],
+    ['Fretes lançados',real(tLanc),`${l.length} no total (com pendentes e problemas)`],
+    ['Por conta dos vendedores',real(soma(conta,e=>num(e.frete))),`${conta.length} entrega${conta.length===1?'':'s'}`],
+    ['Posto a mais',real(soma(mais,e=>num(e.aMaisValor))),`${mais.length} vez${mais.length===1?'':'es'}`]
+  ].map(([k,v,s])=>`<div class="kpi"><span class="k">${k}</span><span class="v">${v}</span><span class="s">${esc(s)}</span></div>`).join('');
+  // por dia
+  const dias=Array.from({length:fim},(_,i)=>{const d=m+'-'+String(i+1).padStart(2,'0'),x=ent.filter(e=>e.data===d);return {dia:i+1,v:soma(x,e=>num(e.frete)),n:x.length}});
+  desenharGrafico(dias);
+  $('#tabDias').innerHTML=`<table><thead><tr><th>Dia</th><th class="n">Entregas</th><th class="n">Fretes entregues</th></tr></thead><tbody>${dias.filter(d=>d.n).map(d=>`<tr><td>${d.dia}</td><td class="n">${d.n}</td><td class="n">${real(d.v)}</td></tr>`).join('')||'<tr><td colspan="3" class="muted">Nenhuma entrega entregue neste mês.</td></tr>'}</tbody></table>`;
+  // por pessoa
+  const P={},pp=n=>P[n]||(P[n]={n:0,v:0,cn:0,cv:0,mn:0,mv:0});
+  for(const e of l){pp(e.criadoPorNome||'Sem nome');P[e.criadoPorNome||'Sem nome'].n++;P[e.criadoPorNome||'Sem nome'].v+=num(e.frete);
+    if(e.fretePor){pp(e.fretePor).cn++;P[e.fretePor].cv+=num(e.frete)}
+    if(e.aMaisPor){pp(e.aMaisPor).mn++;P[e.aMaisPor].mv+=num(e.aMaisValor)}}
+  const linhas=Object.entries(P).sort((a,b)=>b[1].v-a[1].v),max=Math.max(1,...linhas.map(([,x])=>x.v));
+  $('#tabPessoas').innerHTML=linhas.length?`<table><thead><tr><th>Nome</th><th class="n">Lançou</th><th class="n">Fretes lançados</th><th class="n">Pagou por conta</th><th class="n">Pôs a mais</th></tr></thead><tbody>
+    ${linhas.map(([n,x])=>`<tr><td>${esc(n)}</td><td class="n">${x.n}</td><td class="n">${real(x.v)}<div class="hbar" style="width:${x.v/max*100}%"></div></td>
+      <td class="n">${x.cn?`${real(x.cv)} <span class="muted">(${x.cn})</span>`:'—'}</td><td class="n">${x.mn?`${real(x.mv)} <span class="muted">(${x.mn})</span>`:'—'}</td></tr>`).join('')}</tbody></table>`
+    :'<p class="muted">Nenhuma entrega neste mês.</p>';
+}
+function desenharGrafico(dias){
+  const box=$('#chart'),W=Math.max(280,box.clientWidth||600),H=220,L=52,R=8,T=12,B=24,iw=W-L-R,ih=H-T-B;
+  const max=Math.max(...dias.map(d=>d.v));
+  if(!max){box.innerHTML='<p class="muted" style="margin:0">Nenhum frete entregue neste mês ainda.</p>';return}
+  // escala com números redondos
+  const passo=Math.pow(10,Math.floor(Math.log10(max/3))),cand=[1,2,2.5,5,10].map(k=>k*passo).find(p=>max/p<=4)||passo*10,top=Math.ceil(max/cand)*cand;
+  const y=v=>T+ih-v/top*ih,bw=iw/dias.length,gap=Math.min(2,bw*.2);
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Fretes entregues por dia">`;
+  for(let v=0;v<=top+1e-9;v+=cand)svg+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${L-6}" y="${y(v)+4}" text-anchor="end">${realCurto(v)}</text>`;
+  dias.forEach((d,i)=>{const x=L+i*bw,h=ih-(y(d.v)-T),bx=x+gap/2,w=bw-gap;
+    if(d.v){const r=Math.min(4,w/2,h);svg+=`<path class="bar" data-i="${i}" d="M${bx},${T+ih} V${y(d.v)+r} Q${bx},${y(d.v)} ${bx+r},${y(d.v)} H${bx+w-r} Q${bx+w},${y(d.v)} ${bx+w},${y(d.v)+r} V${T+ih} Z"/>`}
+    svg+=`<rect class="hit" data-i="${i}" x="${x}" y="${T}" width="${bw}" height="${ih}"/>`;
+    if(d.dia===1||d.dia%5===0)svg+=`<text class="ax" x="${x+bw/2}" y="${H-6}" text-anchor="middle">${d.dia}</text>`});
+  svg+=`<line x1="${L}" x2="${W-R}" y1="${T+ih}" y2="${T+ih}" stroke="var(--line)"/></svg><div class="tip" hidden></div>`;
+  box.innerHTML=svg;
+  const tip=box.querySelector('.tip');
+  const mostrar=ev=>{const h=ev.target.closest('.hit');box.querySelectorAll('.bar.on').forEach(b=>b.classList.remove('on'));if(!h){tip.hidden=true;return}
+    const d=dias[+h.dataset.i];box.querySelector(`.bar[data-i="${h.dataset.i}"]`)?.classList.add('on');
+    tip.innerHTML=`Dia ${d.dia}: <b>${real(d.v)}</b> · ${d.n} entrega${d.n===1?'':'s'}`;tip.hidden=false;
+    const rb=box.getBoundingClientRect(),hb=h.getBoundingClientRect();
+    tip.style.left=Math.min(rb.width-70,Math.max(70,hb.left-rb.left+hb.width/2))+'px';tip.style.top=Math.max(20,(y(d.v)/H)*rb.height-6)+'px'};
+  box.addEventListener('pointermove',mostrar);box.addEventListener('click',mostrar);box.addEventListener('pointerleave',()=>{tip.hidden=true;box.querySelectorAll('.bar.on').forEach(b=>b.classList.remove('on'))});
+}
+let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(dadosMes&&aba==='valores')renderValores()},150)});
+
+/* ---------- ajustes ---------- */
+$('#limpar').addEventListener('click',async e=>{const b=e.currentTarget;b.disabled=true;
+  try{const n=await limparFotosAntigas(true);toast(n?`${n} foto${n===1?'':'s'} antiga${n===1?'':'s'} apagada${n===1?'':'s'}`:'Não há fotos antigas para apagar')}catch(er){erro(er)}b.disabled=false});
+
+/* ---------- login ---------- */
+function telaLogin(msg,outra){$('#app').hidden=true;$('#login').hidden=false;$('#loginMsg').innerHTML=msg;$('#gentrar').hidden=!!outra;$('#lsair').hidden=!outra}
+$('#gentrar').addEventListener('click',()=>entrarComGoogle().catch(()=>toast('Não consegui entrar. Tente de novo.')));
+$('#lsair').addEventListener('click',()=>auth.signOut());
+$('#usair').addEventListener('click',()=>auth.signOut());
+auth.onAuthStateChanged(u=>{
+  pararP&&pararP();pararP=null;fechar();
+  if(!u){telaLogin('Entre com a conta Google do administrador.');return}
+  if(!ehAdmin(u)){telaLogin(`Só o administrador entra no painel. Você entrou como <b>${esc(u.email)}</b>.`,true);return}
+  $('#login').hidden=true;$('#app').hidden=false;mostrarAba(aba);
+  pararP=db.collection('usuarios').onSnapshot(s=>{pessoas=s.docs.map(d=>({id:d.id,...d.data()}));renderPessoas()},e=>erro(e));
+  limparFotosAntigas().catch(()=>{});
+});
+})();
+</script>
+</body>
+</html>
