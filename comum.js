@@ -19,13 +19,12 @@ const PERMS = {
   apagar: 'Apagar entregas',
   marcar: 'Marcar entregue / problema e passar de dia',
   verValores: 'Ver valores de frete',
-  pasta: 'Pôr e tirar fotos na pasta de notas',
-  aviso: 'Receber aviso de entrega nova (para os freteiros)'
+  pasta: 'Pôr e tirar fotos na pasta de notas'
 };
 const FUNCOES = {
-  gerente: { nome: 'Gerente', perms: { lancar: true, editarTodas: true, apagar: true, marcar: true, verValores: true, pasta: true, aviso: false } },
-  vendedor: { nome: 'Vendedor', perms: { lancar: true, editarTodas: false, apagar: false, marcar: false, verValores: true, pasta: true, aviso: false } },
-  entregador: { nome: 'Entregador', perms: { lancar: false, editarTodas: false, apagar: false, marcar: true, verValores: false, pasta: false, aviso: true } }
+  gerente: { nome: 'Gerente', perms: { lancar: true, editarTodas: true, apagar: true, marcar: true, verValores: true, pasta: true } },
+  vendedor: { nome: 'Vendedor', perms: { lancar: true, editarTodas: false, apagar: false, marcar: false, verValores: true, pasta: true } },
+  entregador: { nome: 'Entregador', perms: { lancar: false, editarTodas: false, apagar: false, marcar: true, verValores: false, pasta: false } }
 };
 // motivos de problema: o Bruno cadastra mais no mural ou no painel (config/motivos)
 const MOTIVOS_PADRAO = ['Cliente ausente', 'Endereço errado', 'Produto faltando', 'Produto avariado', 'Não coube no carro', 'Remarcar'];
@@ -74,7 +73,7 @@ function entrarComGoogle() {
 
 // Devolve {uid,email,nome,funcao,admin,perms} ou null quando o Bruno ainda não liberou o e-mail
 async function carregarPerfil(u) {
-  if (ehAdmin(u)) return { uid: u.uid, email: emailDe(u), nome: u.displayName || 'Bruno', funcao: 'admin', admin: true, perms: { ...TODAS, aviso: false } };
+  if (ehAdmin(u)) return { uid: u.uid, email: emailDe(u), nome: u.displayName || 'Bruno', funcao: 'admin', admin: true, perms: { ...TODAS } };
   if (!u.emailVerified) return null;
   const snap = await db.collection('usuarios').doc(emailDe(u)).get(); contarLeitura(1);
   if (!snap.exists) return null;
