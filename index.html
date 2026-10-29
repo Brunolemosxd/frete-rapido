@@ -365,7 +365,7 @@ function render(){
   const c=k=>list.filter(e=>e.status===k).length;
   const totFrete=list.filter(e=>e.status!=='problema').reduce((s,e)=>s+(Number(e.frete)||0),0);
   let html=`<div class="dayhead"><h2>${esc(nomeDia(dia))}</h2><div class="tally">
-    ${list.length?`<span class="pill p-pend">${c('pendente')} pendente${c('pendente')===1?'':'s'}</span><span class="pill p-ok">${c('entregue')} entregue${c('entregue')===1?'':'s'}</span>${c('problema')?`<span class="pill p-bad">${c('problema')} problema</span>`:''}${P.verValores&&totFrete?`<span class="pill p-frete">Fretes ${real(totFrete)}</span>`:''}`:''}
+    ${list.length?`<span class="pill p-pend">${c('pendente')} pendente${c('pendente')===1?'':'s'}</span><span class="pill p-ok">${c('entregue')} entregue${c('entregue')===1?'':'s'}</span>${c('problema')?`<span class="pill p-bad">${c('problema')} problema</span>`:''}${me&&me.admin&&totFrete?`<span class="pill p-frete">Fretes ${real(totFrete)}</span>`:''}`:''}
   </div></div>`;
   const nj=notasDoDia(dia).length;
   html+=`<button type="button" class="pasta" id="pasta"><span aria-hidden="true">📁</span>Produtos que vão com outras notas${nj?`<span class="n">${nj}</span>`:''}</button>`;
