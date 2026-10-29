@@ -108,7 +108,11 @@ input.err{border-color:var(--bad)}
 .prods{display:flex;gap:6px;flex-wrap:wrap}
 .prod{border:1.5px solid var(--line);background:var(--bg);border-radius:99px;padding:8px 12px;font-weight:600;font-size:14px}
 .plist{display:grid;gap:8px}
-.pitem{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 12px;background:var(--bg)}
+.pitem{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 12px;background:var(--bg)}
+.pitem .linha{grid-column:1/-1;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.qty{display:flex;align-items:center;gap:8px}
+.qty button{width:34px;height:34px;border-radius:99px;border:1.5px solid var(--line);background:var(--surface);font-size:20px;font-weight:700;line-height:1}
+.qty b{font-family:var(--display);font-size:22px;min-width:22px;text-align:center;font-variant-numeric:tabular-nums}
 .pitem .nm{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis}
 .seg{display:flex;flex:0 0 auto;border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
 .seg button{border:0;background:transparent;padding:7px 10px;font-weight:600;font-size:14px}
@@ -225,7 +229,8 @@ function ordemTurno(e){return {manha:0,tarde:1,apos:2}[e.turno]??3}
 const PRODUTOS=['Geladeira','Freezer','Fogão','Cooktop','Forno elétrico','Micro-ondas','Coifa','Lava-louças','Máquina de lavar','Lava e seca','Tanquinho','Secadora','Ar-condicionado','TV','Colchão','Cama box','Sofá','Guarda-roupa','Cômoda','Armário de cozinha','Mesa e cadeiras','Rack / painel'];
 const LOC={loja:'Loja',deposito:'Depósito'};
 // entregas antigas guardavam itens como texto e um único local para tudo
-function itensDe(e){return (e.itens||[]).map(i=>typeof i==='string'?{nome:i,local:e.local||'loja'}:{nome:i.nome||'',local:i.local||null})}
+function itensDe(e){return (e.itens||[]).map(i=>typeof i==='string'?{nome:i,local:e.local||'loja',qtd:1}:{nome:i.nome||'',local:i.local||null,qtd:Math.max(1,+i.qtd||1)})}
+const qtdNome=i=>(i.qtd>1?i.qtd+'× ':'')+i.nome;
 function locais(e){const its=itensDe(e),s=new Set(its.map(i=>i.local).filter(Boolean));if(!its.length)s.add(e.local==='deposito'?'deposito':'loja');
   return {txt:s.size>1?'Loja + Depósito':s.has('deposito')?'Depósito':'Loja',dep:s.has('deposito')}}
 // quantas notas fiscais e onde estão; entregas antigas só tinham "mais de uma nota"
@@ -269,7 +274,7 @@ $('#days').addEventListener('click',e=>{const b=e.target.closest('.day');if(!b)r
 /* ---------- lista ---------- */
 function cardHTML(e){
   const src=fotoSrc(e),nm=e.criadoPorNome,V=P.verValores;
-  const itens=itensDe(e).map(i=>i.nome+(i.local?` (${LOC[i.local]})`:'')).join(' · ');
+  const itens=itensDe(e).map(i=>qtdNome(i)+(i.local?` (${LOC[i.local]})`:'')).join(' · ');
   return `<div class="card st-${e.status}" data-id="${esc(e.id)}">
     <div class="under"><span class="l">✓ Entregue</span><span class="r">Problema ✕</span></div>
     <div class="face">
@@ -463,7 +468,7 @@ function abrirDetalhe(id){
     ${(e.contatos||[]).map(c=>`<div><span class="lbl">Outro contato${c.nome?' — '+esc(c.nome):''}</span><div class="fonerow"><span style="user-select:all">${esc(c.fone)}</span><button type="button" class="btn sm" data-copiar="${esc(soDig(c.fone))}">📋 Copiar</button></div></div>`).join('')}
     ${V&&e.frete?`<div><span class="lbl">Valor do frete</span><br>${real(e.frete)}${e.fretePago?' — <b>já pago</b>':''}${e.fretePor?` — por conta de <b>${esc(e.fretePor)}</b>`:''}</div>`:''}
     ${V&&e.aMaisPor?`<div><span class="lbl">Vendedor pôs a mais no frete</span><br><b>${esc(e.aMaisPor)}</b>${e.aMaisValor?` — mais ${real(e.aMaisValor)}`:''}</div>`:''}
-    ${its.length?`<div><span class="lbl">Produtos</span><ul>${its.map(i=>`<li>${esc(i.nome)}${i.local?` — <b>${LOC[i.local]}</b>`:''}</li>`).join('')}</ul></div>`:''}
+    ${its.length?`<div><span class="lbl">Produtos</span><ul>${its.map(i=>`<li>${esc(qtdNome(i))}${i.local?` — <b>${LOC[i.local]}</b>`:''}</li>`).join('')}</ul></div>`:''}
     ${e.observacao?`<div><span class="lbl">Observação</span><br>${esc(e.observacao)}</div>`:''}
     ${e.status==='problema'&&e.obs?`<div><span class="lbl">Problema</span><br>${esc(e.obs)}</div>`:''}
     ${e.criadoPorNome?`<div><span class="lbl">Lançada por</span><br>${esc(e.criadoPorNome)}</div>`:''}
@@ -557,8 +562,9 @@ function abrirForm(ed){
       s.querySelectorAll('#cmaisr .chip').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.r===st.aMaisValor));
       s.querySelectorAll('#cvend .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.fretePor));
       q('#fitens').innerHTML=st.itens.map((t,i)=>`<div class="pitem${errLocal&&!t.local?' err':''}"><span class="nm">${esc(t.nome)}</span>
-        <div class="seg" role="group" aria-label="Onde está">${Object.entries(LOC).map(([k,v])=>`<button type="button" data-i="${i}" data-l="${k}" aria-pressed="${t.local===k}">${v}</button>`).join('')}</div>
-        <button type="button" class="x" data-del="${i}" aria-label="Tirar ${esc(t.nome)}">×</button></div>`).join('');
+        <button type="button" class="x" data-del="${i}" aria-label="Tirar ${esc(t.nome)}">×</button>
+        <div class="linha"><div class="qty"><button type="button" data-q="${i}" data-d="-1" aria-label="Um a menos">−</button><b>${t.qtd}</b><button type="button" data-q="${i}" data-d="1" aria-label="Um a mais">+</button></div>
+        <div class="seg" role="group" aria-label="Onde está">${Object.entries(LOC).map(([k,v])=>`<button type="button" data-i="${i}" data-l="${k}" aria-pressed="${t.local===k}">${v}</button>`).join('')}</div></div></div>`).join('');
       const th=q('#fthumb');th.style.backgroundImage=fotoPrev?`url('${fotoPrev}')`:'';th.textContent=fotoPrev?'':'sem foto';
       q('#fbtn').textContent=fotoPrev?'📷 Trocar foto':'📷 Tirar foto';
       q('#fextras').innerHTML=extras.map((x,i)=>`<div class="fx"><div class="thumb" style="background-image:url('${esc(x.prev||x.src)}')"></div><button type="button" data-xdel="${i}" aria-label="Tirar esta foto">×</button></div>`).join('');
@@ -590,12 +596,13 @@ function abrirForm(ed){
     q('#fone').addEventListener('input',e=>{e.target.value=fmtFone(e.target.value)});
     q('#ffrete').addEventListener('input',e=>{const d=soDig(e.target.value).slice(0,9);st.frete=d?Number(d)/100:0;e.target.value=d?real(st.frete):''});
     s.addEventListener('input',e=>e.target.classList?.remove('err'));
-    q('#fprods').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(b){st.itens.push({nome:b.dataset.p,local:null});sync()}});
-    const add=()=>{const v=q('#fitem').value.trim();if(v){st.itens.push({nome:v,local:null});q('#fitem').value='';sync()}q('#fitem').focus()};
+    q('#fprods').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(b){st.itens.push({nome:b.dataset.p,local:null,qtd:1});sync()}});
+    const add=()=>{const v=q('#fitem').value.trim();if(v){st.itens.push({nome:v,local:null,qtd:1});q('#fitem').value='';sync()}q('#fitem').focus()};
     q('#fadd').addEventListener('click',add);
     q('#fitem').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();add()}});
     q('#fitens').addEventListener('click',e=>{
       const l=e.target.closest('[data-l]');if(l){st.itens[+l.dataset.i].local=l.dataset.l;sync();return}
+      const qb=e.target.closest('[data-q]');if(qb){const it=st.itens[+qb.dataset.q];it.qtd=Math.max(1,Math.min(99,it.qtd+ +qb.dataset.d));sync();return}
       const d=e.target.closest('[data-del]');if(d){st.itens.splice(+d.dataset.del,1);sync()}});
     q('#fbtn').addEventListener('click',()=>{const f=$('#file');f.value='';f.onchange=async()=>{const file=f.files[0];if(!file)return;
       try{fotoBlob=await reduzir(file,1400,.75);if(fotoPrev&&fotoPrev.startsWith('blob:'))URL.revokeObjectURL(fotoPrev);fotoPrev=URL.createObjectURL(fotoBlob);sync()}catch{toast('Não consegui ler essa foto.')}};f.click()});
@@ -603,7 +610,7 @@ function abrirForm(ed){
     q('#fsave').addEventListener('click',async()=>{
       if(enviando)return;
       st.cliente=q('#fcli').value.trim();st.bairro=q('#fbai').value.trim();st.endereco=q('#fend').value.trim();st.observacao=q('#fobs').value.trim();st.fone=q('#fone').value.trim();st.hora=q('#fhora').value;
-      const pendItem=q('#fitem').value.trim();if(pendItem){st.itens.push({nome:pendItem,local:null});q('#fitem').value='';sync()}
+      const pendItem=q('#fitem').value.trim();if(pendItem){st.itens.push({nome:pendItem,local:null,qtd:1});q('#fitem').value='';sync()}
       const erros=[['#fcli',!st.cliente,'Coloque o nome que está na nota.'],['#fone',!foneOk(st.fone),'Coloque o telefone com DDD. Ex.: (11) 98765-4321'],
         ['#fbai',!st.bairro,'Coloque o bairro.'],['#fend',!st.endereco,'Coloque o endereço.'],['#ffrete',!(st.frete>0),'Coloque o valor do frete.']].filter(x=>x[1]);
       erros.forEach(([sel])=>q(sel).classList.add('err'));
@@ -624,7 +631,7 @@ function abrirForm(ed){
         const fotosExtras=[];for(const x of extras)fotosExtras.push(x.blob?await fotoGrande(x.blob):x.src);
         const ls=new Set(st.itens.map(i=>i.local));
         const dados={cliente:st.cliente,fone:st.fone,bairro:st.bairro,endereco:st.endereco,observacao:st.observacao,frete:st.frete,fretePago:st.fretePago,fretePor:st.porConta?st.fretePor:'',aMaisPor:st.aMais?st.aMaisPor:'',aMaisValor:st.aMais?st.aMaisValor:0,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
-          itens:st.itens.map(i=>({nome:i.nome,local:i.local})),local:ls.size>1?'ambos':ls.has('deposito')?'deposito':'loja',
+          itens:st.itens.map(i=>({nome:i.nome,local:i.local,qtd:i.qtd})),local:ls.size>1?'ambos':ls.has('deposito')?'deposito':'loja',
           thumb:st.thumb||null,fotoData:st.fotoData||null,contatos:contOk,fotosExtras:fotosExtras.length,atualizadoEm:Date.now()};
         let ok;
         if(ed){ok=await salvar(id,dados)}
