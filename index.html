@@ -228,7 +228,9 @@ const WD=['dom','seg','ter','qua','qui','sex','sáb'];
 const TURNOS={manha:'Manhã',tarde:'Tarde',apos:'Depois das'};
 const ST={pendente:['Pendente','p-pend'],entregue:['Entregue','p-ok'],problema:['Problema','p-bad']};
 // quem carrega o caminhão (aparece no menu ao segurar o cartão)
-const CARREGADORES=['Thiago','Bruno'];
+const CARREGADORES=['Tiago','Bruno'];
+// entregas marcadas antes da correção do nome mostram o nome certo
+const carr=e=>e.carregadoPor==='Thiago'?'Tiago':(e.carregadoPor||'');
 let MOTIVOS=[...MOTIVOS_PADRAO];
 let me=null,P={},VENDEDORES=[],pararEntregas=null,pararNotas=null,notasDe=null;
 let notasJ=[],pastaAberta=false;
@@ -299,7 +301,7 @@ function cardHTML(e){
   return `<div class="card st-${e.status}${pr?' prio':''}" data-id="${esc(e.id)}">
     <div class="under"><span class="l">✓ Entregue</span><span class="r">Problema ✕</span></div>
     <div class="face">
-      <div class="tcol"><div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>${e.carregadoPor?`<span class="carr">🚚 ${esc(e.carregadoPor)}</span>`:''}</div>
+      <div class="tcol"><div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>${carr(e)?`<span class="carr">🚚 ${esc(carr(e))}</span>`:''}</div>
       <div class="info">
         ${pr?'<div><span class="pill pprio">⬆ Prioridade</span></div>':''}
         <div class="who">${esc(e.cliente||'Sem nome')}${e.bairro?` <span style="font-weight:400;color:var(--muted)">· ${esc(e.bairro)}</span>`:''}</div>
@@ -446,7 +448,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')fechar()});
 function abrirAcoes(id){
   const e=entregas.find(x=>x.id===id);if(!e)return;
   abrirSheet(`<h2>${esc(e.cliente||'Entrega')}</h2>
-    ${P.marcar||podeEditar(e)?`<div class="field"><span class="lbl">Quem carregou</span><div class="chips">${CARREGADORES.map(n=>`<button type="button" class="chip" data-carr="${esc(n)}" aria-pressed="${e.carregadoPor===n}">🚚 ${esc(n)}</button>`).join('')}</div></div>`:''}
+    ${P.marcar||podeEditar(e)?`<div class="field"><span class="lbl">Quem carregou</span><div class="chips">${CARREGADORES.map(n=>`<button type="button" class="chip" data-carr="${esc(n)}" aria-pressed="${carr(e)===n}">🚚 ${esc(n)}</button>`).join('')}</div></div>`:''}
     ${P.marcar?'<div class="actions two"><button class="btn ok" data-a="entregue">✓ Entregue</button><button class="btn bad" data-a="problema">✕ Problema</button></div>':''}
     <div class="actions">${P.marcar&&e.status!=='pendente'?'<button class="btn" data-a="pendente">Voltar para pendente</button>':''}
     <button class="btn post" data-a="postit">📝 Colar post-it</button>
@@ -456,7 +458,7 @@ function abrirAcoes(id){
     ${P.apagar?'<button class="btn danger" data-a="apagar">Apagar</button>':''}<button class="btn ghost" data-a="x">Fechar</button></div>`,
   s=>s.addEventListener('click',async ev=>{
     const cb=ev.target.closest('[data-carr]');
-    if(cb){const v=e.carregadoPor===cb.dataset.carr?'':cb.dataset.carr;fechar();e.carregadoPor=v;render();
+    if(cb){const v=carr(e)===cb.dataset.carr?'':cb.dataset.carr;fechar();e.carregadoPor=v;render();
       if(await salvar(id,{carregadoPor:v,carregadoEm:Date.now(),atualizadoEm:Date.now()}))toast(v?'Carregada por '+v:'Tirado quem carregou');return}
     const a=ev.target.closest('[data-a]')?.dataset.a;if(!a)return;
     if(a==='entregue'||a==='pendente'){fechar();setStatus(id,a)}
