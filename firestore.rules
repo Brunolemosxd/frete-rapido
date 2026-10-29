@@ -29,7 +29,7 @@ service cloud.firestore {
       allow create: if pode('lancar') && request.resource.data.criadoPorUid == request.auth.uid;
       allow update: if pode('editarTodas')
         || (pode('lancar') && resource.data.criadoPorUid == request.auth.uid && request.resource.data.criadoPorUid == request.auth.uid)
-        || (pode('marcar') && mudou().hasOnly(['status', 'obs', 'data', 'postits', 'atualizadoEm']))
+        || (pode('marcar') && mudou().hasOnly(['status', 'obs', 'data', 'postits', 'carregadoPor', 'carregadoEm', 'atualizadoEm']))
         || (membro() && mudou().hasOnly(['postits', 'atualizadoEm']));
       allow delete: if pode('apagar');
     }
