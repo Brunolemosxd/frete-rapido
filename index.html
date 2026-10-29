@@ -57,6 +57,8 @@ main{padding-block:14px 120px;display:grid;gap:18px;max-width:720px;margin:0 aut
 .p-pend{background:var(--pend-bg);color:var(--pend)} .p-ok{background:var(--ok-bg);color:var(--ok)} .p-bad{background:var(--bad-bg);color:var(--bad)}
 section h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:600}
 section.late h3{color:var(--bad)}
+section.feitas h3{color:var(--ok)}
+section.feitas{border-top:1px solid var(--line);padding-top:14px}
 .list{display:grid;gap:10px}
 .card{position:relative;border-radius:14px;overflow:hidden;touch-action:pan-y;user-select:none;-webkit-user-select:none}
 .under{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font-weight:600;font-size:14px}
@@ -306,11 +308,15 @@ function render(){
   if(!loaded){html+=`<div class="empty"><strong>Carregando o mural…</strong><span>As entregas agendadas aparecem aqui.</span></div>`}
   else if(!list.length){html+=`<div class="empty"><strong>Nenhuma entrega para ${esc(nomeDia(dia).toLowerCase())}</strong>${P.lancar?'<span>Toque em <b>+ Nova entrega</b> para lançar a nota.</span>':''}</div>`}
   else{
+    // as já entregues saem dos turnos e vão para o fim da tela
+    const abertas=list.filter(e=>e.status!=='entregue'),feitas=list.filter(e=>e.status==='entregue');
     for(const t of ['manha','tarde','apos','']){
-      const g=list.filter(e=>(e.turno||'')===t||(t===''&&!TURNOS[e.turno]));
+      const g=abertas.filter(e=>(e.turno||'')===t||(t===''&&!TURNOS[e.turno]));
       if(!g.length)continue;
       html+=`<section><h3>${t==='apos'?'Depois de horário':t?TURNOS[t]:'Qualquer turno'}</h3><div class="list">${g.map(cardHTML).join('')}</div></section>`;
     }
+    if(!abertas.length)html+=`<div class="empty"><strong>Tudo entregue! 🎉</strong></div>`;
+    if(feitas.length)html+=`<section class="feitas"><h3>Entregues (${feitas.length})</h3><div class="list">${feitas.map(cardHTML).join('')}</div></section>`;
     html+=`<p class="hint">${P.marcar?'Arraste para a direita: entregue · para a esquerda: problema · segure para mais opções':'Toque numa entrega para ver tudo'}</p>`;
   }
   m.innerHTML=html;
