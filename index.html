@@ -307,6 +307,10 @@ async function copiar(t,msg){
 function pegarFoto(cb){const f=$('#file');f.value='';f.onchange=async()=>{const file=f.files[0];if(!file)return;
   let b;try{b=await reduzir(file,1600,.8)}catch{toast('Não consegui ler essa foto.');return}cb(b)};f.click()}
 const condTag=e=>e.condominio?'<span class="tag">🏢 Condomínio</span>':'';
+// o mapa se perde com "ap 302", "bloco B" etc.; vai só rua, número e bairro
+function enderecoMapa(e){const rua=String(e.endereco||'').replace(/[,\-–]?\s*\b(ap|apt|apto|apartamento|bl|bloco|torre|sala|cj|conjunto|casa|lote|lt|quadra|qd)\b\.?\s*(n[º°o.]?\s*)?([0-9]+|[a-z])\b.*$/i,'').trim()||e.endereco||'';
+  return rua+(e.bairro?', '+e.bairro:'')}
+function enderecoCompleto(e){return [e.endereco,e.complemento].filter(Boolean).join(', ')+(e.bairro?' - '+e.bairro:'')}
 function ajusteTxt(e){const a=ajusteDe(e);if(!a.por&&!a.valor)return '';return a.por+' '+(a.valor?(a.valor>0?'+':'−')+real(Math.abs(a.valor)):'pôs a mais')}
 // pagamento aparece para todos: o entregador precisa saber se cobra ou não
 function pagTagHTML(e){const p=pagamentoDe(e);
@@ -543,8 +547,8 @@ function abrirDetalhe(id){
     <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span><span class="tag">${esc(turnoTxt(e))}</span>${localTagHTML(e)}${condTag(e)}${notasTagHTML(e)}${pagTagHTML(e)}</div>
     ${src?`<div class="photo"><img id="dfoto" src="${esc(src)}" alt="Foto da nota"></div>`:''}
     ${e.fotosExtras?`<div id="dextras" style="display:grid;gap:8px"></div>`:''}
-    <div class="det">${e.endereco?`<div><span class="lbl">Endereço</span><div class="fonerow"><span style="user-select:all">${esc(e.endereco)}</span><button type="button" class="btn sm" data-copiar="${esc(e.endereco+(e.bairro?' - '+e.bairro:''))}" data-msg="Endereço copiado. É só colar no WhatsApp ou no mapa.">📋 Copiar</button></div>
-      <div class="fonerow" style="margin-top:6px"><a class="btn sm mapa" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.endereco+(e.bairro?', '+e.bairro:''))}" target="_blank" rel="noopener">🗺️ Google Maps</a><a class="btn sm mapa" href="https://waze.com/ul?q=${encodeURIComponent(e.endereco+(e.bairro?', '+e.bairro:''))}&navigate=yes" target="_blank" rel="noopener">🚗 Waze</a></div></div>`:''}
+    <div class="det">${e.endereco?`<div><span class="lbl">Endereço</span><div class="fonerow"><span style="user-select:all">${esc(e.endereco)}${e.complemento?`<br><b>${esc(e.complemento)}</b>`:''}</span><button type="button" class="btn sm" data-copiar="${esc(enderecoCompleto(e))}" data-msg="Endereço copiado. É só colar no WhatsApp ou no mapa.">📋 Copiar</button></div>
+      <div class="fonerow" style="margin-top:6px"><a class="btn sm mapa" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoMapa(e))}" target="_blank" rel="noopener">🗺️ Google Maps</a><a class="btn sm mapa" href="https://waze.com/ul?q=${encodeURIComponent(enderecoMapa(e))}&navigate=yes" target="_blank" rel="noopener">🚗 Waze</a></div></div>`:''}
     ${e.bairro?`<div><span class="lbl">Bairro</span><br>${esc(e.bairro)}</div>`:''}
     ${e.fone?`<div><span class="lbl">Telefone</span><div class="fonerow"><span style="user-select:all">${esc(e.fone)}</span><button type="button" class="btn sm" data-a="copiar">📋 Copiar</button></div></div>`:''}
     ${(e.contatos||[]).map(c=>`<div><span class="lbl">Outro contato${c.nome?' — '+esc(c.nome):''}</span><div class="fonerow"><span style="user-select:all">${esc(c.fone)}</span><button type="button" class="btn sm" data-copiar="${esc(soDig(c.fone))}">📋 Copiar</button></div></div>`).join('')}
@@ -621,7 +625,8 @@ function abrirForm(ed){
     <div class="field bai"><label for="fbai">Bairro / localidade ${R}</label><input type="text" id="fbai" autocomplete="off" placeholder="Comece a digitar o bairro" required>
       <div class="sugs" id="fsugs" hidden></div>
       <div class="chips"><button type="button" class="chip" id="fcond">É condomínio</button></div></div>
-    <div class="field"><label for="fend">Endereço ${R}</label><input type="text" id="fend" autocomplete="off" placeholder="Rua, número, complemento" required></div>
+    <div class="field"><label for="fend">Endereço ${R}</label><input type="text" id="fend" autocomplete="off" placeholder="Rua e número (sem o apartamento)" required></div>
+    <div class="field"><label for="fcomp">Apartamento / complemento (opcional)</label><input type="text" id="fcomp" autocomplete="off" placeholder="Ex.: Ap 302, Bloco B" maxlength="80"></div>
     <div class="field"><span class="lbl">Valor do frete ${R}</span>
       <div class="fretebox" id="fbox"></div>
       <div class="field" id="bajv"><span class="lbl">Qual vendedor mudou o valor</span><div class="chips" id="cajv" role="group" aria-label="Qual vendedor mudou o valor">${nomesHTML}</div></div>
@@ -637,7 +642,7 @@ function abrirForm(ed){
   s=>{
     const q=x=>s.querySelector(x);
     {const nm=st.clienteNome!==undefined?[st.clienteNome,st.clienteSobrenome||'']:[(st.cliente||'').split(' ')[0],(st.cliente||'').split(' ').slice(1).join(' ')];q('#fcli').value=nm[0];q('#fsob').value=nm[1]}
-    q('#fbai').value=st.bairro||'';q('#fend').value=st.endereco||'';q('#fobs').value=st.observacao||'';q('#fone').value=st.fone||'';q('#fhora').value=st.hora||'';
+    q('#fbai').value=st.bairro||'';q('#fend').value=st.endereco||'';q('#fcomp').value=st.complemento||'';q('#fobs').value=st.observacao||'';q('#fone').value=st.fone||'';q('#fhora').value=st.hora||'';
 
     let errLocal=false;
     const sync=()=>{
@@ -731,7 +736,7 @@ function abrirForm(ed){
     q('#fcancel').addEventListener('click',fechar);
     q('#fsave').addEventListener('click',async()=>{
       if(enviando)return;
-      st.clienteNome=q('#fcli').value.trim().replace(/\s+/g,' ');st.clienteSobrenome=q('#fsob').value.trim().replace(/\s+/g,' ');st.cliente=(st.clienteNome+' '+st.clienteSobrenome).trim();st.bairro=st.loc?st.loc.nome:q('#fbai').value.trim();st.endereco=q('#fend').value.trim();st.observacao=q('#fobs').value.trim();st.fone=q('#fone').value.trim();st.hora=q('#fhora').value;
+      st.clienteNome=q('#fcli').value.trim().replace(/\s+/g,' ');st.clienteSobrenome=q('#fsob').value.trim().replace(/\s+/g,' ');st.cliente=(st.clienteNome+' '+st.clienteSobrenome).trim();st.bairro=st.loc?st.loc.nome:q('#fbai').value.trim();st.complemento=q('#fcomp').value.trim().replace(/\s+/g,' ');st.endereco=q('#fend').value.trim();st.observacao=q('#fobs').value.trim();st.fone=q('#fone').value.trim();st.hora=q('#fhora').value;
       const pendItem=q('#fitem').value.trim();if(pendItem){st.itens.push({nome:pendItem,local:null,qtd:1});q('#fitem').value='';sync()}
       // entrega nova precisa da foto da nota (entregas antigas sem foto ainda podem ser editadas)
       if(!ed&&!fotoBlob){q('#fotobox').classList.add('err');q('#fotobox').scrollIntoView({block:'center'});toast('Tire a foto da nota antes de lançar.');return}
@@ -761,7 +766,7 @@ function abrirForm(ed){
         if(fotoBlob){st.thumb=await fotoMiniatura(fotoBlob);fotoNova=await fotoGrande(fotoBlob);st.fotoData=null}
         const fotosExtras=[];for(const x of extras)fotosExtras.push(x.blob?await fotoGrande(x.blob):x.src);
         const ls=new Set(st.itens.map(i=>i.local));
-        const dados={cliente:st.cliente,clienteNome:st.clienteNome,clienteSobrenome:st.clienteSobrenome,fone:st.fone,bairro:st.bairro,endereco:st.endereco,observacao:st.observacao,freteBase:baseFrete(),freteTabela:st.loc.valor,condominio:st.condominio,freteConsultar:st.loc.valor===null,freteAjuste:st.ajuste,ajustePor:st.ajuste?st.ajustePor:'',frete:totalFrete(),
+        const dados={cliente:st.cliente,clienteNome:st.clienteNome,clienteSobrenome:st.clienteSobrenome,fone:st.fone,bairro:st.bairro,endereco:st.endereco,complemento:st.complemento,observacao:st.observacao,freteBase:baseFrete(),freteTabela:st.loc.valor,condominio:st.condominio,freteConsultar:st.loc.valor===null,freteAjuste:st.ajuste,ajustePor:st.ajuste?st.ajustePor:'',frete:totalFrete(),
           pagamento:st.pag,fretePago:st.pag==='pix'||st.pag==='junto',fretePor:st.pag==='vendedor'?st.fretePor:'',aMaisPor:'',aMaisValor:0,prioridade:st.prioridade,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
           itens:st.itens.map(i=>({nome:i.nome,local:i.local,qtd:i.qtd})),local:ls.size>1?'ambos':ls.has('deposito')?'deposito':'loja',
           thumb:st.thumb||null,fotoData:st.fotoData||null,contatos:contOk,fotosExtras:fotosExtras.length,atualizadoEm:Date.now()};
