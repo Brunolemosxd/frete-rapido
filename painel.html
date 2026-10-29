@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1f5fae">
 <title>Painel Frete Rápido</title>
+<script>/* se der erro antes de abrir, mostra um aviso em vez de tela vazia */window.addEventListener('error',function(){if(document.getElementById('erroCarga'))return;var d=document.createElement('div');d.id='erroCarga';d.style.cssText='position:fixed;inset:0;display:grid;place-items:center;padding:24px;background:#10161c;color:#e7edf2;font:16px system-ui,sans-serif;text-align:center;z-index:99';d.innerHTML='<div><p style="margin:0 0 16px">A página não carregou direito.</p><button onclick="location.reload()" style="font:inherit;font-weight:600;padding:12px 20px;border-radius:12px;border:0;background:#5b9bec;color:#0b1520">Recarregar</button></div>';(document.body||document.documentElement).appendChild(d)});</script>
 <script>/* tema escolhido no botão 🌓 (aplicado antes de desenhar, para não piscar) */try{const t=localStorage.getItem('freterapido_tema');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch{}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
@@ -164,7 +165,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="comum.js"></script>
+<script src="comum.js?v=20261029b"></script>
 <script>
 (function(){
 const $=s=>document.querySelector(s);

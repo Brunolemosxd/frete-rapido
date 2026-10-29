@@ -36,3 +36,8 @@ Fotos com mais de 60 dias são apagadas quando o Bruno abre o mural ou o painel 
 - `entregas/{id}` — as entregas.
 - `fotos/{id}` — foto grande da nota de cada entrega.
 - `notasjuntas/{id}` — pasta "Produtos que vão com outras notas".
+
+## Ao mudar o comum.js
+
+Troque o número em `comum.js?v=...` no `index.html` e no `painel.html`.
+Sem isso, o celular pode juntar a página nova com o `comum.js` antigo (guardado em cache) e abrir em branco.
