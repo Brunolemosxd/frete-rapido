@@ -51,7 +51,8 @@ service cloud.firestore {
     match /notasjuntas/{id} {
       allow read: if membro();
       allow create: if pode('pasta') && request.resource.data.porUid == request.auth.uid;
-      allow update: if pode('pasta') && mudou().hasOnly(['texto']);
+      allow update: if (pode('pasta') && mudou().hasOnly(['texto', 'fotos', 'fotoData', 'arquivada', 'arquivadaEm', 'arquivadaPor']))
+        || (pode('marcar') && mudou().hasOnly(['arquivada', 'arquivadaEm', 'arquivadaPor']));
       allow delete: if pode('pasta') || pode('apagar');
     }
   }

@@ -165,6 +165,17 @@ input.err{border-color:var(--bad)}
 .pasta{justify-self:start;display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--bad);border-radius:99px;padding:6px 12px;background:var(--surface);color:var(--bad);font-weight:600;font-size:14px}
 .pasta .n{background:var(--bad);color:#fff;border-radius:99px;min-width:22px;height:22px;display:grid;place-items:center;font-size:12px;font-weight:700;padding:0 6px}
 .plist2{display:grid;gap:14px}
+.nitem{border:1.5px solid var(--line);border-radius:14px;padding:10px;display:grid;gap:8px;background:var(--bg)}
+.nfotos{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.nfoto{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--surface)}
+.nfoto img{width:100%;height:100%;object-fit:cover;display:block}
+.nfoto button.x{position:absolute;top:4px;right:4px;border:0;background:var(--bad);color:#fff;border-radius:99px;width:26px;height:26px;line-height:1;font-size:14px;box-shadow:0 0 0 2px #fff}
+.nfoto.add{display:grid;place-items:center;font-weight:700;color:var(--accent);border-style:dashed;font-size:14px;text-align:center;padding:4px}
+.nacoes{display:flex;gap:8px;flex-wrap:wrap}
+.nacoes .btn{padding:9px 12px;font-size:15px}
+.arqbtn{justify-self:start;border:1.5px solid var(--line);background:var(--surface);border-radius:99px;padding:7px 14px;font-weight:600;font-size:14px;color:var(--muted)}
+.nitem.arq{opacity:.8}
+.nitem.arq .nfotos{grid-template-columns:repeat(5,1fr)}
 .pfoto{display:grid;gap:4px}
 .pfoto .pm{font-size:13px;color:var(--muted)}
 .btn.junto{background:var(--bad);border-color:var(--bad);color:#fff;font-size:17px;padding:15px 16px}
@@ -254,6 +265,7 @@ input.err{border-color:var(--bad)}
 (function(){
 const $=s=>document.querySelector(s);
 const WD=['dom','seg','ter','qua','qui','sex','sáb'];
+const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const TURNOS={manha:'Manhã',tarde:'Tarde',apos:'Depois das'};
 const ST={pendente:['Pendente','p-pend'],entregue:['Entregue','p-ok'],problema:['Problema','p-bad']};
 // quem carrega o caminhão (aparece no menu ao segurar o cartão)
@@ -324,11 +336,11 @@ function real(n){return Number(n||0).toLocaleString('pt-BR',{style:'currency',cu
 /* ---------- dias ---------- */
 function renderDays(){
   const h=hoje(),box=$('#days');let html='';
-  for(let i=-2;i<=12;i++){
+  for(let i=-2;i<=92;i++){
     const s=addDays(h,i),d=pd(s),list=entregas.filter(e=>e.data===s);
     const pend=list.filter(e=>e.status==='pendente').length;
     html+=`<button type="button" role="tab" class="day${s===dia?' on':''}" data-d="${s}" aria-selected="${s===dia}">
-      <span class="wd">${i===0?'hoje':WD[d.getDay()]}</span><span class="dn">${d.getDate()}</span>
+      <span class="wd">${i===0?'hoje':d.getDate()===1?MESES[d.getMonth()]:WD[d.getDay()]}</span><span class="dn">${d.getDate()}</span>
       <span class="ct">${list.length?(pend?`<b>${pend}</b>/${list.length}`:'✓ '+list.length):''}</span></button>`;
   }
   box.innerHTML=html;
@@ -367,7 +379,7 @@ function render(){
   let html=`<div class="dayhead"><h2>${esc(nomeDia(dia))}</h2><div class="tally">
     ${list.length?`<span class="pill p-pend">${c('pendente')} pendente${c('pendente')===1?'':'s'}</span><span class="pill p-ok">${c('entregue')} entregue${c('entregue')===1?'':'s'}</span>${c('problema')?`<span class="pill p-bad">${c('problema')} problema</span>`:''}${me&&me.admin&&totFrete?`<span class="pill p-frete">Fretes ${real(totFrete)}</span>`:''}`:''}
   </div></div>`;
-  const nj=notasDoDia(dia).length;
+  const nj=notasDoDia(dia).filter(n=>!n.arquivada).length;
   html+=`<button type="button" class="pasta" id="pasta"><span aria-hidden="true">📁</span>Produtos que vão com outras notas${nj?`<span class="n">${nj}</span>`:''}</button>`;
   if(atras.length) html+=`<section class="late"><h3>Ficaram para trás (${atras.length})</h3><div class="list">${atras.map(cardHTML).join('')}</div></section>`;
   if(!loaded){html+=`<div class="empty"><strong>Carregando o mural…</strong><span>As entregas agendadas aparecem aqui.</span></div>`}
@@ -399,44 +411,75 @@ function ouvirNotas(){
 }
 function notasDoDia(d){return notasJ.filter(n=>n.data===d).sort((a,b)=>(b.em||0)-(a.em||0))}
 $('#main').addEventListener('click',e=>{if(e.target.closest('#pasta'))abrirPasta()});
-function listaPastaHTML(){
-  const l=notasDoDia(dia);
-  if(!l.length)return `<div class="empty"><strong>Nenhuma foto ainda</strong><span>${P.pasta?'Quando um produto for junto com outra nota, tire a foto dessa nota aqui.':'As fotos das notas que vão juntas aparecem aqui.'}</span></div>`;
-  return l.map(n=>`<div class="pfoto"><div class="photo extra"><img src="${esc(fotoSrc(n))}" alt="Foto da nota">${P.pasta?`<button type="button" class="photo-x" data-del="${esc(n.id)}" aria-label="Tirar esta foto">×</button>`:''}</div>
-    ${P.pasta?`<input type="text" data-txt="${esc(n.id)}" value="${esc(n.texto||'')}" autocomplete="off" enterkeyhint="done" placeholder="Escreva um detalhe desta foto (opcional)" aria-label="Detalhe desta foto">`:(n.texto?`<div>${esc(n.texto)}</div>`:'')}
-    <div class="pm">${esc([quando(n.em),n.porNome].filter(Boolean).join(' · '))}</div></div>`).join('');
+// cada item é um cliente/entrega e pode ter várias fotos (entregas antigas tinham uma foto só)
+let verArquivados=false;
+const fotosDe=n=>Array.isArray(n.fotos)?n.fotos:(n.fotoData?[n.fotoData]:[]);
+const LIMITE_DOC=900000; // um documento do Firebase guarda até 1 MB
+function itemPastaHTML(n,arq){
+  const f=fotosDe(n),podeArq=P.pasta||P.marcar;
+  return `<div class="nitem${arq?' arq':''}">
+    ${P.pasta&&!arq?`<input type="text" data-txt="${esc(n.id)}" value="${esc(n.texto||'')}" autocomplete="off" enterkeyhint="done" placeholder="Cliente / detalhe (ex.: vai com a nota da Maria)" aria-label="Detalhe">`:(n.texto?`<strong>${esc(n.texto)}</strong>`:'')}
+    <div class="nfotos">${f.map((src,k)=>`<div class="nfoto"><img src="${esc(src)}" alt="Foto ${k+1}" data-ver="${esc(n.id)}" data-k="${k}">${P.pasta&&!arq?`<button type="button" class="x" data-fdel="${esc(n.id)}" data-k="${k}" aria-label="Tirar esta foto">×</button>`:''}</div>`).join('')}
+      ${P.pasta&&!arq?`<button type="button" class="nfoto add" data-fadd="${esc(n.id)}">📷<br>+ foto</button>`:''}</div>
+    <div class="pm">${esc([quando(n.em),n.porNome,arq&&n.arquivadaPor?'arquivado por '+n.arquivadaPor:''].filter(Boolean).join(' · '))}</div>
+    ${podeArq?`<div class="nacoes">${arq?`<button type="button" class="btn" data-desarq="${esc(n.id)}">↩ Voltar para a pasta</button>`:`<button type="button" class="btn ok" data-arq="${esc(n.id)}">✓ Entregue, arquivar</button>`}</div>`:''}
+  </div>`;
 }
+function listaPastaHTML(){
+  const l=notasDoDia(dia),ativos=l.filter(n=>!n.arquivada),arqs=l.filter(n=>n.arquivada);
+  let h=ativos.length?ativos.map(n=>itemPastaHTML(n,false)).join(''):`<div class="empty"><strong>Nada na pasta</strong><span>${P.pasta?'Quando um produto for junto com outra nota, toque em "Nova nota" e tire as fotos.':'As fotos das notas que vão juntas aparecem aqui.'}</span></div>`;
+  if(arqs.length)h+=`<button type="button" class="arqbtn" data-togarq>📦 Arquivados (${arqs.length}) ${verArquivados?'▲':'▼'}</button>${verArquivados?arqs.map(n=>itemPastaHTML(n,true)).join(''):''}`;
+  return h;
+}
+function salvarNota(id,dados,ok){return db.collection('notasjuntas').doc(id).update(dados).then(()=>ok&&toast(ok))
+  .catch(e=>{e?.code==='permission-denied'?toast('Sem permissão. O Bruno precisa publicar as regras novas do Firebase.'):e?.code==='resource-exhausted'?toast('O mural está cheio por hoje. Fale com o Bruno.'):toast('Não consegui salvar. Tente de novo.')})}
 function abrirPasta(){
   abrirSheet(`<h2>📁 Produtos que vão com outras notas</h2><p style="margin:0;color:var(--muted)">${esc(nomeDia(dia))}</p>
-    ${P.pasta?'<button type="button" class="btn junto" data-a="foto">📷 Tirar foto da nota</button>':''}
+    ${P.pasta?'<button type="button" class="btn junto" data-a="foto">📷 Nova nota (tirar foto)</button>':''}
     <div class="plist2" id="plista">${listaPastaHTML()}</div>
     <button type="button" class="btn ghost" data-x>Fechar</button>`,
-  s=>{pastaAberta=true;s.addEventListener('click',ev=>{
+  s=>{pastaAberta=true;const redesenhar=()=>{const l=s.querySelector('#plista');if(l)l.innerHTML=listaPastaHTML()};
+  s.addEventListener('click',ev=>{
     if(ev.target.closest('[data-x]'))fechar();
+    if(ev.target.closest('[data-togarq]')){verArquivados=!verArquivados;redesenhar();return}
     if(ev.target.closest('[data-a="foto"]')){
-      const d=dia;pegarFoto(async b=>{
-        toast('Enviando a foto…');
+      const d=dia;pegarFoto(async b=>{toast('Enviando a foto…');
         try{const id='n'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-          await db.collection('notasjuntas').doc(id).set({data:d,texto:'',fotoData:await fotoGrande(b),em:Date.now(),porUid:me.uid,porNome:me.nome});
-          toast('Foto guardada. Se quiser, escreva um detalhe embaixo dela.')}
+          await db.collection('notasjuntas').doc(id).set({data:d,texto:'',fotos:[await fotoGrande(b)],arquivada:false,em:Date.now(),porUid:me.uid,porNome:me.nome});
+          toast('Guardada. Se for mais de uma nota, toque em "+ foto".')}
         catch(e){e?.code==='permission-denied'?semPermissao():e?.code==='resource-exhausted'?toast('O mural está cheio por hoje. Fale com o Bruno.'):toast('Não consegui guardar a foto. Tente de novo.')}
-      })}
-    const del=ev.target.closest('[data-del]');if(del)confirmarTirarFoto(del.dataset.del);
+      });return}
+    const add=ev.target.closest('[data-fadd]');
+    if(add){const n=notasJ.find(x=>x.id===add.dataset.fadd);if(!n)return;
+      pegarFoto(async b=>{const nova=await fotoGrande(b),l=[...fotosDe(n),nova];
+        if(l.join('').length>LIMITE_DOC){toast('Esse item já tem fotos demais. Toque em "Nova nota" para pôr as próximas.');return}
+        toast('Enviando a foto…');n.fotos=l;redesenhar();salvarNota(n.id,{fotos:l,fotoData:null},'Foto juntada')});return}
+    const fd=ev.target.closest('[data-fdel]');
+    if(fd){const n=notasJ.find(x=>x.id===fd.dataset.fdel);if(!n)return;const l=fotosDe(n).filter((_,k)=>k!==+fd.dataset.k);
+      if(!l.length){confirmarTirarFoto(n.id);return}n.fotos=l;redesenhar();salvarNota(n.id,{fotos:l,fotoData:null},'Foto tirada');return}
+    const ver=ev.target.closest('[data-ver]');
+    if(ver){const n=notasJ.find(x=>x.id===ver.dataset.ver);const src=n&&fotosDe(n)[+ver.dataset.k];if(!src)return;
+      abrirSheet(`<div class="photo"><img src="${esc(src)}" alt="Foto da nota"></div><button type="button" class="btn" data-x>← Voltar para a pasta</button>`,
+        s2=>s2.addEventListener('click',e2=>{if(e2.target.closest('[data-x]'))abrirPasta()}));return}
+    const arq=ev.target.closest('[data-arq]');
+    if(arq){const n=notasJ.find(x=>x.id===arq.dataset.arq);if(!n)return;n.arquivada=true;n.arquivadaPor=me.nome;redesenhar();render();
+      salvarNota(n.id,{arquivada:true,arquivadaEm:Date.now(),arquivadaPor:me.nome},'Arquivado. Fica em "📦 Arquivados".');return}
+    const des=ev.target.closest('[data-desarq]');
+    if(des){const n=notasJ.find(x=>x.id===des.dataset.desarq);if(!n)return;n.arquivada=false;redesenhar();render();
+      salvarNota(n.id,{arquivada:false,arquivadaEm:null,arquivadaPor:''},'Voltou para a pasta');return}
   });
-  // o detalhe de cada foto é salvo quando a pessoa sai do campo
-  s.addEventListener('change',async ev=>{const t=ev.target.closest('[data-txt]');if(!t)return;
-    const id=t.dataset.txt,v=t.value.trim(),n=notasJ.find(x=>x.id===id);if(!n||(n.texto||'')===v)return;n.texto=v;
-    try{await db.collection('notasjuntas').doc(id).update({texto:v});toast('Detalhe salvo')}
-    catch(e){e?.code==='permission-denied'?semPermissao():toast('Não consegui salvar o detalhe.')}});
+  // o detalhe é salvo quando a pessoa sai do campo
+  s.addEventListener('change',ev=>{const t=ev.target.closest('[data-txt]');if(!t)return;
+    const n=notasJ.find(x=>x.id===t.dataset.txt),v=t.value.trim();if(!n||(n.texto||'')===v)return;n.texto=v;salvarNota(n.id,{texto:v},'Detalhe salvo')});
   s.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&ev.target.closest('[data-txt]'))ev.target.blur()});
   });
 }
 function confirmarTirarFoto(id){
-  abrirSheet(`<h2>Tirar esta foto da pasta?</h2><p style="margin:0;color:var(--muted)">Ela some para todos.</p>
+  abrirSheet(`<h2>Tirar esta nota da pasta?</h2><p style="margin:0;color:var(--muted)">Ela some para todos, com as fotos.</p>
     <div class="actions two"><button type="button" class="btn ghost" data-x>Cancelar</button><button type="button" class="btn bad" data-ok>Tirar</button></div>`,
   s=>s.addEventListener('click',async ev=>{
     if(ev.target.closest('[data-x]'))abrirPasta();
-    if(ev.target.closest('[data-ok]')){try{await db.collection('notasjuntas').doc(id).delete();toast('Foto tirada')}catch(e){e?.code==='permission-denied'?semPermissao():toast('Não consegui tirar.')}abrirPasta()}
+    if(ev.target.closest('[data-ok]')){try{await db.collection('notasjuntas').doc(id).delete();toast('Tirada da pasta')}catch(e){e?.code==='permission-denied'?semPermissao():toast('Não consegui tirar.')}abrirPasta()}
   }));
 }
 
