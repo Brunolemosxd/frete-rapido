@@ -29,6 +29,7 @@ const FUNCOES = {
 // motivos de problema: o Bruno cadastra mais no mural ou no painel (config/motivos)
 const MOTIVOS_PADRAO = ['Cliente ausente', 'Endereço errado', 'Produto faltando', 'Produto avariado', 'Não coube no carro', 'Remarcar'];
 // Tabela de fretes por localidade (valor null = consultar). O Bruno muda no painel (config/fretes).
+function semAcento(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
 const FRETES_PADRAO = [
   ['Capão da Canoa (Centro)', 70], ['Zona Nova', 70], ['Girassol', 70], ['Santa Luzia', 70], ['Santo Antônio', 70],
   ['São Jorge', 70], ['Morada do Sol', 70], ['Parque Antártica', 70], ['Quero-Quero', 70], ['Vale Verde', 70],
@@ -41,8 +42,18 @@ const FRETES_PADRAO = [
   ['Marina Maristela', 100], ['Arpoador', 100], ['Noiva do Mar', 100], ['Rainha do Mar', 100], ['Mariápolis', 120],
   ['Atlântida Sul', 120], ['Imbé', null], ['Tramandaí', null], ['Nova Tramandaí', null],
   ['Maquiné (Centro)', 200], ['Condomínio entre Rainha do Mar e Curumim (Centro)', 100]
-].map(([nome, valor]) => ({ nome, valor }));
-const semAcento = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+].map(([nome, valor]) => ({ nome, valor, dir: direcaoPadrao(nome) }));
+// Direção da entrega para aproveitar viagem: norte = Araçá até Terra de Areia (← azul),
+// sul = Guará até Tramandaí (→ vermelha), centro = o resto (↑ cinza). O Bruno muda no painel.
+function direcaoPadrao(nome) {
+  const n = semAcento(nome);
+  const NORTE = ['araca', 'arco iris', 'guarani', 'nova guarani', 'jardim beira-mar', 'zona norte', 'praia do barco', 'capao novo (centro)', 'capao novo (village)',
+    'arroio teixeira', 'ctg joao sobrinho', 'estrada da laguna', 'curumim (centro)', 'novo curumim', 'santa rita de cassia (curumim)', 'arroio do sal (centro)', 'terra de areia (centro)'];
+  const SUL = ['guara', 'atlantida', 'figueirinha', 'xangri-la (centro)', 'nova xangri-la', 'remanso', 'marina maristela', 'arpoador', 'noiva do mar', 'rainha do mar',
+    'mariapolis', 'atlantida sul', 'imbe', 'tramandai', 'nova tramandai'];
+  return NORTE.includes(n) ? 'norte' : SUL.includes(n) ? 'sul' : 'centro';
+}
+const DIRECOES = { norte: { seta: '←', nome: 'Lado de Araçá a Terra de Areia' }, centro: { seta: '↑', nome: 'Centro' }, sul: { seta: '→', nome: 'Lado de Guará a Tramandaí' } };
 const AJUSTES = [-50, -40, -30, -20, -10, 10, 20, 30, 40, 50];
 const PAGAMENTOS = { entrega: 'Cobrar na entrega', pix: 'Já pago no Pix', junto: 'Dinheiro junto com a nota', vendedor: 'Por conta do vendedor' };
 // Ajuste de valor feito pelo vendedor (entregas antigas usavam aMaisPor/aMaisValor)
