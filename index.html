@@ -138,6 +138,17 @@ input.err{border-color:var(--bad)}
 .photo{border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--bg)}
 .photo img{display:block;width:100%;max-height:60vh;object-fit:contain}
 .photobtn{display:flex;gap:10px;align-items:center}
+.fextras{display:flex;gap:10px;flex-wrap:wrap}
+.fextras:empty{display:none}
+.fx{position:relative}
+.fx .thumb{width:64px;height:64px}
+.fx button{position:absolute;top:-6px;right:-6px;border:0;background:var(--bad);color:#fff;border-radius:99px;width:24px;height:24px;line-height:1;font-size:14px;box-shadow:0 0 0 2px var(--surface)}
+.thumb{position:relative}
+.thumb .mais{position:absolute;right:3px;bottom:3px;background:rgba(0,0,0,.7);color:#fff;border-radius:6px;padding:0 5px;font-size:11px;font-weight:700}
+.crow{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center}
+.crow input{min-width:0}
+.crow button{border:0;background:var(--line);border-radius:99px;width:30px;height:30px;font-size:16px;line-height:1}
+.addbtn{justify-self:start;padding:8px 12px;font-size:15px}
 .notas2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .notas2.err .cont{border-color:var(--bad)}
 .cont{border:1.5px solid var(--line);background:var(--bg);border-radius:12px;padding:8px 10px;display:grid;gap:6px;justify-items:center}
@@ -262,7 +273,7 @@ function cardHTML(e){
   return `<div class="card st-${e.status}" data-id="${esc(e.id)}">
     <div class="under"><span class="l">✓ Entregue</span><span class="r">Problema ✕</span></div>
     <div class="face">
-      <div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}</div>
+      <div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>
       <div class="info">
         <div class="who">${esc(e.cliente||'Sem nome')}${e.bairro?` <span style="font-weight:400;color:var(--muted)">· ${esc(e.bairro)}</span>`:''}</div>
         <div class="meta"><span class="tag">${esc(turnoTxt(e))}</span>${localTagHTML(e)}${V&&e.frete?`<span class="tag">${real(e.frete)}${e.fretePor?' · por conta: '+esc(e.fretePor):''}</span>`:''}${V&&e.aMaisPor?`<span class="tag">${esc(aMaisTxt(e))}</span>`:''}${notasTagHTML(e)}<span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span></div>
@@ -437,7 +448,7 @@ function confirmarApagar(id){
     <div class="actions two"><button class="btn ghost" data-x>Cancelar</button><button class="btn bad" data-ok>Apagar</button></div>`,
   s=>s.addEventListener('click',async ev=>{
     if(ev.target.closest('[data-x]'))fechar();
-    if(ev.target.closest('[data-ok]')){fechar();try{await db.collection('entregas').doc(id).delete();db.collection('fotos').doc(id).delete().catch(()=>{});toast('Entrega apagada')}catch(e){e?.code==='permission-denied'?semPermissao():toast('Não consegui apagar.')}}
+    if(ev.target.closest('[data-ok]')){fechar();try{await db.collection('entregas').doc(id).delete();const e2=entregas.find(x=>x.id===id);for(const k of [id,...Array.from({length:+e2?.fotosExtras||0},(_,i)=>id+'__'+(i+1))])db.collection('fotos').doc(k).delete().catch(()=>{});toast('Entrega apagada')}catch(e){e?.code==='permission-denied'?semPermissao():toast('Não consegui apagar.')}}
   }));
 }
 function abrirDetalhe(id){
@@ -445,9 +456,11 @@ function abrirDetalhe(id){
   abrirSheet(`<h2>${esc(e.cliente||'Entrega')}</h2>
     <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span><span class="tag">${esc(turnoTxt(e))}</span>${localTagHTML(e)}${notasTagHTML(e)}</div>
     ${src?`<div class="photo"><img id="dfoto" src="${esc(src)}" alt="Foto da nota"></div>`:''}
+    ${e.fotosExtras?`<div id="dextras" style="display:grid;gap:8px"></div>`:''}
     <div class="det">${e.endereco?`<div><span class="lbl">Endereço</span><br>${esc(e.endereco)}</div>`:''}
     ${e.bairro?`<div><span class="lbl">Bairro</span><br>${esc(e.bairro)}</div>`:''}
     ${e.fone?`<div><span class="lbl">Telefone</span><div class="fonerow"><span style="user-select:all">${esc(e.fone)}</span><button type="button" class="btn sm" data-a="copiar">📋 Copiar</button></div></div>`:''}
+    ${(e.contatos||[]).map(c=>`<div><span class="lbl">Outro contato${c.nome?' — '+esc(c.nome):''}</span><div class="fonerow"><span style="user-select:all">${esc(c.fone)}</span><button type="button" class="btn sm" data-copiar="${esc(soDig(c.fone))}">📋 Copiar</button></div></div>`).join('')}
     ${V&&e.frete?`<div><span class="lbl">Valor do frete</span><br>${real(e.frete)}${e.fretePor?` — por conta de <b>${esc(e.fretePor)}</b>`:''}</div>`:''}
     ${V&&e.aMaisPor?`<div><span class="lbl">Vendedor pôs a mais no frete</span><br><b>${esc(e.aMaisPor)}</b>${e.aMaisValor?` — mais ${real(e.aMaisValor)}`:''}</div>`:''}
     ${its.length?`<div><span class="lbl">Produtos</span><ul>${its.map(i=>`<li>${esc(i.nome)}${i.local?` — <b>${LOC[i.local]}</b>`:''}</li>`).join('')}</ul></div>`:''}
@@ -461,10 +474,12 @@ function abrirDetalhe(id){
   s=>{
   // a miniatura aparece na hora; a foto grande vem em seguida
   if(src)db.collection('fotos').doc(id).get().then(f=>{const im=s.querySelector('#dfoto');if(f.exists&&im)im.src=f.data().foto}).catch(()=>{});
+  for(let i=1;i<=(+e.fotosExtras||0);i++){const box=s.querySelector('#dextras'),div=document.createElement('div');div.className='photo';box.appendChild(div);
+    db.collection('fotos').doc(id+'__'+i).get().then(f=>{if(f.exists&&f.data().foto)div.innerHTML=`<img src="${esc(f.data().foto)}" alt="Foto ${i+1} da nota">`;else div.remove()}).catch(()=>div.remove())}
   s.addEventListener('click',async ev=>{
     const rm=ev.target.closest('[data-rm]');
     if(rm){const lista=(e.postits||[]).filter((_,i)=>i!==+rm.dataset.rm);e.postits=lista;render();abrirDetalhe(id);if(await salvar(id,{postits:lista,atualizadoEm:Date.now()}))toast('Post-it tirado');return}
-    const a=ev.target.closest('[data-a]')?.dataset.a;if(a==='entregue'){fechar();setStatus(id,'entregue')}if(a==='postit')abrirPostit(id);if(a==='mais')abrirAcoes(id);if(a==='copiar')copiar(soDig(e.fone));});
+    const a=ev.target.closest('[data-a]')?.dataset.a;if(a==='entregue'){fechar();setStatus(id,'entregue')}if(a==='postit')abrirPostit(id);if(a==='mais')abrirAcoes(id);if(a==='copiar')copiar(soDig(e.fone));const cp=ev.target.closest('[data-copiar]');if(cp)copiar(cp.dataset.copiar);});
   });
 }
 function abrirPostit(id){
@@ -487,6 +502,9 @@ function abrirForm(ed){
   const st=ed?{...ed,itens:itensDe(ed),fone:fmtFone(ed.fone)}:{data:h,turno:'qualquer',hora:'',itens:[],cliente:'',bairro:'',endereco:'',fone:'',frete:0,observacao:'',thumb:null,fotoData:null};
   if(!TURNOS[st.turno])st.turno='qualquer';
   let fotoBlob=null,fotoPrev=fotoSrc(st),enviando=false;
+  // fotos a mais ficam em fotos/{id}__1, __2…; contatos a mais em "contatos"
+  const contatos=(ed?.contatos||[]).map(c=>({nome:c.nome||'',fone:fmtFone(c.fone)}));
+  const extras=[],qtdExtrasAntes=+(ed?.fotosExtras)||0;let carregandoExtras=qtdExtrasAntes>0;
   const dChips=[[h,'Hoje'],[addDays(h,1),'Amanhã'],[addDays(h,2),pd(addDays(h,2)).toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')]];
   const R='<span class="req" aria-hidden="true">*</span>';
   st.notasLoja=+st.notasLoja||0;st.notasDeposito=+st.notasDeposito||0;st.porConta=!!st.fretePor;st.fretePor=st.fretePor||'';
@@ -495,7 +513,7 @@ function abrirForm(ed){
   const nomesHTML=vends.length?vends.map(v=>`<button type="button" class="chip" data-v="${esc(v)}">${esc(v)}</button>`).join(''):'<span class="hint">Nenhum vendedor cadastrado ainda. O Bruno cadastra no painel.</span>';
   abrirSheet(`<h2>${ed?'Editar entrega':'Nova entrega'}</h2>
     <div class="field"><span class="lbl">Foto da nota</span><div class="photobtn"><div class="thumb" id="fthumb"></div><button type="button" class="btn" id="fbtn">📷 Tirar foto</button></div>
-</div>
+      <div class="fextras" id="fextras"></div><button type="button" class="btn addbtn" id="fmaisfoto">+ Outra foto da nota</button></div>
     <div class="field"><span class="lbl">Notas ${R} — quantas e onde estão</span><div class="notas2" id="fnotas">
       <div class="cont"><span>Na loja</span><div class="step"><button type="button" data-n="notasLoja" data-d="-1" aria-label="Uma nota a menos na loja">−</button><b id="nloja">0</b><button type="button" data-n="notasLoja" data-d="1" aria-label="Uma nota a mais na loja">+</button></div></div>
       <div class="cont"><span>No depósito</span><div class="step"><button type="button" data-n="notasDeposito" data-d="-1" aria-label="Uma nota a menos no depósito">−</button><b id="ndep">0</b><button type="button" data-n="notasDeposito" data-d="1" aria-label="Uma nota a mais no depósito">+</button></div></div>
@@ -504,7 +522,8 @@ function abrirForm(ed){
     <div class="field"><span class="lbl">Turno</span><div class="chips" id="cturno"><button type="button" class="chip" data-v="qualquer">Qualquer turno</button><button type="button" class="chip" data-v="manha">Manhã</button><button type="button" class="chip" data-v="tarde">Tarde</button><button type="button" class="chip" data-v="apos">Depois das…</button></div>
       <input type="time" id="fhora" ${st.turno==='apos'?'':'hidden'}></div>
     <div class="field"><label for="fcli">Cliente ${R}</label><input type="text" id="fcli" autocomplete="off" placeholder="Nome do cliente" required></div>
-    <div class="field"><label for="fone">Telefone ${R}</label><input type="tel" id="fone" inputmode="numeric" autocomplete="off" placeholder="(00) 00000-0000" required></div>
+    <div class="field"><label for="fone">Telefone ${R}</label><input type="tel" id="fone" inputmode="numeric" autocomplete="off" placeholder="(00) 00000-0000" required>
+      <div id="fconts" style="display:grid;gap:8px"></div><button type="button" class="btn addbtn" id="fmaiscont">+ Outro contato (opcional)</button></div>
     <div class="field"><label for="fbai">Bairro ${R}</label><input type="text" id="fbai" autocomplete="off" placeholder="Bairro" required></div>
     <div class="field"><label for="fend">Endereço ${R}</label><input type="text" id="fend" autocomplete="off" placeholder="Rua, número, complemento" required></div>
     <div class="field"><label for="ffrete">Valor do frete ${R}</label><input type="text" id="ffrete" inputmode="numeric" autocomplete="off" placeholder="R$ 0,00" required>
@@ -540,6 +559,7 @@ function abrirForm(ed){
         <button type="button" class="x" data-del="${i}" aria-label="Tirar ${esc(t.nome)}">×</button></div>`).join('');
       const th=q('#fthumb');th.style.backgroundImage=fotoPrev?`url('${fotoPrev}')`:'';th.textContent=fotoPrev?'':'sem foto';
       q('#fbtn').textContent=fotoPrev?'📷 Trocar foto':'📷 Tirar foto';
+      q('#fextras').innerHTML=extras.map((x,i)=>`<div class="fx"><div class="thumb" style="background-image:url('${esc(x.prev||x.src)}')"></div><button type="button" data-xdel="${i}" aria-label="Tirar esta foto">×</button></div>`).join('');
       q('#nloja').textContent=st.notasLoja;q('#ndep').textContent=st.notasDeposito;
     };sync();
     q('#cdia').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b){st.data=b.dataset.v;sync()}});
@@ -553,6 +573,17 @@ function abrirForm(ed){
     q('#fmais').addEventListener('click',()=>{st.aMais=!st.aMais;q('#cmaisv').classList.remove('err');sync()});
     q('#cmaisv').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b){st.aMaisPor=b.dataset.v;q('#cmaisv').classList.remove('err');sync()}});
     q('#cmaisr').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b){st.aMaisValor=st.aMaisValor===+b.dataset.r?0:+b.dataset.r;sync()}});
+    if(carregandoExtras)Promise.all(Array.from({length:qtdExtrasAntes},(_,i)=>db.collection('fotos').doc(ed.id+'__'+(i+1)).get().catch(()=>null)))
+      .then(l=>{extras.unshift(...l.filter(f=>f&&f.exists&&f.data().foto).map(f=>({src:f.data().foto})));carregandoExtras=false;sync()});
+    q('#fmaisfoto').addEventListener('click',()=>pegarFoto(b=>{extras.push({blob:b,prev:URL.createObjectURL(b)});sync()}));
+    q('#fextras').addEventListener('click',e=>{const b=e.target.closest('[data-xdel]');if(b){extras.splice(+b.dataset.xdel,1);sync()}});
+    const desenharContatos=()=>{q('#fconts').innerHTML=contatos.map((c,i)=>`<div class="crow"><input type="text" data-cn="${i}" value="${esc(c.nome)}" autocomplete="off" placeholder="Nome (opcional)" aria-label="Nome do outro contato">
+      <input type="tel" data-cf="${i}" value="${esc(c.fone)}" inputmode="numeric" autocomplete="off" placeholder="(00) 00000-0000" aria-label="Telefone do outro contato"><button type="button" data-cdel="${i}" aria-label="Tirar este contato">×</button></div>`).join('')};
+    desenharContatos();
+    q('#fmaiscont').addEventListener('click',()=>{contatos.push({nome:'',fone:''});desenharContatos();q(`[data-cn="${contatos.length-1}"]`).focus()});
+    q('#fconts').addEventListener('input',e=>{const n=e.target.dataset.cn,f=e.target.dataset.cf;
+      if(n!==undefined)contatos[+n].nome=e.target.value;if(f!==undefined){e.target.value=fmtFone(e.target.value);contatos[+f].fone=e.target.value}});
+    q('#fconts').addEventListener('click',e=>{const b=e.target.closest('[data-cdel]');if(b){contatos.splice(+b.dataset.cdel,1);desenharContatos()}});
     q('#fone').addEventListener('input',e=>{e.target.value=fmtFone(e.target.value)});
     q('#ffrete').addEventListener('input',e=>{const d=soDig(e.target.value).slice(0,9);st.frete=d?Number(d)/100:0;e.target.value=d?real(st.frete):''});
     s.addEventListener('input',e=>e.target.classList?.remove('err'));
@@ -574,6 +605,10 @@ function abrirForm(ed){
         ['#fbai',!st.bairro,'Coloque o bairro.'],['#fend',!st.endereco,'Coloque o endereço.'],['#ffrete',!(st.frete>0),'Coloque o valor do frete.']].filter(x=>x[1]);
       erros.forEach(([sel])=>q(sel).classList.add('err'));
       if(erros.length){toast(erros[0][2]);q(erros[0][0]).focus();return}
+      const contOk=contatos.map(c=>({nome:c.nome.trim(),fone:c.fone.trim()})).filter(c=>c.nome||c.fone);
+      const ruim=contatos.findIndex(c=>(c.nome.trim()||c.fone.trim())&&!foneOk(c.fone));
+      if(ruim>=0){const el=q(`[data-cf="${ruim}"]`);el.classList.add('err');el.focus();toast('Confira o telefone do outro contato, com DDD.');return}
+      if(carregandoExtras){toast('Espere as fotos carregarem.');return}
       if(st.porConta&&!st.fretePor){q('#cvend').classList.add('err');toast('Escolha quem paga o frete.');q('#cvend').scrollIntoView({block:'center'});return}
       if(st.aMais&&!st.aMaisPor){q('#cmaisv').classList.add('err');toast('Escolha qual vendedor pôs a mais no frete.');q('#cmaisv').scrollIntoView({block:'center'});return}
       if(st.notasLoja+st.notasDeposito<1){q('#fnotas').classList.add('err');toast('Diga quantas notas tem na loja e no depósito.');q('#fnotas').scrollIntoView({block:'center'});return}
@@ -583,13 +618,17 @@ function abrirForm(ed){
         const id=ed?ed.id:'e'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
         let fotoNova=null;
         if(fotoBlob){st.thumb=await fotoMiniatura(fotoBlob);fotoNova=await fotoGrande(fotoBlob);st.fotoData=null}
+        const fotosExtras=[];for(const x of extras)fotosExtras.push(x.blob?await fotoGrande(x.blob):x.src);
         const ls=new Set(st.itens.map(i=>i.local));
         const dados={cliente:st.cliente,fone:st.fone,bairro:st.bairro,endereco:st.endereco,observacao:st.observacao,frete:st.frete,fretePor:st.porConta?st.fretePor:'',aMaisPor:st.aMais?st.aMaisPor:'',aMaisValor:st.aMais?st.aMaisValor:0,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
           itens:st.itens.map(i=>({nome:i.nome,local:i.local})),local:ls.size>1?'ambos':ls.has('deposito')?'deposito':'loja',
-          thumb:st.thumb||null,fotoData:st.fotoData||null,atualizadoEm:Date.now()};
+          thumb:st.thumb||null,fotoData:st.fotoData||null,contatos:contOk,fotosExtras:fotosExtras.length,atualizadoEm:Date.now()};
         let ok;
         if(ed){ok=await salvar(id,dados)}
         else{dados.status='pendente';dados.obs='';dados.criadoEm=Date.now();dados.criadoPorUid=me.uid;dados.criadoPorNome=me.nome;ok=await salvar(id,dados,true)}
+        // as que sobraram de antes ficam vazias (vendedor não pode apagar foto) e somem na limpeza
+        if(ok)for(let i=0;i<Math.max(fotosExtras.length,qtdExtrasAntes);i++){
+          try{await db.collection('fotos').doc(id+'__'+(i+1)).set({foto:fotosExtras[i]||'',em:Date.now()})}catch{toast('A entrega foi salva, mas uma das fotos não. Tente de novo.');break}}
         if(ok&&fotoNova){try{await db.collection('fotos').doc(id).set({foto:fotoNova,em:Date.now()})}catch{toast('A entrega foi salva, mas a foto grande não. Tente pôr a foto de novo.')}}
         if(ok){fechar();dia=st.data;render();toast(ed?'Entrega atualizada':'Lançada para '+nomeDia(st.data).toLowerCase())}
       }finally{enviando=false;if(document.body.contains(btn)){btn.disabled=false;btn.textContent=ed?'Salvar':'Lançar no mural'}}
