@@ -279,13 +279,13 @@ function fmtFone(v){const d=soDig(v).slice(0,11);if(!d)return '';if(d.length<3)r
   const a=d.slice(0,2),r=d.slice(2);if(r.length<=4)return `(${a}) ${r}`;const k=r.length>8?5:4;return `(${a}) ${r.slice(0,k)}-${r.slice(k)}`}
 function foneOk(v){const n=soDig(v).length;return n===10||n===11}
 function quando(t){return t?new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):''}
-async function copiar(t){
+async function copiar(t,msg){
   let ok=false;
   try{await navigator.clipboard.writeText(t);ok=true}catch{}
   // alguns navegadores bloqueiam a área de transferência dentro de páginas incorporadas
   if(!ok){const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();
     try{ok=document.execCommand('copy')}catch{}ta.remove()}
-  toast(ok?'Número copiado. É só colar no WhatsApp.':'Não consegui copiar. Segure o dedo no número para copiar.')}
+  toast(ok?(msg||'Número copiado. É só colar no WhatsApp.'):'Não consegui copiar. Segure o dedo no texto para copiar.')}
 function pegarFoto(cb){const f=$('#file');f.value='';f.onchange=async()=>{const file=f.files[0];if(!file)return;
   let b;try{b=await reduzir(file,1600,.8)}catch{toast('Não consegui ler essa foto.');return}cb(b)};f.click()}
 function aMaisTxt(e){return e.aMaisPor?e.aMaisPor+' pôs '+(e.aMaisValor?'+'+real(e.aMaisValor):'a mais'):''}
@@ -517,7 +517,7 @@ function abrirDetalhe(id){
     <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span><span class="tag">${esc(turnoTxt(e))}</span>${localTagHTML(e)}${notasTagHTML(e)}${e.fretePago?'<span class="pill p-ok">✓ Frete pago</span>':''}</div>
     ${src?`<div class="photo"><img id="dfoto" src="${esc(src)}" alt="Foto da nota"></div>`:''}
     ${e.fotosExtras?`<div id="dextras" style="display:grid;gap:8px"></div>`:''}
-    <div class="det">${e.endereco?`<div><span class="lbl">Endereço</span><br>${esc(e.endereco)}</div>`:''}
+    <div class="det">${e.endereco?`<div><span class="lbl">Endereço</span><div class="fonerow"><span style="user-select:all">${esc(e.endereco)}</span><button type="button" class="btn sm" data-copiar="${esc(e.endereco+(e.bairro?' - '+e.bairro:''))}" data-msg="Endereço copiado. É só colar no WhatsApp ou no mapa.">📋 Copiar</button></div></div>`:''}
     ${e.bairro?`<div><span class="lbl">Bairro</span><br>${esc(e.bairro)}</div>`:''}
     ${e.fone?`<div><span class="lbl">Telefone</span><div class="fonerow"><span style="user-select:all">${esc(e.fone)}</span><button type="button" class="btn sm" data-a="copiar">📋 Copiar</button></div></div>`:''}
     ${(e.contatos||[]).map(c=>`<div><span class="lbl">Outro contato${c.nome?' — '+esc(c.nome):''}</span><div class="fonerow"><span style="user-select:all">${esc(c.fone)}</span><button type="button" class="btn sm" data-copiar="${esc(soDig(c.fone))}">📋 Copiar</button></div></div>`).join('')}
@@ -538,7 +538,7 @@ function abrirDetalhe(id){
   s.addEventListener('click',async ev=>{
     const rm=ev.target.closest('[data-rm]');
     if(rm){const lista=(e.postits||[]).filter((_,i)=>i!==+rm.dataset.rm);e.postits=lista;render();abrirDetalhe(id);if(await salvar(id,{postits:lista,atualizadoEm:Date.now()}))toast('Post-it tirado');return}
-    const a=ev.target.closest('[data-a]')?.dataset.a;if(a==='entregue'){fechar();setStatus(id,'entregue')}if(a==='postit')abrirPostit(id);if(a==='mais')abrirAcoes(id);if(a==='copiar')copiar(soDig(e.fone));const cp=ev.target.closest('[data-copiar]');if(cp)copiar(cp.dataset.copiar);});
+    const a=ev.target.closest('[data-a]')?.dataset.a;if(a==='entregue'){fechar();setStatus(id,'entregue')}if(a==='postit')abrirPostit(id);if(a==='mais')abrirAcoes(id);if(a==='copiar')copiar(soDig(e.fone));const cp=ev.target.closest('[data-copiar]');if(cp)copiar(cp.dataset.copiar,cp.dataset.msg);});
   });
 }
 function abrirPostit(id){
