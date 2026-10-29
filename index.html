@@ -64,6 +64,13 @@ section.feitas{border-top:1px solid var(--line);padding-top:14px}
 .under{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font-weight:600;font-size:14px}
 .under .l{color:var(--ok)} .under .r{color:var(--bad)}
 .face{position:relative;background:var(--surface);box-shadow:var(--shadow);border-left:5px solid var(--pend);padding:12px 12px 12px 12px;display:flex;gap:12px;transition:transform .2s ease}
+.card.prio .face{background:var(--bad);color:#fff;border-left-color:#7a1414;box-shadow:0 4px 14px rgba(197,48,48,.35)}
+.card.prio .face .who span,.card.prio .items,.card.prio .meta{color:#fff!important}
+.card.prio .tag{border-color:rgba(255,255,255,.6);color:#fff}
+.card.prio .thumb{border-color:rgba(255,255,255,.5)}
+.pprio{background:#fff;color:var(--bad);font-weight:700}
+section.prio h3{color:var(--bad);font-size:14px}
+.chip.prio[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
 .card.st-entregue .face{border-left-color:var(--ok)} .card.st-problema .face{border-left-color:var(--bad)}
 .card.st-entregue .face .who{text-decoration:line-through;opacity:.65}
 .thumb{flex:0 0 64px;height:64px;border-radius:10px;background:var(--bg) center/cover no-repeat;border:1px solid var(--line);display:grid;place-items:center;color:var(--muted);font-size:11px}
@@ -277,11 +284,13 @@ $('#days').addEventListener('click',e=>{const b=e.target.closest('.day');if(!b)r
 function cardHTML(e){
   const src=fotoSrc(e),nm=e.criadoPorNome,V=P.verValores;
   const itens=itensDe(e).map(i=>qtdNome(i)+(i.local?` (${LOC[i.local]})`:'')).join(' · ');
-  return `<div class="card st-${e.status}" data-id="${esc(e.id)}">
+  const pr=e.prioridade&&e.status!=='entregue';
+  return `<div class="card st-${e.status}${pr?' prio':''}" data-id="${esc(e.id)}">
     <div class="under"><span class="l">✓ Entregue</span><span class="r">Problema ✕</span></div>
     <div class="face">
       <div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>
       <div class="info">
+        ${pr?'<div><span class="pill pprio">⬆ Prioridade</span></div>':''}
         <div class="who">${esc(e.cliente||'Sem nome')}${e.bairro?` <span style="font-weight:400;color:var(--muted)">· ${esc(e.bairro)}</span>`:''}</div>
         <div class="meta"><span class="tag">${esc(turnoTxt(e))}</span>${localTagHTML(e)}${V&&e.frete?`<span class="tag">${real(e.frete)}${e.fretePor?' · por conta: '+esc(e.fretePor):''}</span>`:''}${V&&e.aMaisPor?`<span class="tag">${esc(aMaisTxt(e))}</span>`:''}${notasTagHTML(e)}${e.fretePago?'<span class="pill p-ok">✓ Frete pago</span>':''}<span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span></div>
         ${itens?`<div class="items">${esc(itens)}</div>`:''}
@@ -310,8 +319,10 @@ function render(){
   else{
     // as já entregues saem dos turnos e vão para o fim da tela
     const abertas=list.filter(e=>e.status!=='entregue'),feitas=list.filter(e=>e.status==='entregue');
+    const prio=abertas.filter(e=>e.prioridade);
+    if(prio.length)html+=`<section class="prio"><h3>⬆ Prioridade (${prio.length})</h3><div class="list">${prio.map(cardHTML).join('')}</div></section>`;
     for(const t of ['manha','tarde','apos','']){
-      const g=abertas.filter(e=>(e.turno||'')===t||(t===''&&!TURNOS[e.turno]));
+      const g=abertas.filter(e=>!e.prioridade).filter(e=>(e.turno||'')===t||(t===''&&!TURNOS[e.turno]));
       if(!g.length)continue;
       html+=`<section><h3>${t==='apos'?'Depois de horário':t?TURNOS[t]:'Qualquer turno'}</h3><div class="list">${g.map(cardHTML).join('')}</div></section>`;
     }
@@ -427,6 +438,7 @@ function abrirAcoes(id){
     ${P.marcar?'<div class="actions two"><button class="btn ok" data-a="entregue">✓ Entregue</button><button class="btn bad" data-a="problema">✕ Problema</button></div>':''}
     <div class="actions">${P.marcar&&e.status!=='pendente'?'<button class="btn" data-a="pendente">Voltar para pendente</button>':''}
     <button class="btn post" data-a="postit">📝 Colar post-it</button>
+    ${podeEditar(e)?`<button class="btn ${e.prioridade?'':'bad'}" data-a="prio">${e.prioridade?'Tirar a prioridade':'⬆ Marcar como prioridade'}</button>`:''}
     ${P.marcar?'<button class="btn" data-a="amanha">Passar para o dia seguinte</button>':''}
     ${podeEditar(e)?'<button class="btn" data-a="editar">Editar</button>':''}<button class="btn" data-a="ver">Ver nota e foto</button>
     ${P.apagar?'<button class="btn danger" data-a="apagar">Apagar</button>':''}<button class="btn ghost" data-a="x">Fechar</button></div>`,
@@ -436,6 +448,7 @@ function abrirAcoes(id){
     else if(a==='problema')abrirProblema(id);
     else if(a==='amanha'){fechar();const nd=addDays(e.data<hoje()?hoje():e.data,1);e.data=nd;render();if(await salvar(id,{data:nd,atualizadoEm:Date.now()}))toast('Passada para '+nomeDia(nd).toLowerCase())}
     else if(a==='postit')abrirPostit(id);
+    else if(a==='prio'){fechar();const v=!e.prioridade;e.prioridade=v;render();if(await salvar(id,{prioridade:v,atualizadoEm:Date.now()}))toast(v?'Marcada como prioridade':'Prioridade tirada')}
     else if(a==='editar')abrirForm(e);
     else if(a==='ver')abrirDetalhe(id);
     else if(a==='apagar')confirmarApagar(id);
@@ -518,7 +531,7 @@ function abrirForm(ed){
   const extras=[],qtdExtrasAntes=+(ed?.fotosExtras)||0;let carregandoExtras=qtdExtrasAntes>0;
   const dChips=[[h,'Hoje'],[addDays(h,1),'Amanhã'],[addDays(h,2),pd(addDays(h,2)).toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')]];
   const R='<span class="req" aria-hidden="true">*</span>';
-  st.notasLoja=+st.notasLoja||0;st.notasDeposito=+st.notasDeposito||0;st.fretePago=!!st.fretePago;st.porConta=!!st.fretePor;st.fretePor=st.fretePor||'';
+  st.notasLoja=+st.notasLoja||0;st.notasDeposito=+st.notasDeposito||0;st.fretePago=!!st.fretePago;st.prioridade=!!st.prioridade;st.porConta=!!st.fretePor;st.fretePor=st.fretePor||'';
   st.aMais=!!st.aMaisPor;st.aMaisPor=st.aMaisPor||'';st.aMaisValor=st.aMaisValor||0;
   const vends=[...new Set([...VENDEDORES,st.fretePor,st.aMaisPor].filter(Boolean))];
   const nomesHTML=vends.length?vends.map(v=>`<button type="button" class="chip" data-v="${esc(v)}">${esc(v)}</button>`).join(''):'<span class="hint">Nenhum vendedor cadastrado ainda. O Bruno cadastra no painel.</span>';
@@ -529,6 +542,7 @@ function abrirForm(ed){
       <div class="cont"><span>Na loja</span><div class="step"><button type="button" data-n="notasLoja" data-d="-1" aria-label="Uma nota a menos na loja">−</button><b id="nloja">0</b><button type="button" data-n="notasLoja" data-d="1" aria-label="Uma nota a mais na loja">+</button></div></div>
       <div class="cont"><span>No depósito</span><div class="step"><button type="button" data-n="notasDeposito" data-d="-1" aria-label="Uma nota a menos no depósito">−</button><b id="ndep">0</b><button type="button" data-n="notasDeposito" data-d="1" aria-label="Uma nota a mais no depósito">+</button></div></div>
     </div></div>
+    <div class="chips"><button type="button" class="chip prio" id="fprio">Prioridade</button></div>
     <div class="field"><span class="lbl">Dia</span><div class="chips" id="cdia">${dChips.map(([v,t])=>`<button type="button" class="chip" data-v="${v}">${t}</button>`).join('')}<input type="date" id="fdata" style="width:auto;flex:1;min-width:140px"></div></div>
     <div class="field"><span class="lbl">Turno</span><div class="chips" id="cturno"><button type="button" class="chip" data-v="qualquer">Qualquer turno</button><button type="button" class="chip" data-v="manha">Manhã</button><button type="button" class="chip" data-v="tarde">Tarde</button><button type="button" class="chip" data-v="apos">Depois das…</button></div>
       <input type="time" id="fhora" ${st.turno==='apos'?'':'hidden'}></div>
@@ -559,6 +573,7 @@ function abrirForm(ed){
       q('#fdata').value=st.data;
       s.querySelectorAll('#cturno .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.turno));
       q('#fhora').hidden=st.turno!=='apos';
+      q('#fprio').setAttribute('aria-pressed',st.prioridade);q('#fprio').textContent=(st.prioridade?'☑':'☐')+' ⬆ Prioridade';
       q('#fpago').setAttribute('aria-pressed',st.fretePago);q('#fpago').textContent=(st.fretePago?'☑':'☐')+' Frete já foi pago';
       q('#fconta').setAttribute('aria-pressed',st.porConta);q('#fconta').textContent=(st.porConta?'☑':'☐')+' Frete por conta do vendedor';
       q('#bvend').hidden=!st.porConta;
@@ -582,6 +597,7 @@ function abrirForm(ed){
     q('#fnotas').addEventListener('click',e=>{const b=e.target.closest('[data-n]');if(!b)return;const antes=st.notasLoja+st.notasDeposito;
       st[b.dataset.n]=Math.max(0,Math.min(20,st[b.dataset.n]+ +b.dataset.d));q('#fnotas').classList.remove('err');sync();
       if(antes===1&&st.notasLoja+st.notasDeposito===2)toast('Ponha a foto da outra nota na pasta 📁 do mural.')});
+    q('#fprio').addEventListener('click',()=>{st.prioridade=!st.prioridade;sync()});
     q('#fpago').addEventListener('click',()=>{st.fretePago=!st.fretePago;sync()});
     q('#fconta').addEventListener('click',()=>{st.porConta=!st.porConta;q('#cvend').classList.remove('err');sync()});
     q('#cvend').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b){st.fretePor=b.dataset.v;q('#cvend').classList.remove('err');sync()}});
@@ -636,7 +652,7 @@ function abrirForm(ed){
         if(fotoBlob){st.thumb=await fotoMiniatura(fotoBlob);fotoNova=await fotoGrande(fotoBlob);st.fotoData=null}
         const fotosExtras=[];for(const x of extras)fotosExtras.push(x.blob?await fotoGrande(x.blob):x.src);
         const ls=new Set(st.itens.map(i=>i.local));
-        const dados={cliente:st.cliente,fone:st.fone,bairro:st.bairro,endereco:st.endereco,observacao:st.observacao,frete:st.frete,fretePago:st.fretePago,fretePor:st.porConta?st.fretePor:'',aMaisPor:st.aMais?st.aMaisPor:'',aMaisValor:st.aMais?st.aMaisValor:0,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
+        const dados={cliente:st.cliente,fone:st.fone,bairro:st.bairro,endereco:st.endereco,observacao:st.observacao,frete:st.frete,fretePago:st.fretePago,prioridade:st.prioridade,fretePor:st.porConta?st.fretePor:'',aMaisPor:st.aMais?st.aMaisPor:'',aMaisValor:st.aMais?st.aMaisValor:0,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
           itens:st.itens.map(i=>({nome:i.nome,local:i.local,qtd:i.qtd})),local:ls.size>1?'ambos':ls.has('deposito')?'deposito':'loja',
           thumb:st.thumb||null,fotoData:st.fotoData||null,contatos:contOk,fotosExtras:fotosExtras.length,atualizadoEm:Date.now()};
         let ok;
