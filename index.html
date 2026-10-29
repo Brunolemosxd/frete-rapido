@@ -231,7 +231,7 @@ const hoje=()=>ds(new Date());
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function nomeDia(s){const h=hoje();if(s===h)return 'Hoje';if(s===addDays(h,1))return 'Amanhã';if(s===addDays(h,-1))return 'Ontem';
   return pd(s).toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'short'})}
-function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2600)}
+function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,t.length>60?4500:2600)}
 function fotoSrc(e){return e.thumb||e.fotoData||''}
 const podeEditar=e=>P.editarTodas||(P.lancar&&e.criadoPorUid===me.uid);
 function turnoTxt(e){return e.turno==='apos'?'Depois das '+(e.hora||'—'):(TURNOS[e.turno]||'Qualquer turno')}
@@ -547,7 +547,8 @@ function abrirForm(ed){
     <div class="field"><span class="lbl">Dia</span><div class="chips" id="cdia">${dChips.map(([v,t])=>`<button type="button" class="chip" data-v="${v}">${t}</button>`).join('')}<input type="date" id="fdata" style="width:auto;flex:1;min-width:140px"></div></div>
     <div class="field"><span class="lbl">Turno</span><div class="chips" id="cturno"><button type="button" class="chip" data-v="qualquer">Qualquer turno</button><button type="button" class="chip" data-v="manha">Manhã</button><button type="button" class="chip" data-v="tarde">Tarde</button><button type="button" class="chip" data-v="apos">Depois das…</button></div>
       <input type="time" id="fhora" ${st.turno==='apos'?'':'hidden'}></div>
-    <div class="field"><label for="fcli">Nome que está na nota ${R}</label><input type="text" id="fcli" autocomplete="off" placeholder="Escreva igual está na nota" required></div>
+    <div class="field"><span class="lbl">Nome do cliente como está na nota ${R}</span>
+      <div class="row"><input type="text" id="fcli" autocomplete="off" autocapitalize="words" placeholder="Nome" aria-label="Nome (como está na nota)" required><input type="text" id="fsob" autocomplete="off" autocapitalize="words" placeholder="Sobrenome" aria-label="Sobrenome (como está na nota)" required></div></div>
     <div class="field"><label for="fone">Telefone ${R}</label><input type="tel" id="fone" inputmode="numeric" autocomplete="off" placeholder="(00) 00000-0000" required>
       <div id="fconts" style="display:grid;gap:8px"></div><button type="button" class="btn addbtn" id="fmaiscont">+ Outro contato (opcional)</button></div>
     <div class="field"><label for="fbai">Bairro ${R}</label><input type="text" id="fbai" autocomplete="off" placeholder="Bairro" required></div>
@@ -566,7 +567,8 @@ function abrirForm(ed){
     <div class="actions two"><button type="button" class="btn ghost" id="fcancel">Cancelar</button><button type="button" class="btn pri" id="fsave">${ed?'Salvar':'Lançar no mural'}</button></div>`,
   s=>{
     const q=x=>s.querySelector(x);
-    q('#fcli').value=st.cliente||'';q('#fbai').value=st.bairro||'';q('#fend').value=st.endereco||'';q('#fobs').value=st.observacao||'';q('#fone').value=st.fone||'';q('#fhora').value=st.hora||'';
+    {const nm=st.clienteNome!==undefined?[st.clienteNome,st.clienteSobrenome||'']:[(st.cliente||'').split(' ')[0],(st.cliente||'').split(' ').slice(1).join(' ')];q('#fcli').value=nm[0];q('#fsob').value=nm[1]}
+    q('#fbai').value=st.bairro||'';q('#fend').value=st.endereco||'';q('#fobs').value=st.observacao||'';q('#fone').value=st.fone||'';q('#fhora').value=st.hora||'';
     q('#ffrete').value=st.frete?real(st.frete):'';
     let errLocal=false;
     const sync=()=>{
@@ -632,12 +634,15 @@ function abrirForm(ed){
     q('#fcancel').addEventListener('click',fechar);
     q('#fsave').addEventListener('click',async()=>{
       if(enviando)return;
-      st.cliente=q('#fcli').value.trim();st.bairro=q('#fbai').value.trim();st.endereco=q('#fend').value.trim();st.observacao=q('#fobs').value.trim();st.fone=q('#fone').value.trim();st.hora=q('#fhora').value;
+      st.clienteNome=q('#fcli').value.trim().replace(/\s+/g,' ');st.clienteSobrenome=q('#fsob').value.trim().replace(/\s+/g,' ');st.cliente=(st.clienteNome+' '+st.clienteSobrenome).trim();st.bairro=q('#fbai').value.trim();st.endereco=q('#fend').value.trim();st.observacao=q('#fobs').value.trim();st.fone=q('#fone').value.trim();st.hora=q('#fhora').value;
       const pendItem=q('#fitem').value.trim();if(pendItem){st.itens.push({nome:pendItem,local:null,qtd:1});q('#fitem').value='';sync()}
-      const erros=[['#fcli',!st.cliente,'Coloque o nome que está na nota.'],['#fone',!foneOk(st.fone),'Coloque o telefone com DDD. Ex.: (11) 98765-4321'],
+      const erros=[['#fcli',!st.clienteNome,'Coloque o nome do cliente como está na nota.'],['#fsob',!st.clienteSobrenome,'Coloque o sobrenome do cliente como está na nota.'],['#fone',!foneOk(st.fone),'Coloque o telefone com DDD. Ex.: (11) 98765-4321'],
         ['#fbai',!st.bairro,'Coloque o bairro.'],['#fend',!st.endereco,'Coloque o endereço.'],['#ffrete',!(st.frete>0),'Coloque o valor do frete.']].filter(x=>x[1]);
       erros.forEach(([sel])=>q(sel).classList.add('err'));
       if(erros.length){toast(erros[0][2]);q(erros[0][0]).focus();return}
+      // mesmo telefone no mesmo dia = entrega duplicada
+      const dup=entregas.find(x=>x.id!==(ed?ed.id:'')&&x.data===st.data&&soDig(x.fone)===soDig(st.fone));
+      if(dup){q('#fone').classList.add('err');q('#fone').focus();toast(`Já existe uma entrega para ${nomeDia(st.data).toLowerCase()} com esse telefone (${dup.cliente||'sem nome'}). Não lance de novo.`);return}
       const contOk=contatos.map(c=>({nome:c.nome.trim(),fone:c.fone.trim()})).filter(c=>c.nome||c.fone);
       const ruim=contatos.findIndex(c=>(c.nome.trim()||c.fone.trim())&&!foneOk(c.fone));
       if(ruim>=0){const el=q(`[data-cf="${ruim}"]`);el.classList.add('err');el.focus();toast('Confira o telefone do outro contato, com DDD.');return}
@@ -653,7 +658,7 @@ function abrirForm(ed){
         if(fotoBlob){st.thumb=await fotoMiniatura(fotoBlob);fotoNova=await fotoGrande(fotoBlob);st.fotoData=null}
         const fotosExtras=[];for(const x of extras)fotosExtras.push(x.blob?await fotoGrande(x.blob):x.src);
         const ls=new Set(st.itens.map(i=>i.local));
-        const dados={cliente:st.cliente,fone:st.fone,bairro:st.bairro,endereco:st.endereco,observacao:st.observacao,frete:st.frete,fretePago:st.fretePago,prioridade:st.prioridade,fretePor:st.porConta?st.fretePor:'',aMaisPor:st.aMais?st.aMaisPor:'',aMaisValor:st.aMais?st.aMaisValor:0,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
+        const dados={cliente:st.cliente,clienteNome:st.clienteNome,clienteSobrenome:st.clienteSobrenome,fone:st.fone,bairro:st.bairro,endereco:st.endereco,observacao:st.observacao,frete:st.frete,fretePago:st.fretePago,prioridade:st.prioridade,fretePor:st.porConta?st.fretePor:'',aMaisPor:st.aMais?st.aMaisPor:'',aMaisValor:st.aMais?st.aMaisValor:0,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
           itens:st.itens.map(i=>({nome:i.nome,local:i.local,qtd:i.qtd})),local:ls.size>1?'ambos':ls.has('deposito')?'deposito':'loja',
           thumb:st.thumb||null,fotoData:st.fotoData||null,contatos:contOk,fotosExtras:fotosExtras.length,atualizadoEm:Date.now()};
         let ok;
