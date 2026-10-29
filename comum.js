@@ -28,6 +28,29 @@ const FUNCOES = {
 };
 // motivos de problema: o Bruno cadastra mais no mural ou no painel (config/motivos)
 const MOTIVOS_PADRAO = ['Cliente ausente', 'Endereço errado', 'Produto faltando', 'Produto avariado', 'Não coube no carro', 'Remarcar'];
+// Tabela de fretes por localidade (valor null = consultar). O Bruno muda no painel (config/fretes).
+const FRETES_PADRAO = [
+  ['Capão da Canoa (Centro)', 70], ['Zona Nova', 70], ['Girassol', 70], ['Santa Luzia', 70], ['Santo Antônio', 70],
+  ['São Jorge', 70], ['Morada do Sol', 70], ['Parque Antártica', 70], ['Quero-Quero', 70], ['Vale Verde', 70],
+  ['Araçá', 70], ['Arco Íris', 70], ['Guarani', 70], ['Nova Guarani', 70],
+  ['Jardim Beira-Mar', 80], ['Zona Norte', 80], ['Praia do Barco', 80],
+  ['Capão Novo (Centro)', 90], ['Capão Novo (Village)', 100], ['Arroio Teixeira', 100], ['CTG João Sobrinho', 120],
+  ['Estrada da Laguna', 120], ['Curumim (Centro)', 100], ['Novo Curumim', 110], ['Santa Rita de Cássia (Curumim)', 130],
+  ['Arroio do Sal (Centro)', 200], ['Terra de Areia (Centro)', 200],
+  ['Guará', 80], ['Atlântida', 80], ['Figueirinha', 90], ['Xangri-Lá (Centro)', 90], ['Nova Xangri-Lá', 90], ['Remanso', 90],
+  ['Marina Maristela', 100], ['Arpoador', 100], ['Noiva do Mar', 100], ['Rainha do Mar', 100], ['Mariápolis', 120],
+  ['Atlântida Sul', 120], ['Imbé', null], ['Tramandaí', null], ['Nova Tramandaí', null],
+  ['Maquiné (Centro)', 200], ['Condomínio entre Rainha do Mar e Curumim (Centro)', 100]
+].map(([nome, valor]) => ({ nome, valor }));
+const semAcento = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+const AJUSTES = [-50, -40, -30, -20, -10, 10, 20, 30, 40, 50];
+const PAGAMENTOS = { entrega: 'Cobrar na entrega', pix: 'Já pago no Pix', junto: 'Dinheiro junto com a nota', vendedor: 'Por conta do vendedor' };
+// Ajuste de valor feito pelo vendedor (entregas antigas usavam aMaisPor/aMaisValor)
+function ajusteDe(e) {
+  if (e.freteAjuste !== undefined) return { valor: +e.freteAjuste || 0, por: e.ajustePor || '' };
+  return e.aMaisPor ? { valor: +e.aMaisValor || 0, por: e.aMaisPor } : { valor: 0, por: '' };
+}
+function pagamentoDe(e) { return e.pagamento || (e.fretePor ? 'vendedor' : e.fretePago ? 'pago' : 'entrega'); }
 const TODAS = Object.fromEntries(Object.keys(PERMS).map(k => [k, true]));
 
 firebase.initializeApp(FIREBASE_CONFIG);

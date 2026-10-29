@@ -128,6 +128,20 @@ input[type=text],input[type=date],input[type=time],input[type=tel],textarea{widt
 input.err{border-color:var(--bad)}
 .chips.err .chip{border-color:var(--bad)}
 .toggles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bai{position:relative}
+.sugs{display:grid;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);max-height:280px;overflow-y:auto}
+.sugs button{display:flex;justify-content:space-between;gap:10px;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:11px 12px;font-size:15px}
+.sugs button:last-child{border-bottom:0}
+.sugs button span{color:var(--muted);white-space:nowrap}
+.fretebox{border:1.5px solid var(--line);border-radius:12px;padding:12px;background:var(--bg);display:grid;gap:10px}
+.fretebox .base{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.fretebox .base b{font-family:var(--display);font-size:28px}
+.fretebox .tot{font-family:var(--display);font-size:24px;font-weight:700;color:var(--accent)}
+.ajs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.ajs .chip{padding:9px 0;text-align:center;font-size:15px}
+.ajs .chip.neg[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
+.pags{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pags .chip{text-align:left;font-size:14px;padding:10px 12px;line-height:1.25}
 .toggles .chip{text-align:left;font-size:14px;padding:10px 12px;line-height:1.25}
 .prods{display:flex;gap:6px;flex-wrap:wrap}
 .prod{border:1.5px solid var(--line);background:var(--bg);border-radius:99px;padding:8px 12px;font-weight:600;font-size:14px}
@@ -233,7 +247,7 @@ input.err{border-color:var(--bad)}
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="comum.js?v=20261029c"></script>
+<script src="comum.js?v=20261029d"></script>
 <script>
 (function(){
 const $=s=>document.querySelector(s);
@@ -246,6 +260,7 @@ const CARREGADORES=['Tiago','Bruno'];
 const carr=e=>e.carregadoPor==='Thiago'?'Tiago':(e.carregadoPor||'');
 const MOTIVOS_BASE=typeof MOTIVOS_PADRAO!=='undefined'?MOTIVOS_PADRAO:['Cliente ausente','Endereço errado','Produto faltando','Produto avariado','Não coube no carro','Remarcar'];
 let MOTIVOS=[...MOTIVOS_BASE];
+let TABELA=FRETES_PADRAO.map(x=>({...x}));
 let me=null,P={},VENDEDORES=[],pararEntregas=null,pararNotas=null,notasDe=null;
 let notasJ=[],pastaAberta=false;
 let entregas=[],loaded=false,dia=ds(new Date());
@@ -289,7 +304,14 @@ async function copiar(t,msg){
   toast(ok?(msg||'Número copiado. É só colar no WhatsApp.'):'Não consegui copiar. Segure o dedo no texto para copiar.')}
 function pegarFoto(cb){const f=$('#file');f.value='';f.onchange=async()=>{const file=f.files[0];if(!file)return;
   let b;try{b=await reduzir(file,1600,.8)}catch{toast('Não consegui ler essa foto.');return}cb(b)};f.click()}
-function aMaisTxt(e){return e.aMaisPor?e.aMaisPor+' pôs '+(e.aMaisValor?'+'+real(e.aMaisValor):'a mais'):''}
+function ajusteTxt(e){const a=ajusteDe(e);if(!a.por&&!a.valor)return '';return a.por+' '+(a.valor?(a.valor>0?'+':'−')+real(Math.abs(a.valor)):'pôs a mais')}
+// pagamento aparece para todos: o entregador precisa saber se cobra ou não
+function pagTagHTML(e){const p=pagamentoDe(e);
+  if(p==='entrega')return e.frete?`<span class="pill p-pend">💰 Cobrar ${real(e.frete)}</span>`:'';
+  if(p==='pix')return '<span class="pill p-ok">✓ Pago no Pix</span>';
+  if(p==='junto')return '<span class="pill p-ok">💵 Dinheiro junto com a nota</span>';
+  if(p==='vendedor')return `<span class="pill p-frete">Por conta: ${esc(e.fretePor)}</span>`;
+  return '<span class="pill p-ok">✓ Frete pago</span>'}
 function real(n){return Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
 
 /* ---------- dias ---------- */
@@ -320,7 +342,7 @@ function cardHTML(e){
       <div class="info">
         ${pr?'<div><span class="pill pprio">⬆ Prioridade</span></div>':''}
         <div class="who">${esc(e.cliente||'Sem nome')}${e.bairro?` <span style="font-weight:400;color:var(--muted)">· ${esc(e.bairro)}</span>`:''}</div>
-        <div class="meta"><span class="tag">${esc(turnoTxt(e))}</span>${localTagHTML(e)}${V&&e.frete?`<span class="tag">${real(e.frete)}${e.fretePor?' · por conta: '+esc(e.fretePor):''}</span>`:''}${V&&e.aMaisPor?`<span class="tag">${esc(aMaisTxt(e))}</span>`:''}${notasTagHTML(e)}${e.fretePago?'<span class="pill p-ok">✓ Frete pago</span>':''}<span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span></div>
+        <div class="meta"><span class="tag">${esc(turnoTxt(e))}</span>${localTagHTML(e)}${V&&e.frete?`<span class="tag">${real(e.frete)}</span>`:''}${V&&ajusteTxt(e)?`<span class="tag">${esc(ajusteTxt(e))}</span>`:''}${notasTagHTML(e)}${pagTagHTML(e)}<span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span></div>
         ${itens?`<div class="items">${esc(itens)}</div>`:''}
         ${e.observacao?`<div class="items">Obs.: ${esc(e.observacao)}</div>`:''}
         ${(e.postits||[]).length?`<div class="postits">${e.postits.map(p=>`<div class="postit">${esc(p.texto)}</div>`).join('')}</div>`:''}
@@ -515,7 +537,7 @@ function abrirDetalhe(id){
   const e=entregas.find(x=>x.id===id);if(!e)return;const src=fotoSrc(e),its=itensDe(e),V=P.verValores;
   abrirSheet(`<h2>${esc(e.cliente||'Entrega')}</h2>
     ${e.status==='problema'?`<div class="probfaixa"><span class="ic" aria-hidden="true">⚠</span><span>${esc(e.obs||'Problema na entrega')}</span></div>`:''}
-    <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span><span class="tag">${esc(turnoTxt(e))}</span>${localTagHTML(e)}${notasTagHTML(e)}${e.fretePago?'<span class="pill p-ok">✓ Frete pago</span>':''}</div>
+    <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span><span class="tag">${esc(turnoTxt(e))}</span>${localTagHTML(e)}${notasTagHTML(e)}${pagTagHTML(e)}</div>
     ${src?`<div class="photo"><img id="dfoto" src="${esc(src)}" alt="Foto da nota"></div>`:''}
     ${e.fotosExtras?`<div id="dextras" style="display:grid;gap:8px"></div>`:''}
     <div class="det">${e.endereco?`<div><span class="lbl">Endereço</span><div class="fonerow"><span style="user-select:all">${esc(e.endereco)}</span><button type="button" class="btn sm" data-copiar="${esc(e.endereco+(e.bairro?' - '+e.bairro:''))}" data-msg="Endereço copiado. É só colar no WhatsApp ou no mapa.">📋 Copiar</button></div>
@@ -523,8 +545,8 @@ function abrirDetalhe(id){
     ${e.bairro?`<div><span class="lbl">Bairro</span><br>${esc(e.bairro)}</div>`:''}
     ${e.fone?`<div><span class="lbl">Telefone</span><div class="fonerow"><span style="user-select:all">${esc(e.fone)}</span><button type="button" class="btn sm" data-a="copiar">📋 Copiar</button></div></div>`:''}
     ${(e.contatos||[]).map(c=>`<div><span class="lbl">Outro contato${c.nome?' — '+esc(c.nome):''}</span><div class="fonerow"><span style="user-select:all">${esc(c.fone)}</span><button type="button" class="btn sm" data-copiar="${esc(soDig(c.fone))}">📋 Copiar</button></div></div>`).join('')}
-    ${V&&e.frete?`<div><span class="lbl">Valor do frete</span><br>${real(e.frete)}${e.fretePago?' — <b>já pago</b>':''}${e.fretePor?` — por conta de <b>${esc(e.fretePor)}</b>`:''}</div>`:''}
-    ${V&&e.aMaisPor?`<div><span class="lbl">Vendedor pôs a mais no frete</span><br><b>${esc(e.aMaisPor)}</b>${e.aMaisValor?` — mais ${real(e.aMaisValor)}`:''}</div>`:''}
+    ${V&&e.frete?`<div><span class="lbl">Valor do frete</span><br><b>${real(e.frete)}</b>${e.freteBase!==undefined&&ajusteDe(e).valor?` <span class="hint">(${e.freteConsultar?'combinado':'tabela'} ${real(e.freteBase)} ${ajusteDe(e).valor>0?'+':'−'} ${real(Math.abs(ajusteDe(e).valor))} de ${esc(ajusteDe(e).por)})</span>`:''}</div>`:''}
+    <div><span class="lbl">Pagamento do frete</span><br>${{entrega:'Cobrar na entrega'+(e.frete?' — '+real(e.frete):''),pix:'Já pago no Pix',junto:'Dinheiro junto com a nota',vendedor:'Por conta do vendedor '+esc(e.fretePor||''),pago:'Já pago'}[pagamentoDe(e)]}</div>
     ${its.length?`<div><span class="lbl">Produtos</span><ul>${its.map(i=>`<li>${esc(qtdNome(i))}${i.local?` — <b>${LOC[i.local]}</b>`:''}</li>`).join('')}</ul></div>`:''}
     ${e.observacao?`<div><span class="lbl">Observação</span><br>${esc(e.observacao)}</div>`:''}
     ${e.criadoPorNome?`<div><span class="lbl">Lançada por</span><br>${esc(e.criadoPorNome)}</div>`:''}
@@ -568,9 +590,14 @@ function abrirForm(ed){
   const extras=[],qtdExtrasAntes=+(ed?.fotosExtras)||0;let carregandoExtras=qtdExtrasAntes>0;
   const dChips=[[h,'Hoje'],[addDays(h,1),'Amanhã'],[addDays(h,2),pd(addDays(h,2)).toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')]];
   const R='<span class="req" aria-hidden="true">*</span>';
-  st.notasLoja=+st.notasLoja||0;st.notasDeposito=+st.notasDeposito||0;st.fretePago=!!st.fretePago;st.prioridade=!!st.prioridade;st.porConta=!!st.fretePor;st.fretePor=st.fretePor||'';
-  st.aMais=!!st.aMaisPor;st.aMaisPor=st.aMaisPor||'';st.aMaisValor=st.aMaisValor||0;
-  const vends=[...new Set([...VENDEDORES,st.fretePor,st.aMaisPor].filter(Boolean))];
+  st.notasLoja=+st.notasLoja||0;st.notasDeposito=+st.notasDeposito||0;st.prioridade=!!st.prioridade;
+  // frete: o valor vem da tabela pelo bairro; o vendedor só ajusta de -50 a +50
+  {const aj=ajusteDe(st);st.ajuste=aj.valor;st.ajustePor=aj.por;}
+  st.pag=pagamentoDe(st);if(st.pag==='pago')st.pag='pix';st.fretePor=st.fretePor||'';
+  st.loc=TABELA.find(t=>semAcento(t.nome)===semAcento(st.bairro))||null;
+  st.valorCombinado=st.loc&&st.loc.valor===null?(+st.freteBase||Math.max(0,(+st.frete||0)-st.ajuste)):0;
+
+  const vends=[...new Set([...VENDEDORES,st.fretePor,st.ajustePor].filter(Boolean))];
   const nomesHTML=vends.length?vends.map(v=>`<button type="button" class="chip" data-v="${esc(v)}">${esc(v)}</button>`).join(''):'<span class="hint">Nenhum vendedor cadastrado ainda. O Bruno cadastra no painel.</span>';
   abrirSheet(`<h2>${ed?'Editar entrega':'Nova entrega'}</h2>
     <div class="field"><span class="lbl">Foto da nota</span><div class="photobtn"><div class="thumb" id="fthumb"></div><button type="button" class="btn" id="fbtn">📷 Tirar foto</button></div>
@@ -587,14 +614,15 @@ function abrirForm(ed){
       <div class="row"><input type="text" id="fcli" autocomplete="off" autocapitalize="words" placeholder="Nome" aria-label="Nome (como está na nota)" required><input type="text" id="fsob" autocomplete="off" autocapitalize="words" placeholder="Sobrenome" aria-label="Sobrenome (como está na nota)" required></div></div>
     <div class="field"><label for="fone">Telefone ${R}</label><input type="tel" id="fone" inputmode="numeric" autocomplete="off" placeholder="(00) 00000-0000" required>
       <div id="fconts" style="display:grid;gap:8px"></div><button type="button" class="btn addbtn" id="fmaiscont">+ Outro contato (opcional)</button></div>
-    <div class="field"><label for="fbai">Bairro ${R}</label><input type="text" id="fbai" autocomplete="off" placeholder="Bairro" required></div>
+    <div class="field bai"><label for="fbai">Bairro / localidade ${R}</label><input type="text" id="fbai" autocomplete="off" placeholder="Comece a digitar o bairro" required>
+      <div class="sugs" id="fsugs" hidden></div></div>
     <div class="field"><label for="fend">Endereço ${R}</label><input type="text" id="fend" autocomplete="off" placeholder="Rua, número, complemento" required></div>
-    <div class="field"><label for="ffrete">Valor do frete ${R}</label><input type="text" id="ffrete" inputmode="numeric" autocomplete="off" placeholder="R$ 0,00" required>
-      <div class="chips"><button type="button" class="chip" id="fpago">Frete já foi pago</button></div>
-      <div class="toggles"><button type="button" class="chip" id="fconta">Frete por conta do vendedor</button><button type="button" class="chip" id="fmais">Vendedor pôs a mais</button></div>
-      <div class="field" id="bvend"><span class="lbl">Quem paga o frete</span><div class="chips" id="cvend" role="group" aria-label="Quem paga o frete">${nomesHTML}</div></div>
-      <div class="field" id="bmais"><span class="lbl">Qual vendedor pôs a mais</span><div class="chips" id="cmaisv" role="group" aria-label="Qual vendedor pôs a mais">${nomesHTML}</div>
-        <span class="lbl">Quanto a mais (opcional)</span><div class="chips" id="cmaisr">${[10,20,30,40].map(v=>`<button type="button" class="chip" data-r="${v}">+${v}</button>`).join('')}</div></div></div>
+    <div class="field"><span class="lbl">Valor do frete ${R}</span>
+      <div class="fretebox" id="fbox"></div>
+      <div class="field" id="bajv"><span class="lbl">Qual vendedor mudou o valor</span><div class="chips" id="cajv" role="group" aria-label="Qual vendedor mudou o valor">${nomesHTML}</div></div>
+      <span class="lbl">Como o frete é pago ${R}</span>
+      <div class="pags" id="fpags">${Object.entries(PAGAMENTOS).map(([k,t])=>`<button type="button" class="chip" data-pag="${k}">${t}</button>`).join('')}</div>
+      <div class="field" id="bvend"><span class="lbl">Qual vendedor paga o frete</span><div class="chips" id="cvend" role="group" aria-label="Qual vendedor paga o frete">${nomesHTML}</div></div></div>
     <div class="field"><span class="lbl">Produtos — toque para pôr na lista</span>
       <div class="prods" id="fprods">${PRODUTOS.map(p=>`<button type="button" class="prod" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div>
       <div class="row"><input type="text" id="fitem" placeholder="Outro produto" enterkeyhint="done"><button type="button" class="btn" id="fadd">Adicionar</button></div>
@@ -605,7 +633,7 @@ function abrirForm(ed){
     const q=x=>s.querySelector(x);
     {const nm=st.clienteNome!==undefined?[st.clienteNome,st.clienteSobrenome||'']:[(st.cliente||'').split(' ')[0],(st.cliente||'').split(' ').slice(1).join(' ')];q('#fcli').value=nm[0];q('#fsob').value=nm[1]}
     q('#fbai').value=st.bairro||'';q('#fend').value=st.endereco||'';q('#fobs').value=st.observacao||'';q('#fone').value=st.fone||'';q('#fhora').value=st.hora||'';
-    q('#ffrete').value=st.frete?real(st.frete):'';
+
     let errLocal=false;
     const sync=()=>{
       s.querySelectorAll('#cdia .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.data));
@@ -613,13 +641,11 @@ function abrirForm(ed){
       s.querySelectorAll('#cturno .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.turno));
       q('#fhora').hidden=st.turno!=='apos';
       q('#fprio').setAttribute('aria-pressed',st.prioridade);q('#fprio').textContent=(st.prioridade?'☑':'☐')+' ⬆ Prioridade';
-      q('#fpago').setAttribute('aria-pressed',st.fretePago);q('#fpago').textContent=(st.fretePago?'☑':'☐')+' Frete já foi pago';
-      q('#fconta').setAttribute('aria-pressed',st.porConta);q('#fconta').textContent=(st.porConta?'☑':'☐')+' Frete por conta do vendedor';
-      q('#bvend').hidden=!st.porConta;
-      q('#fmais').setAttribute('aria-pressed',st.aMais);q('#fmais').textContent=(st.aMais?'☑':'☐')+' Vendedor pôs a mais no frete';
-      q('#bmais').hidden=!st.aMais;
-      s.querySelectorAll('#cmaisv .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.aMaisPor));
-      s.querySelectorAll('#cmaisr .chip').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.r===st.aMaisValor));
+      desenharFrete();
+      q('#bajv').hidden=!st.ajuste;
+      s.querySelectorAll('#cajv .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.ajustePor));
+      s.querySelectorAll('#fpags .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.pag===st.pag));
+      q('#bvend').hidden=st.pag!=='vendedor';
       s.querySelectorAll('#cvend .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.fretePor));
       q('#fitens').innerHTML=st.itens.map((t,i)=>`<div class="pitem${errLocal&&!t.local?' err':''}"><span class="nm">${esc(t.nome)}</span>
         <button type="button" class="x" data-del="${i}" aria-label="Tirar ${esc(t.nome)}">×</button>
@@ -637,12 +663,36 @@ function abrirForm(ed){
       st[b.dataset.n]=Math.max(0,Math.min(20,st[b.dataset.n]+ +b.dataset.d));q('#fnotas').classList.remove('err');sync();
       if(antes===1&&st.notasLoja+st.notasDeposito===2)toast('Ponha a foto da outra nota na pasta 📁 do mural.')});
     q('#fprio').addEventListener('click',()=>{st.prioridade=!st.prioridade;sync()});
-    q('#fpago').addEventListener('click',()=>{st.fretePago=!st.fretePago;sync()});
-    q('#fconta').addEventListener('click',()=>{st.porConta=!st.porConta;q('#cvend').classList.remove('err');sync()});
+    function totalFrete(){return st.loc?Math.max(0,(st.loc.valor===null?st.valorCombinado:st.loc.valor)+st.ajuste):0}
+    // o valor da tabela não se digita; só o "a consultar" tem campo de valor
+    function desenharFrete(){
+      const b=q('#fbox');
+      if(!st.loc){b.innerHTML='<span class="hint" style="text-align:left">Escolha o bairro na lista para aparecer o valor do frete.</span>';return}
+      const cons=st.loc.valor===null;
+      b.innerHTML=`<div class="base"><span>${esc(st.loc.nome)}</span>${cons?'<span class="hint">Valor a consultar</span>':`<b>🔒 ${real(st.loc.valor)}</b>`}</div>
+        ${cons?`<input type="text" id="fcons" inputmode="numeric" autocomplete="off" placeholder="Valor combinado R$ 0,00" value="${st.valorCombinado?real(st.valorCombinado):''}" aria-label="Valor combinado do frete">`:''}
+        <span class="lbl">Mudar o valor (opcional)</span>
+        <div class="ajs">${AJUSTES.map(v=>`<button type="button" class="chip${v<0?' neg':''}" data-aj="${v}" aria-pressed="${st.ajuste===v}">${v>0?'+':'−'}${Math.abs(v)}</button>`).join('')}</div>
+        <div class="base"><span>Total do frete</span><span class="tot">${real(totalFrete())}</span></div>`;
+    }
+    q('#fbox').addEventListener('click',e=>{const b=e.target.closest('[data-aj]');if(!b)return;const v=+b.dataset.aj;st.ajuste=st.ajuste===v?0:v;if(!st.ajuste)st.ajustePor='';sync()});
+    q('#fbox').addEventListener('input',e=>{if(e.target.id!=='fcons')return;const d=soDig(e.target.value).slice(0,7);st.valorCombinado=d?Number(d)/100:0;e.target.value=d?real(st.valorCombinado):'';
+      e.target.classList.remove('err');const t=q('#fbox .tot');if(t)t.textContent=real(totalFrete())});
+    q('#cajv').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b){st.ajustePor=b.dataset.v;q('#cajv').classList.remove('err');sync()}});
+    q('#fpags').addEventListener('click',e=>{const b=e.target.closest('[data-pag]');if(b){st.pag=b.dataset.pag;q('#fpags').classList.remove('err');sync()}});
     q('#cvend').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b){st.fretePor=b.dataset.v;q('#cvend').classList.remove('err');sync()}});
-    q('#fmais').addEventListener('click',()=>{st.aMais=!st.aMais;q('#cmaisv').classList.remove('err');sync()});
-    q('#cmaisv').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b){st.aMaisPor=b.dataset.v;q('#cmaisv').classList.remove('err');sync()}});
-    q('#cmaisr').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b){st.aMaisValor=st.aMaisValor===+b.dataset.r?0:+b.dataset.r;sync()}});
+    // sugestões de bairro enquanto digita (sem ligar para acento)
+    const sugs=q('#fsugs');
+    const mostrarSugs=()=>{const t=semAcento(q('#fbai').value);const l=TABELA.filter(x=>!t||semAcento(x.nome).includes(t)).slice(0,8);
+      sugs.innerHTML=l.map(x=>`<button type="button" data-loc="${esc(x.nome)}">${esc(x.nome)}<span>${x.valor===null?'consultar':real(x.valor)}</span></button>`).join('')||'<span class="hint" style="padding:10px">Nenhum bairro com esse nome na tabela.</span>';
+      sugs.hidden=false};
+    q('#fbai').addEventListener('input',()=>{if(st.loc&&q('#fbai').value!==st.loc.nome){st.loc=null;st.valorCombinado=0;sync()}mostrarSugs()});
+    q('#fbai').addEventListener('focus',mostrarSugs);
+    q('#fbai').addEventListener('blur',()=>setTimeout(()=>sugs.hidden=true,200));
+    sugs.addEventListener('pointerdown',e=>e.preventDefault());
+    sugs.addEventListener('click',e=>{const b=e.target.closest('[data-loc]');if(!b)return;st.loc=TABELA.find(x=>x.nome===b.dataset.loc);st.valorCombinado=0;
+      q('#fbai').value=st.loc.nome;q('#fbai').classList.remove('err');sugs.hidden=true;q('#fbai').blur();sync();
+      if(st.loc.valor===null)setTimeout(()=>q('#fcons')?.focus(),50)});
     if(carregandoExtras)Promise.all(Array.from({length:qtdExtrasAntes},(_,i)=>db.collection('fotos').doc(ed.id+'__'+(i+1)).get().catch(()=>null)))
       .then(l=>{extras.unshift(...l.filter(f=>f&&f.exists&&f.data().foto).map(f=>({src:f.data().foto})));carregandoExtras=false;sync()});
     q('#fmaisfoto').addEventListener('click',()=>pegarFoto(b=>{extras.push({blob:b,prev:URL.createObjectURL(b)});sync()}));
@@ -655,7 +705,7 @@ function abrirForm(ed){
       if(n!==undefined)contatos[+n].nome=e.target.value;if(f!==undefined){e.target.value=fmtFone(e.target.value);contatos[+f].fone=e.target.value}});
     q('#fconts').addEventListener('click',e=>{const b=e.target.closest('[data-cdel]');if(b){contatos.splice(+b.dataset.cdel,1);desenharContatos()}});
     q('#fone').addEventListener('input',e=>{e.target.value=fmtFone(e.target.value)});
-    q('#ffrete').addEventListener('input',e=>{const d=soDig(e.target.value).slice(0,9);st.frete=d?Number(d)/100:0;e.target.value=d?real(st.frete):''});
+
     s.addEventListener('input',e=>e.target.classList?.remove('err'));
     q('#fprods').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(b){st.itens.push({nome:b.dataset.p,local:null,qtd:1});sync()}});
     const add=()=>{const v=q('#fitem').value.trim();if(v){st.itens.push({nome:v,local:null,qtd:1});q('#fitem').value='';sync()}q('#fitem').focus()};
@@ -670,10 +720,10 @@ function abrirForm(ed){
     q('#fcancel').addEventListener('click',fechar);
     q('#fsave').addEventListener('click',async()=>{
       if(enviando)return;
-      st.clienteNome=q('#fcli').value.trim().replace(/\s+/g,' ');st.clienteSobrenome=q('#fsob').value.trim().replace(/\s+/g,' ');st.cliente=(st.clienteNome+' '+st.clienteSobrenome).trim();st.bairro=q('#fbai').value.trim();st.endereco=q('#fend').value.trim();st.observacao=q('#fobs').value.trim();st.fone=q('#fone').value.trim();st.hora=q('#fhora').value;
+      st.clienteNome=q('#fcli').value.trim().replace(/\s+/g,' ');st.clienteSobrenome=q('#fsob').value.trim().replace(/\s+/g,' ');st.cliente=(st.clienteNome+' '+st.clienteSobrenome).trim();st.bairro=st.loc?st.loc.nome:q('#fbai').value.trim();st.endereco=q('#fend').value.trim();st.observacao=q('#fobs').value.trim();st.fone=q('#fone').value.trim();st.hora=q('#fhora').value;
       const pendItem=q('#fitem').value.trim();if(pendItem){st.itens.push({nome:pendItem,local:null,qtd:1});q('#fitem').value='';sync()}
       const erros=[['#fcli',!st.clienteNome,'Coloque o nome do cliente como está na nota.'],['#fsob',!st.clienteSobrenome,'Coloque o sobrenome do cliente como está na nota.'],['#fone',!foneOk(st.fone),'Coloque o telefone com DDD. Ex.: (11) 98765-4321'],
-        ['#fbai',!st.bairro,'Coloque o bairro.'],['#fend',!st.endereco,'Coloque o endereço.'],['#ffrete',!(st.frete>0),'Coloque o valor do frete.']].filter(x=>x[1]);
+        ['#fbai',!st.bairro,'Coloque o bairro.'],['#fend',!st.endereco,'Coloque o endereço.']].filter(x=>x[1]);
       erros.forEach(([sel])=>q(sel).classList.add('err'));
       if(erros.length){toast(erros[0][2]);q(erros[0][0]).focus();return}
       // mesmo telefone no mesmo dia = entrega duplicada
@@ -683,8 +733,12 @@ function abrirForm(ed){
       const ruim=contatos.findIndex(c=>(c.nome.trim()||c.fone.trim())&&!foneOk(c.fone));
       if(ruim>=0){const el=q(`[data-cf="${ruim}"]`);el.classList.add('err');el.focus();toast('Confira o telefone do outro contato, com DDD.');return}
       if(carregandoExtras){toast('Espere as fotos carregarem.');return}
-      if(st.porConta&&!st.fretePor){q('#cvend').classList.add('err');toast('Escolha quem paga o frete.');q('#cvend').scrollIntoView({block:'center'});return}
-      if(st.aMais&&!st.aMaisPor){q('#cmaisv').classList.add('err');toast('Escolha qual vendedor pôs a mais no frete.');q('#cmaisv').scrollIntoView({block:'center'});return}
+      if(!st.loc){q('#fbai').classList.add('err');q('#fbai').focus();toast('Escolha o bairro na lista. Se não estiver, fale com o Bruno.');return}
+      if(st.loc.valor===null&&!(st.valorCombinado>0)){const c=q('#fcons');c.classList.add('err');c.focus();toast('Esse bairro é a consultar: coloque o valor combinado.');return}
+      if(st.ajuste&&!st.ajustePor){q('#cajv').classList.add('err');q('#cajv').scrollIntoView({block:'center'});toast('Escolha qual vendedor mudou o valor do frete.');return}
+      if(!PAGAMENTOS[st.pag]){q('#fpags').classList.add('err');q('#fpags').scrollIntoView({block:'center'});toast('Escolha como o frete é pago.');return}
+      if(st.pag==='vendedor'&&!st.fretePor){q('#cvend').classList.add('err');q('#cvend').scrollIntoView({block:'center'});toast('Escolha qual vendedor paga o frete.');return}
+
       if(st.notasLoja+st.notasDeposito<1){q('#fnotas').classList.add('err');toast('Diga quantas notas tem na loja e no depósito.');q('#fnotas').scrollIntoView({block:'center'});return}
       if(st.itens.some(i=>!i.local)){errLocal=true;sync();toast('Diga se cada produto está na loja ou no depósito.');q('#fitens .pitem.err')?.scrollIntoView({block:'center'});return}
       enviando=true;const btn=q('#fsave');btn.disabled=true;btn.textContent='Salvando…';
@@ -694,7 +748,8 @@ function abrirForm(ed){
         if(fotoBlob){st.thumb=await fotoMiniatura(fotoBlob);fotoNova=await fotoGrande(fotoBlob);st.fotoData=null}
         const fotosExtras=[];for(const x of extras)fotosExtras.push(x.blob?await fotoGrande(x.blob):x.src);
         const ls=new Set(st.itens.map(i=>i.local));
-        const dados={cliente:st.cliente,clienteNome:st.clienteNome,clienteSobrenome:st.clienteSobrenome,fone:st.fone,bairro:st.bairro,endereco:st.endereco,observacao:st.observacao,frete:st.frete,fretePago:st.fretePago,prioridade:st.prioridade,fretePor:st.porConta?st.fretePor:'',aMaisPor:st.aMais?st.aMaisPor:'',aMaisValor:st.aMais?st.aMaisValor:0,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
+        const dados={cliente:st.cliente,clienteNome:st.clienteNome,clienteSobrenome:st.clienteSobrenome,fone:st.fone,bairro:st.bairro,endereco:st.endereco,observacao:st.observacao,freteBase:st.loc.valor===null?st.valorCombinado:st.loc.valor,freteConsultar:st.loc.valor===null,freteAjuste:st.ajuste,ajustePor:st.ajuste?st.ajustePor:'',frete:totalFrete(),
+          pagamento:st.pag,fretePago:st.pag==='pix'||st.pag==='junto',fretePor:st.pag==='vendedor'?st.fretePor:'',aMaisPor:'',aMaisValor:0,prioridade:st.prioridade,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
           itens:st.itens.map(i=>({nome:i.nome,local:i.local,qtd:i.qtd})),local:ls.size>1?'ambos':ls.has('deposito')?'deposito':'loja',
           thumb:st.thumb||null,fotoData:st.fotoData||null,contatos:contOk,fotosExtras:fotosExtras.length,atualizadoEm:Date.now()};
         let ok;
@@ -729,6 +784,7 @@ auth.onAuthStateChanged(async u=>{
   $('#login').hidden=true;$('#app').hidden=false;
   $('#unome').textContent='Olá, '+me.nome.split(' ')[0];$('#upainel').hidden=!me.admin;$('#fab').hidden=!P.lancar;
   try{const c=await db.collection('config').doc('equipe').get();VENDEDORES=c.exists?(c.data().vendedores||[]):[]}catch{}
+  try{const tf=await db.collection('config').doc('fretes').get();const l=tf.exists&&tf.data().lista;TABELA=Array.isArray(l)&&l.length?l:FRETES_PADRAO.map(x=>({...x}))}catch{}
   try{const mo=await db.collection('config').doc('motivos').get();const l=mo.exists&&mo.data().lista;MOTIVOS=Array.isArray(l)&&l.length?l:[...MOTIVOS_BASE]}catch{}
   render();
   // só as entregas recentes e futuras; o histórico fica no painel

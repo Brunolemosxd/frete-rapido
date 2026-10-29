@@ -78,6 +78,9 @@ input.err{border-color:var(--bad)}
 .avuso{padding:10px 14px;font-weight:700;font-size:15px;text-align:center}
 .avuso.medio{background:#f4c430;color:#3d2e00}
 .avuso.alto{background:#c53030;color:#fff}
+.trow{display:grid;grid-template-columns:1fr 110px 32px;gap:6px;align-items:center}
+.trow input{min-width:0;padding:9px 10px!important;font-size:15px!important}
+.trow button{border:0;background:var(--line);border-radius:99px;width:30px;height:30px;line-height:1}
 .barra{height:10px;border-radius:99px;background:var(--line);overflow:hidden}
 .barra i{display:block;height:100%;background:var(--ok)}
 .barra.medio i{background:#f4c430}
@@ -154,6 +157,12 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
   <section id="t-ajustes" style="display:grid;gap:14px" hidden>
     <h2>Ajustes</h2>
     <div class="card">
+      <strong>Tabela de fretes</strong>
+      <p class="muted" style="margin:0">O vendedor escolhe o bairro e o valor vem daqui; ele só consegue ajustar de −50 a +50. Deixe o valor vazio para "a consultar".</p>
+      <div id="tlista" style="display:grid;gap:6px"></div>
+      <div class="row"><button type="button" class="btn" id="tadd">+ Bairro</button><span class="sp"></span><button type="button" class="btn pri" id="tsalvar">Salvar tabela</button></div>
+    </div>
+    <div class="card">
       <strong>Motivos de problema</strong>
       <p class="muted" style="margin:0">Aparecem como botões quando alguém marca uma entrega com problema.</p>
       <div class="chips" id="mlista"></div>
@@ -179,11 +188,12 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="comum.js?v=20261029c"></script>
+<script src="comum.js?v=20261029d"></script>
 <script>
 (function(){
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const soDig=v=>String(v||'').replace(/\D/g,'');
 const real=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const realCurto=n=>'R$ '+Math.round(n).toLocaleString('pt-BR');
 function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2800)}
@@ -295,13 +305,13 @@ function renderValores(){
   const {m,fim}=dadosMes,num=v=>Number(v)||0,l=dadosMes.l.filter(e=>e.status!=='problema'),nProb=dadosMes.l.length-l.length;
   const ent=l.filter(e=>e.status==='entregue'),soma=(a,f)=>a.reduce((s,e)=>s+f(e),0);
   const tEnt=soma(ent,e=>num(e.frete)),tLanc=soma(l,e=>num(e.frete));
-  const conta=l.filter(e=>e.fretePor),mais=l.filter(e=>e.aMaisPor);
+  const conta=l.filter(e=>e.fretePor),mais=l.filter(e=>ajusteDe(e).por),sinal=v=>(v>0?'+':'')+real(v);
   const nomeMes=new Date(m+'-15T12:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
   $('#kpis').innerHTML=[
     ['Fretes entregues',real(tEnt),`${ent.length} entrega${ent.length===1?'':'s'} em ${nomeMes}`],
     ['Fretes lançados',real(tLanc),`${l.length} no total, com as pendentes${nProb?` · ${nProb} com problema fora da conta`:''}`],
     ['Por conta dos vendedores',real(soma(conta,e=>num(e.frete))),`${conta.length} entrega${conta.length===1?'':'s'}`],
-    ['Posto a mais',real(soma(mais,e=>num(e.aMaisValor))),`${mais.length} vez${mais.length===1?'':'es'}`]
+    ['Ajustes dos vendedores',sinal(soma(mais,e=>ajusteDe(e).valor)),`${mais.length} vez${mais.length===1?'':'es'} (somando o que puseram a mais e a menos)`]
   ].map(([k,v,s])=>`<div class="kpi"><span class="k">${k}</span><span class="v">${v}</span><span class="s">${esc(s)}</span></div>`).join('');
   // por dia
   const dias=Array.from({length:fim},(_,i)=>{const d=m+'-'+String(i+1).padStart(2,'0'),x=ent.filter(e=>e.data===d);return {dia:i+1,v:soma(x,e=>num(e.frete)),n:x.length}});
@@ -311,11 +321,11 @@ function renderValores(){
   const P={},pp=n=>P[n]||(P[n]={n:0,v:0,cn:0,cv:0,mn:0,mv:0});
   for(const e of l){pp(e.criadoPorNome||'Sem nome');P[e.criadoPorNome||'Sem nome'].n++;P[e.criadoPorNome||'Sem nome'].v+=num(e.frete);
     if(e.fretePor){pp(e.fretePor).cn++;P[e.fretePor].cv+=num(e.frete)}
-    if(e.aMaisPor){pp(e.aMaisPor).mn++;P[e.aMaisPor].mv+=num(e.aMaisValor)}}
+    const aj=ajusteDe(e);if(aj.por){pp(aj.por).mn++;P[aj.por].mv+=aj.valor}}
   const linhas=Object.entries(P).sort((a,b)=>b[1].v-a[1].v),max=Math.max(1,...linhas.map(([,x])=>x.v));
-  $('#tabPessoas').innerHTML=linhas.length?`<table><thead><tr><th>Nome</th><th class="n">Lançou</th><th class="n">Fretes lançados</th><th class="n">Pagou por conta</th><th class="n">Pôs a mais</th></tr></thead><tbody>
+  $('#tabPessoas').innerHTML=linhas.length?`<table><thead><tr><th>Nome</th><th class="n">Lançou</th><th class="n">Fretes lançados</th><th class="n">Pagou por conta</th><th class="n">Ajustes</th></tr></thead><tbody>
     ${linhas.map(([n,x])=>`<tr><td>${esc(n)}</td><td class="n">${x.n}</td><td class="n">${real(x.v)}<div class="hbar" style="width:${x.v/max*100}%"></div></td>
-      <td class="n">${x.cn?`${real(x.cv)} <span class="muted">(${x.cn})</span>`:'—'}</td><td class="n">${x.mn?`${real(x.mv)} <span class="muted">(${x.mn})</span>`:'—'}</td></tr>`).join('')}</tbody></table>`
+      <td class="n">${x.cn?`${real(x.cv)} <span class="muted">(${x.cn})</span>`:'—'}</td><td class="n">${x.mn?`${sinal(x.mv)} <span class="muted">(${x.mn})</span>`:'—'}</td></tr>`).join('')}</tbody></table>`
     :'<p class="muted">Nenhuma entrega neste mês.</p>';
 }
 function desenharGrafico(dias){
@@ -344,6 +354,18 @@ function desenharGrafico(dias){
 let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(dadosMes&&aba==='valores')renderValores()},150)});
 
 /* ---------- ajustes ---------- */
+let tabela=FRETES_PADRAO.map(x=>({...x})),pararT=null,tabelaMexida=false;
+function renderTabela(){$('#tlista').innerHTML=tabela.map((t,i)=>`<div class="trow"><input type="text" data-tn="${i}" value="${esc(t.nome)}" aria-label="Bairro">
+  <input type="text" data-tv="${i}" inputmode="numeric" value="${t.valor===null||t.valor===undefined?'':real(t.valor)}" placeholder="consultar" aria-label="Valor do frete"><button type="button" data-tdel="${i}" aria-label="Tirar ${esc(t.nome)}">×</button></div>`).join('')}
+$('#tlista').addEventListener('input',e=>{tabelaMexida=true;const n=e.target.dataset.tn,v=e.target.dataset.tv;
+  if(n!==undefined)tabela[+n].nome=e.target.value;
+  if(v!==undefined){const d=soDig(e.target.value).slice(0,7);tabela[+v].valor=d?Number(d)/100:null;e.target.value=d?real(tabela[+v].valor):''}});
+$('#tlista').addEventListener('click',e=>{const b=e.target.closest('[data-tdel]');if(!b)return;tabelaMexida=true;tabela.splice(+b.dataset.tdel,1);renderTabela()});
+$('#tadd').addEventListener('click',()=>{tabelaMexida=true;tabela.push({nome:'',valor:null});renderTabela();$(`[data-tn="${tabela.length-1}"]`).focus()});
+$('#tsalvar').addEventListener('click',async e=>{const l=tabela.map(t=>({nome:t.nome.trim().replace(/\s+/g,' '),valor:t.valor})).filter(t=>t.nome);
+  const vistos=new Set();for(const t of l){const k=semAcento(t.nome);if(vistos.has(k)){toast(`"${t.nome}" está repetido na tabela.`);return}vistos.add(k)}
+  const b=e.currentTarget;b.disabled=true;
+  try{await db.collection('config').doc('fretes').set({lista:l,atualizadoEm:Date.now()});tabelaMexida=false;toast('Tabela de fretes salva. Vale para as próximas entregas.')}catch(er){erro(er)}b.disabled=false});
 let motivos=[...MOTIVOS_PADRAO],pararM=null;
 function renderMotivos(){$('#mlista').innerHTML=motivos.map((m,i)=>`<span class="chip" style="display:inline-flex;gap:8px;align-items:center">${esc(m)}<button type="button" data-mdel="${i}" aria-label="Apagar o motivo ${esc(m)}" style="border:0;background:var(--line);border-radius:99px;width:24px;height:24px;line-height:1">×</button></span>`).join('')||'<span class="muted">Nenhum motivo. Cadastre pelo menos um.</span>'}
 function salvarMotivos(l,msg){return db.collection('config').doc('motivos').set({lista:l,atualizadoEm:Date.now()}).then(()=>toast(msg)).catch(erro)}
@@ -362,10 +384,11 @@ $('#gentrar').addEventListener('click',()=>entrarComGoogle().catch(()=>toast('N�
 $('#lsair').addEventListener('click',()=>auth.signOut());
 $('#usair').addEventListener('click',()=>auth.signOut());
 auth.onAuthStateChanged(u=>{
-  pararP&&pararP();pararP=null;pararUso&&pararUso();pararUso=null;pararM&&pararM();pararM=null;pararValores&&pararValores();pararValores=null;mesOuvido=null;fechar();
+  pararP&&pararP();pararP=null;pararT&&pararT();pararT=null;pararUso&&pararUso();pararUso=null;pararM&&pararM();pararM=null;pararValores&&pararValores();pararValores=null;mesOuvido=null;fechar();
   if(!u){telaLogin('Entre com a conta Google do administrador.');return}
   if(!ehAdmin(u)){telaLogin(`Só o administrador entra no painel. Você entrou como <b>${esc(u.email)}</b>.`,true);return}
   $('#login').hidden=true;$('#app').hidden=false;mostrarAba(aba);
+  pararT=db.collection('config').doc('fretes').onSnapshot(d=>{if(tabelaMexida)return;const l=d.exists&&d.data().lista;tabela=(Array.isArray(l)&&l.length?l:FRETES_PADRAO).map(x=>({...x}));renderTabela()},()=>{});
   pararM=db.collection('config').doc('motivos').onSnapshot(d=>{const l=d.exists&&d.data().lista;motivos=Array.isArray(l)?l:[...MOTIVOS_PADRAO];renderMotivos()},()=>{});
   pararP=db.collection('usuarios').onSnapshot(s=>{contarSnap(s);pessoas=s.docs.map(d=>({id:d.id,...d.data()}));renderPessoas()},e=>erro(e));
   limparFotosAntigas().catch(()=>{});
