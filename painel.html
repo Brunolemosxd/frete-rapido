@@ -75,6 +75,13 @@ input.err{border-color:var(--bad)}
 .scrim{position:fixed;inset:0;background:rgba(10,16,22,.5);z-index:20;display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:var(--surface);width:100%;max-width:560px;max-height:92%;overflow-y:auto;border-radius:20px 20px 0 0;padding:16px max(16px,env(safe-area-inset-left,0px)) calc(20px + env(safe-area-inset-bottom,0px));display:grid;gap:14px}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.avuso{padding:10px 14px;font-weight:700;font-size:15px;text-align:center}
+.avuso.medio{background:#f4c430;color:#3d2e00}
+.avuso.alto{background:#c53030;color:#fff}
+.barra{height:10px;border-radius:99px;background:var(--line);overflow:hidden}
+.barra i{display:block;height:100%;background:var(--ok)}
+.barra.medio i{background:#f4c430}
+.barra.alto i{background:#c53030}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:30;font-size:14px;max-width:calc(100% - 32px);text-align:center}
 /* números grandes */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
@@ -122,6 +129,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
     <div class="tabs" role="tablist"><button class="tab" role="tab" data-t="pessoas">Pessoas</button><button class="tab" role="tab" data-t="valores">Valores</button><button class="tab" role="tab" data-t="ajustes">Ajustes</button></div>
   </div>
 </header>
+<div class="avuso" id="avuso" hidden></div>
 <main class="wrap">
   <section id="t-pessoas" class="grid" style="display:grid;gap:12px">
     <div class="row"><h2>Pessoas</h2><span class="sp"></span><button type="button" class="btn pri" id="novaP">+ Cadastrar pessoa</button></div>
@@ -152,6 +160,12 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
       <div class="row"><input type="text" id="mnovo" maxlength="60" placeholder="Novo motivo" style="flex:1;min-width:0;width:auto"><button type="button" class="btn pri" id="madd">Cadastrar</button></div>
     </div>
     <div class="card">
+      <strong>Uso do plano grátis hoje</strong>
+      <div id="usoTxt" class="muted">Carregando…</div>
+      <div class="barra" id="usoBarra"><i style="width:0"></i></div>
+      <p class="muted" style="margin:0">É uma conta feita pelo próprio mural, perto do número real. Zera de madrugada (umas 4 ou 5 da manhã). O número oficial fica em <a href="https://console.firebase.google.com/project/frete-rapido-5516e/usage" target="_blank" rel="noopener">Firebase → Uso</a>.</p>
+    </div>
+    <div class="card">
       <strong>Fotos antigas</strong>
       <p class="muted" style="margin:0">As fotos com mais de 60 dias são apagadas sozinhas quando você abre o mural ou o painel (uma vez por dia). As entregas continuam; só as fotos grandes somem.</p>
       <div><button type="button" class="btn" id="limpar">Apagar agora as fotos antigas</button></div>
@@ -165,7 +179,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="comum.js?v=20261029b"></script>
+<script src="comum.js?v=20261029c"></script>
 <script>
 (function(){
 const $=s=>document.querySelector(s);
@@ -174,7 +188,7 @@ const real=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BR
 const realCurto=n=>'R$ '+Math.round(n).toLocaleString('pt-BR');
 function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2800)}
 function erro(e){toast(e?.code==='permission-denied'?'Sem permissão. Confira se as regras do Firestore foram publicadas.':'Não consegui salvar. Confira a internet e tente de novo.')}
-let pessoas=[],pararP=null;
+let pessoas=[],pararP=null,pararUso=null;
 
 /* ---------- abas ---------- */
 let aba='pessoas';
@@ -273,7 +287,7 @@ function carregarValores(){
   pararValores&&pararValores();mesOuvido=m;dadosMes=null;
   $('#kpis').innerHTML='<div class="muted">Carregando…</div>';$('#chart').innerHTML='';$('#tabPessoas').innerHTML='';$('#tabDias').innerHTML='';
   pararValores=db.collection('entregas').where('data','>=',m+'-01').where('data','<=',m+'-'+String(fim).padStart(2,'0')).onSnapshot(snap=>{
-    dadosMes={m,fim,l:snap.docs.map(d=>({id:d.id,status:'pendente',...d.data()}))};if(aba==='valores')renderValores();
+    contarSnap(snap);dadosMes={m,fim,l:snap.docs.map(d=>({id:d.id,status:'pendente',...d.data()}))};if(aba==='valores')renderValores();
   },()=>{pararValores=null;mesOuvido=null;$('#kpis').innerHTML='<div class="muted">Não consegui carregar os valores. Confira a internet.</div>'});
 }
 function renderValores(){
@@ -348,13 +362,17 @@ $('#gentrar').addEventListener('click',()=>entrarComGoogle().catch(()=>toast('N�
 $('#lsair').addEventListener('click',()=>auth.signOut());
 $('#usair').addEventListener('click',()=>auth.signOut());
 auth.onAuthStateChanged(u=>{
-  pararP&&pararP();pararP=null;pararM&&pararM();pararM=null;pararValores&&pararValores();pararValores=null;mesOuvido=null;fechar();
+  pararP&&pararP();pararP=null;pararUso&&pararUso();pararUso=null;pararM&&pararM();pararM=null;pararValores&&pararValores();pararValores=null;mesOuvido=null;fechar();
   if(!u){telaLogin('Entre com a conta Google do administrador.');return}
   if(!ehAdmin(u)){telaLogin(`Só o administrador entra no painel. Você entrou como <b>${esc(u.email)}</b>.`,true);return}
   $('#login').hidden=true;$('#app').hidden=false;mostrarAba(aba);
   pararM=db.collection('config').doc('motivos').onSnapshot(d=>{const l=d.exists&&d.data().lista;motivos=Array.isArray(l)?l:[...MOTIVOS_PADRAO];renderMotivos()},()=>{});
-  pararP=db.collection('usuarios').onSnapshot(s=>{pessoas=s.docs.map(d=>({id:d.id,...d.data()}));renderPessoas()},e=>erro(e));
+  pararP=db.collection('usuarios').onSnapshot(s=>{contarSnap(s);pessoas=s.docs.map(d=>({id:d.id,...d.data()}));renderPessoas()},e=>erro(e));
   limparFotosAntigas().catch(()=>{});
+  pararUso=ouvirUso(u=>{const t=textoUso(u),el=$('#avuso');
+    el.hidden=t.nivel==='ok';el.className='avuso '+t.nivel;el.textContent=t.nivel==='alto'?`⚠ Quase no limite grátis de hoje (${t.p}%). Se passar, o mural para até de madrugada.`:`Atenção: o mural já usou ${t.p}% do limite grátis de hoje.`;
+    $('#usoTxt').textContent=`Leituras: ${(u.leituras||0).toLocaleString('pt-BR')} de ${LIMITE_LEITURAS.toLocaleString('pt-BR')} (${t.pl}%) · Gravações: ${(u.gravacoes||0).toLocaleString('pt-BR')} de ${LIMITE_GRAVACOES.toLocaleString('pt-BR')} (${t.pg}%)`;
+    $('#usoBarra').className='barra '+t.nivel;$('#usoBarra i').style.width=Math.min(100,t.p)+'%'});
 });
 })();
 </script>

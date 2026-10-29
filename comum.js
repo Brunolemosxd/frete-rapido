@@ -52,7 +52,7 @@ function entrarComGoogle() {
 async function carregarPerfil(u) {
   if (ehAdmin(u)) return { uid: u.uid, email: emailDe(u), nome: u.displayName || 'Bruno', funcao: 'admin', admin: true, perms: { ...TODAS } };
   if (!u.emailVerified) return null;
-  const snap = await db.collection('usuarios').doc(emailDe(u)).get();
+  const snap = await db.collection('usuarios').doc(emailDe(u)).get(); contarLeitura(1);
   if (!snap.exists) return null;
   const d = snap.data();
   if (d.ativo !== true) return null;
@@ -105,3 +105,32 @@ document.querySelectorAll('[data-tema]').forEach(b => b.addEventListener('click'
   aplicarTema(TEMAS[(TEMAS.findIndex(x => x[0] === atual) + 1) % TEMAS.length][0]);
 }));
 aplicarTema(document.documentElement.dataset.theme || '');
+
+/* ---------- uso do plano grátis (estimativa) ----------
+   O Firebase não informa ao app quanto do limite diário já foi usado. Cada aparelho conta
+   as leituras e gravações que faz e soma no documento uso/{dia} a cada minuto.
+   O dia é o mesmo do Firebase: vira à meia-noite do horário do Pacífico. */
+const LIMITE_LEITURAS = 50000, LIMITE_GRAVACOES = 20000;
+const usoPendente = { l: 0, g: 0 };
+const diaUso = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+function contarLeitura(n) { usoPendente.l += n; }
+function contarGravacao(n) { usoPendente.g += n; }
+// docChanges() traz tudo na 1ª vez e só o que mudou depois, igual ao que o Firebase cobra
+function contarSnap(snap) { contarLeitura(snap.docChanges ? snap.docChanges().length : snap.docs.length); }
+function enviarUso() {
+  if (!auth.currentUser || (!usoPendente.l && !usoPendente.g)) return;
+  const inc = firebase.firestore.FieldValue.increment, l = usoPendente.l, g = usoPendente.g + 1;
+  usoPendente.l = 0; usoPendente.g = 0;
+  db.collection('uso').doc(diaUso()).set({ leituras: inc(l), gravacoes: inc(g), atualizadoEm: Date.now() }, { merge: true })
+    .catch(() => { usoPendente.l += l; usoPendente.g += g - 1; });
+}
+setInterval(enviarUso, 60000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') enviarUso(); });
+// Só o administrador acompanha. Chama mostrar({leituras, gravacoes}) a cada mudança.
+function ouvirUso(mostrar) {
+  return db.collection('uso').doc(diaUso()).onSnapshot(d => mostrar(d.exists ? d.data() : { leituras: 0, gravacoes: 0 }), () => {});
+}
+function textoUso(u) {
+  const pl = Math.round((u.leituras || 0) / LIMITE_LEITURAS * 100), pg = Math.round((u.gravacoes || 0) / LIMITE_GRAVACOES * 100), p = Math.max(pl, pg);
+  return { p, pl, pg, nivel: p >= 90 ? 'alto' : p >= 70 ? 'medio' : 'ok' };
+}
