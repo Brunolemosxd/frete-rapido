@@ -304,6 +304,7 @@ async function copiar(t,msg){
   toast(ok?(msg||'Número copiado. É só colar no WhatsApp.'):'Não consegui copiar. Segure o dedo no texto para copiar.')}
 function pegarFoto(cb){const f=$('#file');f.value='';f.onchange=async()=>{const file=f.files[0];if(!file)return;
   let b;try{b=await reduzir(file,1600,.8)}catch{toast('Não consegui ler essa foto.');return}cb(b)};f.click()}
+const condTag=e=>e.condominio?'<span class="tag">🏢 Condomínio</span>':'';
 function ajusteTxt(e){const a=ajusteDe(e);if(!a.por&&!a.valor)return '';return a.por+' '+(a.valor?(a.valor>0?'+':'−')+real(Math.abs(a.valor)):'pôs a mais')}
 // pagamento aparece para todos: o entregador precisa saber se cobra ou não
 function pagTagHTML(e){const p=pagamentoDe(e);
@@ -342,7 +343,7 @@ function cardHTML(e){
       <div class="info">
         ${pr?'<div><span class="pill pprio">⬆ Prioridade</span></div>':''}
         <div class="who">${esc(e.cliente||'Sem nome')}${e.bairro?` <span style="font-weight:400;color:var(--muted)">· ${esc(e.bairro)}</span>`:''}</div>
-        <div class="meta"><span class="tag">${esc(turnoTxt(e))}</span>${localTagHTML(e)}${V&&e.frete?`<span class="tag">${real(e.frete)}</span>`:''}${V&&ajusteTxt(e)?`<span class="tag">${esc(ajusteTxt(e))}</span>`:''}${notasTagHTML(e)}${pagTagHTML(e)}<span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span></div>
+        <div class="meta"><span class="tag">${esc(turnoTxt(e))}</span>${localTagHTML(e)}${condTag(e)}${V&&e.frete?`<span class="tag">${real(e.frete)}</span>`:''}${V&&ajusteTxt(e)?`<span class="tag">${esc(ajusteTxt(e))}</span>`:''}${notasTagHTML(e)}${pagTagHTML(e)}<span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span></div>
         ${itens?`<div class="items">${esc(itens)}</div>`:''}
         ${e.observacao?`<div class="items">Obs.: ${esc(e.observacao)}</div>`:''}
         ${(e.postits||[]).length?`<div class="postits">${e.postits.map(p=>`<div class="postit">${esc(p.texto)}</div>`).join('')}</div>`:''}
@@ -537,7 +538,7 @@ function abrirDetalhe(id){
   const e=entregas.find(x=>x.id===id);if(!e)return;const src=fotoSrc(e),its=itensDe(e),V=P.verValores;
   abrirSheet(`<h2>${esc(e.cliente||'Entrega')}</h2>
     ${e.status==='problema'?`<div class="probfaixa"><span class="ic" aria-hidden="true">⚠</span><span>${esc(e.obs||'Problema na entrega')}</span></div>`:''}
-    <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span><span class="tag">${esc(turnoTxt(e))}</span>${localTagHTML(e)}${notasTagHTML(e)}${pagTagHTML(e)}</div>
+    <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span><span class="tag">${esc(turnoTxt(e))}</span>${localTagHTML(e)}${condTag(e)}${notasTagHTML(e)}${pagTagHTML(e)}</div>
     ${src?`<div class="photo"><img id="dfoto" src="${esc(src)}" alt="Foto da nota"></div>`:''}
     ${e.fotosExtras?`<div id="dextras" style="display:grid;gap:8px"></div>`:''}
     <div class="det">${e.endereco?`<div><span class="lbl">Endereço</span><div class="fonerow"><span style="user-select:all">${esc(e.endereco)}</span><button type="button" class="btn sm" data-copiar="${esc(e.endereco+(e.bairro?' - '+e.bairro:''))}" data-msg="Endereço copiado. É só colar no WhatsApp ou no mapa.">📋 Copiar</button></div>
@@ -545,7 +546,7 @@ function abrirDetalhe(id){
     ${e.bairro?`<div><span class="lbl">Bairro</span><br>${esc(e.bairro)}</div>`:''}
     ${e.fone?`<div><span class="lbl">Telefone</span><div class="fonerow"><span style="user-select:all">${esc(e.fone)}</span><button type="button" class="btn sm" data-a="copiar">📋 Copiar</button></div></div>`:''}
     ${(e.contatos||[]).map(c=>`<div><span class="lbl">Outro contato${c.nome?' — '+esc(c.nome):''}</span><div class="fonerow"><span style="user-select:all">${esc(c.fone)}</span><button type="button" class="btn sm" data-copiar="${esc(soDig(c.fone))}">📋 Copiar</button></div></div>`).join('')}
-    ${V&&e.frete?`<div><span class="lbl">Valor do frete</span><br><b>${real(e.frete)}</b>${e.freteBase!==undefined&&ajusteDe(e).valor?` <span class="hint">(${e.freteConsultar?'combinado':'tabela'} ${real(e.freteBase)} ${ajusteDe(e).valor>0?'+':'−'} ${real(Math.abs(ajusteDe(e).valor))} de ${esc(ajusteDe(e).por)})</span>`:''}</div>`:''}
+    ${V&&e.frete?`<div><span class="lbl">Valor do frete</span><br><b>${real(e.frete)}</b>${e.freteBase!==undefined&&ajusteDe(e).valor?` <span class="hint">(${e.freteConsultar?'combinado':e.condominio&&e.freteTabela<=100?'condomínio':'tabela'} ${real(e.freteBase)} ${ajusteDe(e).valor>0?'+':'−'} ${real(Math.abs(ajusteDe(e).valor))} de ${esc(ajusteDe(e).por)})</span>`:''}</div>`:''}
     <div><span class="lbl">Pagamento do frete</span><br>${{entrega:'Cobrar na entrega'+(e.frete?' — '+real(e.frete):''),pix:'Já pago no Pix',junto:'Dinheiro junto com a nota',vendedor:'Por conta do vendedor '+esc(e.fretePor||''),pago:'Já pago'}[pagamentoDe(e)]}</div>
     ${its.length?`<div><span class="lbl">Produtos</span><ul>${its.map(i=>`<li>${esc(qtdNome(i))}${i.local?` — <b>${LOC[i.local]}</b>`:''}</li>`).join('')}</ul></div>`:''}
     ${e.observacao?`<div><span class="lbl">Observação</span><br>${esc(e.observacao)}</div>`:''}
@@ -595,6 +596,7 @@ function abrirForm(ed){
   {const aj=ajusteDe(st);st.ajuste=aj.valor;st.ajustePor=aj.por;}
   st.pag=pagamentoDe(st);if(st.pag==='pago')st.pag='pix';st.fretePor=st.fretePor||'';
   st.loc=TABELA.find(t=>semAcento(t.nome)===semAcento(st.bairro))||null;
+  st.condominio=!!st.condominio;
   st.valorCombinado=st.loc&&st.loc.valor===null?(+st.freteBase||Math.max(0,(+st.frete||0)-st.ajuste)):0;
 
   const vends=[...new Set([...VENDEDORES,st.fretePor,st.ajustePor].filter(Boolean))];
@@ -615,7 +617,8 @@ function abrirForm(ed){
     <div class="field"><label for="fone">Telefone ${R}</label><input type="tel" id="fone" inputmode="numeric" autocomplete="off" placeholder="(00) 00000-0000" required>
       <div id="fconts" style="display:grid;gap:8px"></div><button type="button" class="btn addbtn" id="fmaiscont">+ Outro contato (opcional)</button></div>
     <div class="field bai"><label for="fbai">Bairro / localidade ${R}</label><input type="text" id="fbai" autocomplete="off" placeholder="Comece a digitar o bairro" required>
-      <div class="sugs" id="fsugs" hidden></div></div>
+      <div class="sugs" id="fsugs" hidden></div>
+      <div class="chips"><button type="button" class="chip" id="fcond">É condomínio</button></div></div>
     <div class="field"><label for="fend">Endereço ${R}</label><input type="text" id="fend" autocomplete="off" placeholder="Rua, número, complemento" required></div>
     <div class="field"><span class="lbl">Valor do frete ${R}</span>
       <div class="fretebox" id="fbox"></div>
@@ -641,6 +644,7 @@ function abrirForm(ed){
       s.querySelectorAll('#cturno .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.turno));
       q('#fhora').hidden=st.turno!=='apos';
       q('#fprio').setAttribute('aria-pressed',st.prioridade);q('#fprio').textContent=(st.prioridade?'☑':'☐')+' ⬆ Prioridade';
+      q('#fcond').setAttribute('aria-pressed',st.condominio);q('#fcond').textContent=(st.condominio?'☑':'☐')+' 🏢 É condomínio';
       desenharFrete();
       q('#bajv').hidden=!st.ajuste;
       s.querySelectorAll('#cajv .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.ajustePor));
@@ -663,13 +667,17 @@ function abrirForm(ed){
       st[b.dataset.n]=Math.max(0,Math.min(20,st[b.dataset.n]+ +b.dataset.d));q('#fnotas').classList.remove('err');sync();
       if(antes===1&&st.notasLoja+st.notasDeposito===2)toast('Ponha a foto da outra nota na pasta 📁 do mural.')});
     q('#fprio').addEventListener('click',()=>{st.prioridade=!st.prioridade;sync()});
-    function totalFrete(){return st.loc?Math.max(0,(st.loc.valor===null?st.valorCombinado:st.loc.valor)+st.ajuste):0}
+    // condomínio: tabela até R$ 100 vira R$ 100; acima de R$ 100 fica o valor da tabela
+    const COND=100;
+    function baseFrete(){if(!st.loc)return 0;if(st.loc.valor===null)return st.valorCombinado;return st.condominio&&st.loc.valor<=COND?COND:st.loc.valor}
+    function totalFrete(){return st.loc?Math.max(0,baseFrete()+st.ajuste):0}
     // o valor da tabela não se digita; só o "a consultar" tem campo de valor
     function desenharFrete(){
       const b=q('#fbox');
       if(!st.loc){b.innerHTML='<span class="hint" style="text-align:left">Escolha o bairro na lista para aparecer o valor do frete.</span>';return}
       const cons=st.loc.valor===null;
-      b.innerHTML=`<div class="base"><span>${esc(st.loc.nome)}</span>${cons?'<span class="hint">Valor a consultar</span>':`<b>🔒 ${real(st.loc.valor)}</b>`}</div>
+      b.innerHTML=`<div class="base"><span>${esc(st.loc.nome)}</span>${cons?'<span class="hint">Valor a consultar</span>':`<b>🔒 ${real(baseFrete())}</b>`}</div>
+        ${!cons&&st.condominio?`<span class="hint" style="text-align:left">${st.loc.valor<=COND?`Condomínio: R$ 100,00 (tabela ${real(st.loc.valor)})`:`Condomínio, mas a tabela é maior que R$ 100,00: fica o valor da tabela`}</span>`:''}
         ${cons?`<input type="text" id="fcons" inputmode="numeric" autocomplete="off" placeholder="Valor combinado R$ 0,00" value="${st.valorCombinado?real(st.valorCombinado):''}" aria-label="Valor combinado do frete">`:''}
         <span class="lbl">Mudar o valor (opcional)</span>
         <div class="ajs">${AJUSTES.map(v=>`<button type="button" class="chip${v<0?' neg':''}" data-aj="${v}" aria-pressed="${st.ajuste===v}">${v>0?'+':'−'}${Math.abs(v)}</button>`).join('')}</div>
@@ -679,6 +687,7 @@ function abrirForm(ed){
     q('#fbox').addEventListener('input',e=>{if(e.target.id!=='fcons')return;const d=soDig(e.target.value).slice(0,7);st.valorCombinado=d?Number(d)/100:0;e.target.value=d?real(st.valorCombinado):'';
       e.target.classList.remove('err');const t=q('#fbox .tot');if(t)t.textContent=real(totalFrete())});
     q('#cajv').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b){st.ajustePor=b.dataset.v;q('#cajv').classList.remove('err');sync()}});
+    q('#fcond').addEventListener('click',()=>{st.condominio=!st.condominio;sync()});
     q('#fpags').addEventListener('click',e=>{const b=e.target.closest('[data-pag]');if(b){st.pag=b.dataset.pag;q('#fpags').classList.remove('err');sync()}});
     q('#cvend').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b){st.fretePor=b.dataset.v;q('#cvend').classList.remove('err');sync()}});
     // sugestões de bairro enquanto digita (sem ligar para acento)
@@ -748,7 +757,7 @@ function abrirForm(ed){
         if(fotoBlob){st.thumb=await fotoMiniatura(fotoBlob);fotoNova=await fotoGrande(fotoBlob);st.fotoData=null}
         const fotosExtras=[];for(const x of extras)fotosExtras.push(x.blob?await fotoGrande(x.blob):x.src);
         const ls=new Set(st.itens.map(i=>i.local));
-        const dados={cliente:st.cliente,clienteNome:st.clienteNome,clienteSobrenome:st.clienteSobrenome,fone:st.fone,bairro:st.bairro,endereco:st.endereco,observacao:st.observacao,freteBase:st.loc.valor===null?st.valorCombinado:st.loc.valor,freteConsultar:st.loc.valor===null,freteAjuste:st.ajuste,ajustePor:st.ajuste?st.ajustePor:'',frete:totalFrete(),
+        const dados={cliente:st.cliente,clienteNome:st.clienteNome,clienteSobrenome:st.clienteSobrenome,fone:st.fone,bairro:st.bairro,endereco:st.endereco,observacao:st.observacao,freteBase:baseFrete(),freteTabela:st.loc.valor,condominio:st.condominio,freteConsultar:st.loc.valor===null,freteAjuste:st.ajuste,ajustePor:st.ajuste?st.ajustePor:'',frete:totalFrete(),
           pagamento:st.pag,fretePago:st.pag==='pix'||st.pag==='junto',fretePor:st.pag==='vendedor'?st.fretePor:'',aMaisPor:'',aMaisValor:0,prioridade:st.prioridade,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
           itens:st.itens.map(i=>({nome:i.nome,local:i.local,qtd:i.qtd})),local:ls.size>1?'ambos':ls.has('deposito')?'deposito':'loja',
           thumb:st.thumb||null,fotoData:st.fotoData||null,contatos:contOk,fotosExtras:fotosExtras.length,atualizadoEm:Date.now()};
