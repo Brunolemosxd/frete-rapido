@@ -265,14 +265,15 @@ async function carregarValores(){
   }catch(e){$('#kpis').innerHTML='<div class="muted">Não consegui carregar os valores. Confira a internet.</div>'}
 }
 function renderValores(){
-  const {m,fim,l}=dadosMes,num=v=>Number(v)||0;
+  // entregas com problema não entram em nenhuma conta (as apagadas já não existem mais)
+  const {m,fim}=dadosMes,num=v=>Number(v)||0,l=dadosMes.l.filter(e=>e.status!=='problema'),nProb=dadosMes.l.length-l.length;
   const ent=l.filter(e=>e.status==='entregue'),soma=(a,f)=>a.reduce((s,e)=>s+f(e),0);
   const tEnt=soma(ent,e=>num(e.frete)),tLanc=soma(l,e=>num(e.frete));
   const conta=l.filter(e=>e.fretePor),mais=l.filter(e=>e.aMaisPor);
   const nomeMes=new Date(m+'-15T12:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
   $('#kpis').innerHTML=[
     ['Fretes entregues',real(tEnt),`${ent.length} entrega${ent.length===1?'':'s'} em ${nomeMes}`],
-    ['Fretes lançados',real(tLanc),`${l.length} no total (com pendentes e problemas)`],
+    ['Fretes lançados',real(tLanc),`${l.length} no total, com as pendentes${nProb?` · ${nProb} com problema fora da conta`:''}`],
     ['Por conta dos vendedores',real(soma(conta,e=>num(e.frete))),`${conta.length} entrega${conta.length===1?'':'s'}`],
     ['Posto a mais',real(soma(mais,e=>num(e.aMaisValor))),`${mais.length} vez${mais.length===1?'':'es'}`]
   ].map(([k,v,s])=>`<div class="kpi"><span class="k">${k}</span><span class="v">${v}</span><span class="s">${esc(s)}</span></div>`).join('');
