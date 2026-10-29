@@ -39,7 +39,8 @@ header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1
 .top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-block:12px 4px;max-width:900px;margin:0 auto}
 h1{font-family:var(--display);font-weight:700;font-size:26px;margin:0;text-transform:uppercase}
 h1 span{color:var(--accent)}
-.usr{display:flex;gap:12px;font-size:13px;color:var(--muted)}
+.usr{display:flex;gap:6px 12px;font-size:13px;color:var(--muted);flex-wrap:wrap;justify-content:flex-end}
+.usr a,.usr button{white-space:nowrap}
 .usr a,.usr button{color:var(--accent);font-weight:600;background:none;border:0;padding:0;font-size:13px;text-decoration:none}
 .tabs{display:flex;gap:6px;padding-block:8px 10px;max-width:900px;margin:0 auto}
 .tab{border:1.5px solid var(--line);background:var(--bg);border-radius:99px;padding:8px 16px;font-weight:600;font-size:15px}
@@ -143,6 +144,12 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
 
   <section id="t-ajustes" style="display:grid;gap:14px" hidden>
     <h2>Ajustes</h2>
+    <div class="card">
+      <strong>Motivos de problema</strong>
+      <p class="muted" style="margin:0">Aparecem como botões quando alguém marca uma entrega com problema.</p>
+      <div class="chips" id="mlista"></div>
+      <div class="row"><input type="text" id="mnovo" maxlength="60" placeholder="Novo motivo" style="flex:1;min-width:0;width:auto"><button type="button" class="btn pri" id="madd">Cadastrar</button></div>
+    </div>
     <div class="card">
       <strong>Fotos antigas</strong>
       <p class="muted" style="margin:0">As fotos com mais de 60 dias são apagadas sozinhas quando você abre o mural ou o painel (uma vez por dia). As entregas continuam; só as fotos grandes somem.</p>
@@ -322,6 +329,15 @@ function desenharGrafico(dias){
 let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(dadosMes&&aba==='valores')renderValores()},150)});
 
 /* ---------- ajustes ---------- */
+let motivos=[...MOTIVOS_PADRAO],pararM=null;
+function renderMotivos(){$('#mlista').innerHTML=motivos.map((m,i)=>`<span class="chip" style="display:inline-flex;gap:8px;align-items:center">${esc(m)}<button type="button" data-mdel="${i}" aria-label="Apagar o motivo ${esc(m)}" style="border:0;background:var(--line);border-radius:99px;width:24px;height:24px;line-height:1">×</button></span>`).join('')||'<span class="muted">Nenhum motivo. Cadastre pelo menos um.</span>'}
+function salvarMotivos(l,msg){return db.collection('config').doc('motivos').set({lista:l,atualizadoEm:Date.now()}).then(()=>toast(msg)).catch(erro)}
+$('#madd').addEventListener('click',()=>{const v=$('#mnovo').value.trim().replace(/\s+/g,' ');if(!v){toast('Escreva o motivo.');$('#mnovo').focus();return}
+  if(motivos.some(x=>x.toLowerCase()===v.toLowerCase())){toast('Esse motivo já está na lista.');return}
+  $('#mnovo').value='';salvarMotivos([...motivos,v],'Motivo cadastrado')});
+$('#mnovo').addEventListener('keydown',e=>{if(e.key==='Enter')$('#madd').click()});
+$('#mlista').addEventListener('click',e=>{const b=e.target.closest('[data-mdel]');if(!b)return;const m=motivos[+b.dataset.mdel];
+  salvarMotivos(motivos.filter((_,i)=>i!==+b.dataset.mdel),`"${m}" apagado`)});
 $('#limpar').addEventListener('click',async e=>{const b=e.currentTarget;b.disabled=true;
   try{const n=await limparFotosAntigas(true);toast(n?`${n} foto${n===1?'':'s'} antiga${n===1?'':'s'} apagada${n===1?'':'s'}`:'Não há fotos antigas para apagar')}catch(er){erro(er)}b.disabled=false});
 
@@ -331,10 +347,11 @@ $('#gentrar').addEventListener('click',()=>entrarComGoogle().catch(()=>toast('N�
 $('#lsair').addEventListener('click',()=>auth.signOut());
 $('#usair').addEventListener('click',()=>auth.signOut());
 auth.onAuthStateChanged(u=>{
-  pararP&&pararP();pararP=null;pararValores&&pararValores();pararValores=null;mesOuvido=null;fechar();
+  pararP&&pararP();pararP=null;pararM&&pararM();pararM=null;pararValores&&pararValores();pararValores=null;mesOuvido=null;fechar();
   if(!u){telaLogin('Entre com a conta Google do administrador.');return}
   if(!ehAdmin(u)){telaLogin(`Só o administrador entra no painel. Você entrou como <b>${esc(u.email)}</b>.`,true);return}
   $('#login').hidden=true;$('#app').hidden=false;mostrarAba(aba);
+  pararM=db.collection('config').doc('motivos').onSnapshot(d=>{const l=d.exists&&d.data().lista;motivos=Array.isArray(l)?l:[...MOTIVOS_PADRAO];renderMotivos()},()=>{});
   pararP=db.collection('usuarios').onSnapshot(s=>{pessoas=s.docs.map(d=>({id:d.id,...d.data()}));renderPessoas()},e=>erro(e));
   limparFotosAntigas().catch(()=>{});
 });

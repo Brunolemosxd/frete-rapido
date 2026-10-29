@@ -26,6 +26,8 @@ const FUNCOES = {
   vendedor: { nome: 'Vendedor', perms: { lancar: true, editarTodas: false, apagar: false, marcar: false, verValores: true, pasta: true } },
   entregador: { nome: 'Entregador', perms: { lancar: false, editarTodas: false, apagar: false, marcar: true, verValores: false, pasta: false } }
 };
+// motivos de problema: o Bruno cadastra mais no mural ou no painel (config/motivos)
+const MOTIVOS_PADRAO = ['Cliente ausente', 'Endereço errado', 'Produto faltando', 'Produto avariado', 'Não coube no carro', 'Remarcar'];
 const TODAS = Object.fromEntries(Object.keys(PERMS).map(k => [k, true]));
 
 firebase.initializeApp(FIREBASE_CONFIG);

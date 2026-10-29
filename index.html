@@ -229,6 +229,7 @@ const TURNOS={manha:'Manhã',tarde:'Tarde',apos:'Depois das'};
 const ST={pendente:['Pendente','p-pend'],entregue:['Entregue','p-ok'],problema:['Problema','p-bad']};
 // quem carrega o caminhão (aparece no menu ao segurar o cartão)
 const CARREGADORES=['Thiago','Bruno'];
+let MOTIVOS=[...MOTIVOS_PADRAO];
 let me=null,P={},VENDEDORES=[],pararEntregas=null,pararNotas=null,notasDe=null;
 let notasJ=[],pastaAberta=false;
 let entregas=[],loaded=false,dia=ds(new Date());
@@ -471,11 +472,16 @@ function abrirAcoes(id){
 }
 function abrirProblema(id){
   const e=entregas.find(x=>x.id===id);if(!e)return;
-  const motivos=['Cliente ausente','Endereço errado','Produto faltando','Produto avariado','Não coube no carro','Remarcar'];
-  abrirSheet(`<h2>O que aconteceu?</h2><div class="chips">${motivos.map(m=>`<button class="chip" data-m="${m}">${m}</button>`).join('')}</div>
-    <div class="field"><label for="pobs">Outro motivo</label><input type="text" id="pobs" placeholder="Opcional"></div>
+  abrirSheet(`<h2>O que aconteceu?</h2><div class="chips">${MOTIVOS.map(m=>`<button class="chip" data-m="${esc(m)}">${esc(m)}</button>`).join('')}</div>
+    <div class="field"><label for="pobs">Outro motivo</label><input type="text" id="pobs" placeholder="Opcional" maxlength="60">
+      ${me.admin?'<button type="button" class="btn addbtn" data-cad>+ Cadastrar como motivo novo</button>':''}</div>
     <div class="actions two"><button class="btn ghost" data-x>Cancelar</button><button class="btn bad" data-ok>Marcar problema</button></div>`,
-  s=>s.addEventListener('click',ev=>{
+  s=>s.addEventListener('click',async ev=>{
+    if(ev.target.closest('[data-cad]')){const v=s.querySelector('#pobs').value.trim().replace(/\s+/g,' ');
+      if(!v){toast('Escreva o motivo no campo "Outro motivo".');s.querySelector('#pobs').focus();return}
+      if(MOTIVOS.some(x=>x.toLowerCase()===v.toLowerCase())){toast('Esse motivo já está na lista.');return}
+      try{await db.collection('config').doc('motivos').set({lista:[...MOTIVOS,v],atualizadoEm:Date.now()});MOTIVOS=[...MOTIVOS,v];abrirProblema(id);toast('Motivo cadastrado')}
+      catch(e){e?.code==='permission-denied'?semPermissao():toast('Não consegui cadastrar. Tente de novo.')}return}
     const m=ev.target.closest('[data-m]');if(m){fechar();setStatus(id,'problema',m.dataset.m);return}
     if(ev.target.closest('[data-ok]')){const v=s.querySelector('#pobs').value.trim();fechar();setStatus(id,'problema',v||'Problema na entrega')}
     if(ev.target.closest('[data-x]'))fechar();
@@ -705,6 +711,7 @@ auth.onAuthStateChanged(async u=>{
   $('#login').hidden=true;$('#app').hidden=false;
   $('#unome').textContent='Olá, '+me.nome.split(' ')[0];$('#upainel').hidden=!me.admin;$('#fab').hidden=!P.lancar;
   try{const c=await db.collection('config').doc('equipe').get();VENDEDORES=c.exists?(c.data().vendedores||[]):[]}catch{}
+  try{const mo=await db.collection('config').doc('motivos').get();const l=mo.exists&&mo.data().lista;MOTIVOS=Array.isArray(l)&&l.length?l:[...MOTIVOS_PADRAO]}catch{}
   render();
   // só as entregas recentes e futuras; o histórico fica no painel
   pararEntregas=db.collection('entregas').where('data','>=',addDays(hoje(),-45)).onSnapshot(snap=>{
