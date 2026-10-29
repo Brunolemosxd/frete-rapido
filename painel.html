@@ -256,13 +256,16 @@ function mesAtual(){const d=new Date();return d.getFullYear()+'-'+String(d.getMo
 $('#mes').value=mesAtual();
 $('#mes').addEventListener('change',carregarValores);
 let dadosMes=null;
-async function carregarValores(){
+// ao vivo: apagar, editar ou marcar problema no mural muda os números na hora
+let pararValores=null,mesOuvido=null;
+function carregarValores(){
   const m=$('#mes').value||mesAtual(),[y,mm]=m.split('-').map(Number),fim=new Date(y,mm,0).getDate();
+  if(pararValores&&mesOuvido===m){if(dadosMes)renderValores();return}
+  pararValores&&pararValores();mesOuvido=m;dadosMes=null;
   $('#kpis').innerHTML='<div class="muted">Carregando…</div>';$('#chart').innerHTML='';$('#tabPessoas').innerHTML='';$('#tabDias').innerHTML='';
-  try{
-    const snap=await db.collection('entregas').where('data','>=',m+'-01').where('data','<=',m+'-'+String(fim).padStart(2,'0')).get();
-    dadosMes={m,fim,l:snap.docs.map(d=>({id:d.id,status:'pendente',...d.data()}))};renderValores();
-  }catch(e){$('#kpis').innerHTML='<div class="muted">Não consegui carregar os valores. Confira a internet.</div>'}
+  pararValores=db.collection('entregas').where('data','>=',m+'-01').where('data','<=',m+'-'+String(fim).padStart(2,'0')).onSnapshot(snap=>{
+    dadosMes={m,fim,l:snap.docs.map(d=>({id:d.id,status:'pendente',...d.data()}))};if(aba==='valores')renderValores();
+  },()=>{pararValores=null;mesOuvido=null;$('#kpis').innerHTML='<div class="muted">Não consegui carregar os valores. Confira a internet.</div>'});
 }
 function renderValores(){
   // entregas com problema não entram em nenhuma conta (as apagadas já não existem mais)
@@ -327,7 +330,7 @@ $('#gentrar').addEventListener('click',()=>entrarComGoogle().catch(()=>toast('N�
 $('#lsair').addEventListener('click',()=>auth.signOut());
 $('#usair').addEventListener('click',()=>auth.signOut());
 auth.onAuthStateChanged(u=>{
-  pararP&&pararP();pararP=null;fechar();
+  pararP&&pararP();pararP=null;pararValores&&pararValores();pararValores=null;mesOuvido=null;fechar();
   if(!u){telaLogin('Entre com a conta Google do administrador.');return}
   if(!ehAdmin(u)){telaLogin(`Só o administrador entra no painel. Você entrou como <b>${esc(u.email)}</b>.`,true);return}
   $('#login').hidden=true;$('#app').hidden=false;mostrarAba(aba);
