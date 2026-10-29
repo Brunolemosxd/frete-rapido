@@ -144,6 +144,7 @@ input.err{border-color:var(--bad)}
 .pitem.err .seg{border-color:var(--bad)}
 .pitem .x{flex:0 0 auto;border:0;background:var(--line);border-radius:99px;width:28px;height:28px;line-height:1;font-size:16px}
 .fonerow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn.mapa{text-decoration:none;color:var(--fg);display:inline-block}
 .btn.sm{padding:8px 12px;font-size:15px}
 .extra{position:relative}
 .photo-x{position:absolute;top:8px;right:8px;border:0;background:var(--bad);color:#fff;border-radius:99px;width:32px;height:32px;line-height:1;font-size:16px;box-shadow:0 0 0 2px #fff}
@@ -517,7 +518,8 @@ function abrirDetalhe(id){
     <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span><span class="tag">${esc(turnoTxt(e))}</span>${localTagHTML(e)}${notasTagHTML(e)}${e.fretePago?'<span class="pill p-ok">✓ Frete pago</span>':''}</div>
     ${src?`<div class="photo"><img id="dfoto" src="${esc(src)}" alt="Foto da nota"></div>`:''}
     ${e.fotosExtras?`<div id="dextras" style="display:grid;gap:8px"></div>`:''}
-    <div class="det">${e.endereco?`<div><span class="lbl">Endereço</span><div class="fonerow"><span style="user-select:all">${esc(e.endereco)}</span><button type="button" class="btn sm" data-copiar="${esc(e.endereco+(e.bairro?' - '+e.bairro:''))}" data-msg="Endereço copiado. É só colar no WhatsApp ou no mapa.">📋 Copiar</button></div></div>`:''}
+    <div class="det">${e.endereco?`<div><span class="lbl">Endereço</span><div class="fonerow"><span style="user-select:all">${esc(e.endereco)}</span><button type="button" class="btn sm" data-copiar="${esc(e.endereco+(e.bairro?' - '+e.bairro:''))}" data-msg="Endereço copiado. É só colar no WhatsApp ou no mapa.">📋 Copiar</button></div>
+      <div class="fonerow" style="margin-top:6px"><a class="btn sm mapa" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.endereco+(e.bairro?', '+e.bairro:''))}" target="_blank" rel="noopener">🗺️ Google Maps</a><a class="btn sm mapa" href="https://waze.com/ul?q=${encodeURIComponent(e.endereco+(e.bairro?', '+e.bairro:''))}&navigate=yes" target="_blank" rel="noopener">🚗 Waze</a></div></div>`:''}
     ${e.bairro?`<div><span class="lbl">Bairro</span><br>${esc(e.bairro)}</div>`:''}
     ${e.fone?`<div><span class="lbl">Telefone</span><div class="fonerow"><span style="user-select:all">${esc(e.fone)}</span><button type="button" class="btn sm" data-a="copiar">📋 Copiar</button></div></div>`:''}
     ${(e.contatos||[]).map(c=>`<div><span class="lbl">Outro contato${c.nome?' — '+esc(c.nome):''}</span><div class="fonerow"><span style="user-select:all">${esc(c.fone)}</span><button type="button" class="btn sm" data-copiar="${esc(soDig(c.fone))}">📋 Copiar</button></div></div>`).join('')}
