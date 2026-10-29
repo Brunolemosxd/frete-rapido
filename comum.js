@@ -89,3 +89,17 @@ function reduzir(file, max, q) {
 // Foto que vai dentro do banco de dados: precisa ficar bem abaixo de 1 MB por documento
 async function fotoGrande(blob) { return fotoParaTexto(await reduzir(blob, 1200, 0.6)); }
 async function fotoMiniatura(blob) { return fotoParaTexto(await reduzir(blob, 200, 0.6)); }
+
+// Tema: automático (segue o celular) → claro → escuro. Botões com o atributo data-tema.
+const TEMAS = [['', '🌓 Automático'], ['light', '☀️ Claro'], ['dark', '🌙 Escuro']];
+function aplicarTema(t) {
+  if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+  try { t ? localStorage.setItem('freterapido_tema', t) : localStorage.removeItem('freterapido_tema'); } catch {}
+  const nome = TEMAS.find(x => x[0] === t)[1];
+  document.querySelectorAll('[data-tema]').forEach(b => { b.textContent = nome; b.setAttribute('aria-label', 'Tema: ' + nome.split(' ')[1] + '. Toque para trocar'); });
+}
+document.querySelectorAll('[data-tema]').forEach(b => b.addEventListener('click', () => {
+  const atual = document.documentElement.dataset.theme || '';
+  aplicarTema(TEMAS[(TEMAS.findIndex(x => x[0] === atual) + 1) % TEMAS.length][0]);
+}));
+aplicarTema(document.documentElement.dataset.theme || '');

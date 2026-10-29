@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1f5fae">
 <title>Mural Frete Rápido</title>
+<script>/* tema escolhido no botão 🌓 (aplicado antes de desenhar, para não piscar) */try{const t=localStorage.getItem('freterapido_tema');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch{}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
 <style>
@@ -64,11 +65,11 @@ section.feitas{border-top:1px solid var(--line);padding-top:14px}
 .under{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font-weight:600;font-size:14px}
 .under .l{color:var(--ok)} .under .r{color:var(--bad)}
 .face{position:relative;background:var(--surface);box-shadow:var(--shadow);border-left:5px solid var(--pend);padding:12px 12px 12px 12px;display:flex;gap:12px;transition:transform .2s ease}
-.card.prio .face{background:var(--bad);color:#fff;border-left-color:#7a1414;box-shadow:0 4px 14px rgba(197,48,48,.35)}
+.card.prio .face{background:#c53030;color:#fff;border-left-color:#7a1414;box-shadow:0 4px 14px rgba(197,48,48,.35)}
 .card.prio .face .who span,.card.prio .items,.card.prio .meta{color:#fff!important}
 .card.prio .tag{border-color:rgba(255,255,255,.6);color:#fff}
 .card.prio .thumb{border-color:rgba(255,255,255,.5)}
-.pprio{background:#fff;color:var(--bad);font-weight:700}
+.pprio{background:#fff;color:#c53030;font-weight:700}
 section.prio h3{color:var(--bad);font-size:14px}
 .chip.prio[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
 .card.st-entregue .face{border-left-color:var(--ok)} .card.st-problema .face{border-left-color:var(--bad)}
@@ -198,7 +199,7 @@ input.err{border-color:var(--bad)}
 <header>
   <div class="wrap">
     <div class="top"><h1>Frete <span>Rápido</span></h1><span class="sync" id="sync">Conectando…</span></div>
-    <div class="usr"><span id="unome"></span><a href="painel.html" id="upainel" hidden>Painel</a><button type="button" id="usair">Sair</button></div>
+    <div class="usr"><span id="unome"></span><a href="painel.html" id="upainel" hidden>Painel</a><button type="button" data-tema></button><button type="button" id="usair">Sair</button></div>
     <div class="days" id="days" role="tablist" aria-label="Dias"></div>
   </div>
 </header>
