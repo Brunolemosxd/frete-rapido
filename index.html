@@ -112,6 +112,8 @@ section.hr h3{color:#6b3fd0;font-size:14px}
 .obs{font-size:13px;color:var(--bad)}
 .end{font-size:14px;line-height:1.3;color:var(--fg);overflow-wrap:anywhere}
 .end b{font-weight:600}
+.end .bai2{font-weight:700;color:var(--accent)}
+.card.prio .end .bai2{color:#fff;text-decoration:underline}
 .card.prio .end{color:#fff}
 /* botão de voltar sempre visível no alto do detalhe */
 .voltar{position:sticky;top:-10px;z-index:2;justify-self:start;display:inline-flex;align-items:center;gap:6px;margin:-4px 0 -6px;
@@ -404,8 +406,8 @@ function cardHTML(e){
       <div class="info">
         ${pr?'<div><span class="pill pprio">⬆ Prioridade</span></div>':''}
         ${hr?horaHTML(e):''}
-        <div class="who">${esc(e.cliente||'Sem nome')}${e.bairro?` <span style="font-weight:400;color:var(--muted)">· ${esc(e.bairro)}</span>`:''}</div>
-        ${e.endereco?`<div class="end">📍 ${esc(e.endereco)}${e.complemento?` · <b>${esc(e.complemento)}</b>`:''}</div>`:''}
+        <div class="who">${esc(e.cliente||'Sem nome')}</div>
+        ${e.endereco||e.bairro?`<div class="end">📍 ${esc(e.endereco)}${e.complemento?` · <b>${esc(e.complemento)}</b>`:''}${e.bairro?`${e.endereco?' — ':''}<span class="bai2">${esc(e.bairro)}</span>`:''}</div>`:''}
         <div class="meta">${e.turno==='apos'?'':`<span class="tag">${esc(turnoTxt(e))}</span>`}${localTagHTML(e)}${condTag(e)}${V&&e.frete?`<span class="tag">${real(e.frete)}</span>`:''}${V&&ajusteTxt(e)?`<span class="tag">${esc(ajusteTxt(e))}</span>`:''}${notasTagHTML(e)}${pagTagHTML(e,true)}<span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span></div>
         ${itens?`<div class="items">${itens}</div>`:''}
         ${e.observacao?`<div class="items">Obs.: ${esc(e.observacao)}</div>`:''}
