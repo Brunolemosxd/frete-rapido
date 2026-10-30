@@ -378,7 +378,9 @@ function pegarFoto(cb){const f=$('#file');f.value='';f.onchange=async()=>{const 
   let b;try{b=await reduzir(file,1600,.8)}catch{toast('Não consegui ler essa foto.');return}cb(b)};f.click()}
 const condTag=e=>e.condominio?'<span class="tag">🏢 Condomínio</span>':'';
 // o mapa se perde com "ap 302", "bloco B" etc.; vai só rua, número e bairro
-function enderecoMapa(e){const rua=String(e.endereco||'').replace(/[,\-–]?\s*\b(ap|apt|apto|apartamento|bl|bloco|torre|sala|cj|conjunto|casa|lote|lt|quadra|qd)\b\.?\s*(n[º°o.]?\s*)?([0-9]+|[a-z])\b.*$/i,'').trim()||e.endereco||'';
+function enderecoMapa(e){
+  if(e.rua!==undefined)return e.rua+(e.numero?', '+e.numero:'')+(e.bairro?', '+e.bairro:'');
+  const rua=String(e.endereco||'').replace(/[,\-–]?\s*\b(ap|apt|apto|apartamento|bl|bloco|torre|sala|cj|conjunto|casa|lote|lt|quadra|qd)\b\.?\s*(n[º°o.]?\s*)?([0-9]+|[a-z])\b.*$/i,'').trim()||e.endereco||'';
   return rua+(e.bairro?', '+e.bairro:'')}
 function ajusteTxt(e){const a=ajusteDe(e);if(!a.por&&!a.valor)return '';return a.por+' '+(a.valor?(a.valor>0?'+':'−')+real(Math.abs(a.valor)):'pôs a mais')}
 // pagamento aparece para todos: o entregador precisa saber se cobra ou não
@@ -708,6 +710,15 @@ function abrirPostit(id){
 }
 
 /* ---------- formulário ---------- */
+function separarEndereco(e){
+  if(e.rua!==undefined)return {rua:e.rua||'',numero:e.numero||'',semNumero:!!e.semNumero,complemento:e.complemento||''};
+  let rua=String(e.endereco||''),numero='',comp=e.complemento||'';
+  const m=/^(.*?)[\s,]*(?:n[º°o.]?\s*)?(\d+)\s*[,\-–]?\s*(.*)$/i.exec(rua);
+  if(m){rua=m[1];numero=m[2];comp=[m[3].trim(),comp].filter(Boolean).join(', ')}
+  // número que foi parar no complemento (ex.: "3252 - germinado")
+  if(!numero){const c=/^(\d+)\s*[,\-–]?\s*(.*)$/.exec(comp);if(c){numero=c[1];comp=c[2]}}
+  return {rua:rua.replace(/\d/g,'').replace(/[\s,\-–]+$/,'').replace(/\s+/g,' ').trim(),numero,semNumero:false,complemento:comp.trim()}
+}
 function abrirForm(ed){
   const h=hoje();
   const st=ed?{...ed,itens:itensDe(ed),fone:fmtFone(ed.fone)}:{data:h,turno:'qualquer',hora:'',itens:[],cliente:'',bairro:'',endereco:'',fone:'',frete:0,observacao:'',thumb:null,fotoData:null};
@@ -746,8 +757,9 @@ function abrirForm(ed){
     <div class="field bai"><label for="fbai">Bairro / localidade ${R}</label><input type="text" id="fbai" autocomplete="off" placeholder="Comece a digitar o bairro" required>
       <div class="sugs" id="fsugs" hidden></div>
       <div class="chips"><button type="button" class="chip" id="fcond">É condomínio</button></div></div>
-    <div class="field"><label for="fend">Endereço ${R}</label><input type="text" id="fend" autocomplete="off" placeholder="Rua e número (sem o apartamento)" required></div>
-    <div class="field"><label for="fcomp">Apartamento / complemento (opcional)</label><input type="text" id="fcomp" autocomplete="off" placeholder="Ex.: Ap 302, Bloco B" maxlength="80"></div>
+    <div class="field"><label for="fend">Rua ${R} — só o nome, sem número</label><input type="text" id="fend" autocomplete="off" autocapitalize="words" placeholder="Ex.: Rua das Tulipas" required></div>
+    <div class="field"><label for="fnum">Número ${R}</label><div class="row"><input type="text" id="fnum" inputmode="numeric" autocomplete="off" placeholder="Ex.: 3252" maxlength="6" style="flex:0 1 140px"><button type="button" class="chip" id="fsn">☐ Sem número</button></div></div>
+    <div class="field"><label for="fcomp">AP ou quadra e lote (opcional)</label><input type="text" id="fcomp" autocomplete="off" placeholder="Ex.: Ap 302, Bloco B · Quadra 5, Lote 12" maxlength="80"></div>
     <div class="field"><span class="lbl">Valor do frete ${R}</span>
       <div class="fretebox" id="fbox"></div>
       <div class="field" id="bajv"><span class="lbl">Qual vendedor mudou o valor</span><div class="chips" id="cajv" role="group" aria-label="Qual vendedor mudou o valor">${nomesHTML}</div></div>
@@ -763,7 +775,7 @@ function abrirForm(ed){
   s=>{
     const q=x=>s.querySelector(x);
     {const nm=st.clienteNome!==undefined?[st.clienteNome,st.clienteSobrenome||'']:[(st.cliente||'').split(' ')[0],(st.cliente||'').split(' ').slice(1).join(' ')];q('#fcli').value=nm[0];q('#fsob').value=nm[1]}
-    q('#fbai').value=st.bairro||'';q('#fend').value=st.endereco||'';q('#fcomp').value=st.complemento||'';q('#fobs').value=st.observacao||'';q('#fone').value=st.fone||'';q('#fhora').value=st.hora||'';
+    q('#fbai').value=st.bairro||'';{const en=separarEndereco(st);st.semNumero=en.semNumero;q('#fend').value=en.rua;q('#fnum').value=en.numero;q('#fcomp').value=en.complemento}q('#fobs').value=st.observacao||'';q('#fone').value=st.fone||'';q('#fhora').value=st.hora||'';
 
     let errLocal=false;
     const sync=()=>{
@@ -771,6 +783,7 @@ function abrirForm(ed){
       q('#fdata').value=st.data;
       s.querySelectorAll('#cturno .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.turno));
       q('#fhora').hidden=st.turno!=='apos';
+      q('#fsn').setAttribute('aria-pressed',st.semNumero);q('#fsn').textContent=(st.semNumero?'☑':'☐')+' Sem número';q('#fnum').disabled=st.semNumero;if(st.semNumero)q('#fnum').value='';
       q('#fprio').setAttribute('aria-pressed',st.prioridade);q('#fprio').textContent=(st.prioridade?'☑':'☐')+' ⬆ Prioridade';
       q('#fcond').setAttribute('aria-pressed',st.condominio);q('#fcond').textContent=(st.condominio?'☑':'☐')+' 🏢 É condomínio';
       desenharFrete();
@@ -842,6 +855,9 @@ function abrirForm(ed){
       if(n!==undefined)contatos[+n].nome=e.target.value;if(f!==undefined){e.target.value=fmtFone(e.target.value);contatos[+f].fone=e.target.value}});
     q('#fconts').addEventListener('click',e=>{const b=e.target.closest('[data-cdel]');if(b){contatos.splice(+b.dataset.cdel,1);desenharContatos()}});
     q('#fone').addEventListener('input',e=>{e.target.value=fmtFone(e.target.value)});
+    q('#fend').addEventListener('input',e=>{if(/\d/.test(e.target.value)){e.target.value=e.target.value.replace(/\d/g,'');toast('Na rua vai só o nome. O número vai no campo "Número".')}});
+    q('#fnum').addEventListener('input',e=>{e.target.value=soDig(e.target.value).slice(0,6)});
+    q('#fsn').addEventListener('click',()=>{st.semNumero=!st.semNumero;q('#fnum').classList.remove('err');sync()});
 
     s.addEventListener('input',e=>e.target.classList?.remove('err'));
     q('#fprods').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(b){st.itens.push({nome:b.dataset.p,local:null,qtd:1});sync()}});
@@ -857,12 +873,12 @@ function abrirForm(ed){
     q('#fcancel').addEventListener('click',fechar);
     q('#fsave').addEventListener('click',async()=>{
       if(enviando)return;
-      st.clienteNome=q('#fcli').value.trim().replace(/\s+/g,' ');st.clienteSobrenome=q('#fsob').value.trim().replace(/\s+/g,' ');st.cliente=(st.clienteNome+' '+st.clienteSobrenome).trim();st.bairro=st.loc?st.loc.nome:q('#fbai').value.trim();st.complemento=q('#fcomp').value.trim().replace(/\s+/g,' ');st.endereco=q('#fend').value.trim();st.observacao=q('#fobs').value.trim();st.fone=q('#fone').value.trim();st.hora=q('#fhora').value;
+      st.clienteNome=q('#fcli').value.trim().replace(/\s+/g,' ');st.clienteSobrenome=q('#fsob').value.trim().replace(/\s+/g,' ');st.cliente=(st.clienteNome+' '+st.clienteSobrenome).trim();st.bairro=st.loc?st.loc.nome:q('#fbai').value.trim();st.complemento=q('#fcomp').value.trim().replace(/\s+/g,' ');st.rua=q('#fend').value.replace(/\d/g,'').replace(/\s+/g,' ').replace(/[\s,\-–]+$/,'').trim();st.numero=st.semNumero?'':soDig(q('#fnum').value);st.endereco=st.rua?st.rua+(st.semNumero?', S/N':st.numero?', '+st.numero:''):'';st.observacao=q('#fobs').value.trim();st.fone=q('#fone').value.trim();st.hora=q('#fhora').value;
       const pendItem=q('#fitem').value.trim();if(pendItem){st.itens.push({nome:pendItem,local:null,qtd:1});q('#fitem').value='';sync()}
       // entrega nova precisa da foto da nota (entregas antigas sem foto ainda podem ser editadas)
       if(!ed&&!fotoBlob){q('#fotobox').classList.add('err');q('#fotobox').scrollIntoView({block:'center'});toast('Tire a foto da nota antes de lançar.');return}
       const erros=[['#fcli',!st.clienteNome,'Coloque o nome do cliente como está na nota.'],['#fsob',!st.clienteSobrenome,'Coloque o sobrenome do cliente como está na nota.'],['#fone',!foneOk(st.fone),'Coloque o telefone com DDD. Ex.: (11) 98765-4321'],
-        ['#fbai',!st.bairro,'Coloque o bairro.'],['#fend',!st.endereco,'Coloque o endereço.']].filter(x=>x[1]);
+        ['#fbai',!st.bairro,'Coloque o bairro.'],['#fend',!st.rua,'Coloque o nome da rua.'],['#fnum',!st.numero&&!st.semNumero,'Coloque o número da casa. Se não tiver, toque em "Sem número".']].filter(x=>x[1]);
       erros.forEach(([sel])=>q(sel).classList.add('err'));
       if(erros.length){toast(erros[0][2]);q(erros[0][0]).focus();return}
       // mesmo telefone no mesmo dia = entrega duplicada
@@ -887,7 +903,7 @@ function abrirForm(ed){
         if(fotoBlob){st.thumb=await fotoMiniatura(fotoBlob);fotoNova=await fotoGrande(fotoBlob);st.fotoData=null}
         const fotosExtras=[];for(const x of extras)fotosExtras.push(x.blob?await fotoGrande(x.blob):x.src);
         const ls=new Set(st.itens.map(i=>i.local));
-        const dados={cliente:st.cliente,clienteNome:st.clienteNome,clienteSobrenome:st.clienteSobrenome,fone:st.fone,bairro:st.bairro,endereco:st.endereco,complemento:st.complemento,observacao:st.observacao,freteBase:baseFrete(),freteTabela:st.loc.valor,condominio:st.condominio,freteConsultar:st.loc.valor===null,freteAjuste:st.ajuste,ajustePor:st.ajuste?st.ajustePor:'',frete:totalFrete(),
+        const dados={cliente:st.cliente,clienteNome:st.clienteNome,clienteSobrenome:st.clienteSobrenome,fone:st.fone,bairro:st.bairro,endereco:st.endereco,rua:st.rua,numero:st.numero,semNumero:st.semNumero,complemento:st.complemento,observacao:st.observacao,freteBase:baseFrete(),freteTabela:st.loc.valor,condominio:st.condominio,freteConsultar:st.loc.valor===null,freteAjuste:st.ajuste,ajustePor:st.ajuste?st.ajustePor:'',frete:totalFrete(),
           pagamento:st.pag,fretePago:st.pag==='pix'||st.pag==='junto'||st.pag==='nota',fretePor:st.pag==='vendedor'?st.fretePor:'',aMaisPor:'',aMaisValor:0,prioridade:st.prioridade,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
           itens:st.itens.map(i=>({nome:i.nome,local:i.local,qtd:i.qtd})),local:ls.size>1?'ambos':ls.has('deposito')?'deposito':'loja',
           thumb:st.thumb||null,fotoData:st.fotoData||null,contatos:contOk,fotosExtras:fotosExtras.length,atualizadoEm:Date.now()};

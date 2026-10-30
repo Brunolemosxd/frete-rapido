@@ -38,7 +38,10 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   "Frete na nota" embaixo da foto; conta como já pago), por conta do vendedor (com nome).
 - Turno "Depois das HH:MM": faixa roxa com relógio "🕒 Só depois das HH:MM" no cartão e no detalhe (sempre, não muda com a hora).
 - Cores de local: Loja = azul fraquinho (#cfe5fb), Depósito = marrom (#7a4a21), iguais nos dois temas (etiquetas, produtos, notas, formulário).
-- Endereço sem o apartamento + campo "Apartamento / complemento". Mapa (Google Maps/Waze) usa só rua, número e bairro.
+- Endereço em 3 campos: Rua (só letras: números são tirados ao digitar), Número (só números, obrigatório, ou "Sem número")
+  e "AP ou quadra e lote" (opcional, letras e números). Grava `rua`, `numero`, `semNumero`, `complemento` e também
+  `endereco` = "Rua, Número" (ou "Rua, S/N") para o resto do app. Entregas antigas: `separarEndereco` divide ao editar
+  (número que estava no complemento vai para o Número). Mapa (Google Maps/Waze) usa só rua, número e bairro.
 - Cartão mostra "📍 endereço · complemento — Bairro" (bairro em azul, negrito) embaixo do nome; o bairro saiu da linha do nome.
   Embaixo do endereço: botões "📋 Copiar endereço" e "🗺️ Maps". Embaixo da flecha: telefone + "📋 Copiar".
   REGRA: copiar endereço NUNCA leva o apartamento/complemento (usa `enderecoMapa`, só rua, número e bairro), nem no detalhe. Detalhe da entrega tem botão fixo "← Voltar para o mural" no alto.
