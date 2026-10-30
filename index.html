@@ -124,6 +124,18 @@ section.hr h3{color:#6b3fd0;font-size:14px}
 .cbtns{display:flex;gap:6px;flex-wrap:wrap}
 .cbtn{display:inline-flex;align-items:center;gap:4px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg);border-radius:10px;padding:6px 10px;font-weight:600;font-size:14px;text-decoration:none;line-height:1.1}
 .card.prio .cbtn{background:#fff;color:#7a1414;border-color:#fff}
+.vbox{border-radius:12px;padding:8px 12px;display:grid;gap:3px;border:2px solid var(--line);background:var(--bg)}
+.vtit{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.1;letter-spacing:.01em}
+.vdet{font-size:15px;font-weight:600;color:var(--fg)}
+.vaj{display:inline-block;background:#f4c430;color:#3d2e00;border-radius:6px;padding:0 6px;font-weight:800}
+.v-cobrar{background:var(--pend-bg);border-color:var(--pend)} .v-cobrar .vtit{color:var(--pend)}
+.v-pago{background:var(--ok-bg);border-color:var(--ok)} .v-pago .vtit{color:var(--ok)}
+.v-nota{background:var(--bad-bg);border-color:var(--bad)} .v-nota .vtit{color:var(--bad)}
+.v-vend{border-color:#6b3fd0} .v-vend .vtit{color:#6b3fd0;font-size:22px}
+:root[data-theme="dark"] .v-vend .vtit{color:#b79cf5}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .v-vend .vtit{color:#b79cf5}}
+.card.prio .vbox{background:#fff;border-color:#fff}.card.prio .vbox .vdet{color:#17212b}
+.card.prio .v-cobrar .vtit{color:#b7791f}.card.prio .v-pago .vtit{color:#2f855a}.card.prio .v-nota .vtit{color:#c53030}.card.prio .v-vend .vtit{color:#6b3fd0}
 .tfone{font-size:12px;font-weight:700;text-align:center;line-height:1.2;font-variant-numeric:tabular-nums;color:var(--fg)}
 .card.prio .tfone{color:#fff}
 .tcol .cbtn{padding:5px 6px;font-size:12px;width:100%;justify-content:center}
@@ -392,6 +404,25 @@ function pagTagHTML(e,cartao){const p=pagamentoDe(e);
   if(p==='nota')return cartao?'':'<span class="pill p-bad">🧾 Frete na nota</span>';
   if(p==='vendedor')return `<span class="pill p-frete">Por conta: ${esc(e.fretePor)}</span>`;
   return '<span class="pill p-ok">✓ Frete pago</span>'}
+// caixa grande do valor no pé do cartão (entregas ainda não feitas).
+// "Cobrar" aparece para todos; o resto do valor só para quem pode ver valores.
+function valorHTML(e,V){
+  const p=pagamentoDe(e),v=Number(e.frete)||0,aj=ajusteDe(e);
+  // sem "ver valores": mostra como é pago, sem o valor (frete na nota já aparece embaixo da foto)
+  if(!V&&!(p==='entrega'&&v)){const t={pix:['v-pago','✓ Pago no Pix'],junto:['v-pago','💵 Dinheiro junto com a nota'],pago:['v-pago','✓ Frete pago'],
+    vendedor:['v-vend','Frete por conta do vendedor '+esc(e.fretePor||'')]}[p];return t?`<div class="vbox ${t[0]}"><div class="vtit">${t[1]}</div></div>`:''}
+  if(!v&&p!=='vendedor')return '';
+  const tit={entrega:`💰 Cobrar ${real(v)}`,pix:`✓ ${real(v)} pago no Pix`,junto:`💵 ${real(v)} junto com a nota`,nota:`🧾 ${real(v)} frete na nota`,
+    vendedor:`${real(v)} por conta do vendedor ${esc(e.fretePor||'')}`,pago:`✓ ${real(v)} já pago`}[p]||real(v);
+  const cls={entrega:'v-cobrar',pix:'v-pago',junto:'v-pago',nota:'v-nota',vendedor:'v-vend',pago:'v-pago'}[p]||'';
+  let det='';
+  if(V&&e.freteBase!==undefined){
+    const base=e.freteConsultar?'Valor combinado':e.condominio&&e.freteTabela<=100?'Condomínio':'Tabela';
+    if(aj.valor)det=`${base} ${real(e.freteBase)} <span class="vaj">${aj.valor>0?'+':'−'} ${real(Math.abs(aj.valor))} de ${esc(aj.por||'?')}</span>`;
+    else if(e.freteConsultar||(e.condominio&&e.freteTabela<=100))det=`${base} ${real(e.freteBase)}`;
+  }else if(V&&aj.por)det=`<span class="vaj">${esc(ajusteTxt(e))}</span>`;
+  return `<div class="vbox ${cls}"><div class="vtit">${tit}</div>${det?`<div class="vdet">${det}</div>`:''}</div>`;
+}
 // hora em que a entrega foi lançada no mural (com o dia, se não foi hoje)
 function lancadaTxt(e){if(!e.criadoEm)return '';const d=new Date(e.criadoEm),h=d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   return ds(d)===hoje()?'às '+h:d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' às '+h}
@@ -423,6 +454,7 @@ function cardHTML(e){
   if(e.status==='entregue'&&!expandidas.has(e.id))return miniHTML(e);
   const src=fotoSrc(e),nm=e.criadoPorNome,V=P.verValores;
   const itens=itensDe(e).map(i=>esc(qtdNome(i))+(i.local?' '+locHTML(i.local):'')).join(' · ');
+  const fe=e.status==='entregue';
   const pr=e.prioridade&&e.status!=='entregue',hr=e.turno==='apos'&&e.status!=='entregue';
   return `<div class="card st-${e.status}${pr?' prio':''}${hr?' hr':''}" data-id="${esc(e.id)}">
     <div class="under"><span class="l">✓ Entregue</span><span class="r">Problema ✕</span></div>
@@ -435,10 +467,11 @@ function cardHTML(e){
         <div class="who">${esc(e.cliente||'Sem nome')}</div>
         ${e.endereco||e.bairro?`<div class="end">📍 ${esc(e.endereco)}${e.complemento?` · <b>${esc(e.complemento)}</b>`:''}${e.bairro?`${e.endereco?' — ':''}<span class="bai2">${esc(e.bairro)}</span>`:''}</div>`:''}
         ${e.endereco?`<div class="cbtns"><button type="button" class="cbtn" data-copiar="${esc(enderecoMapa(e))}" data-msg="Endereço copiado (sem o apartamento). É só colar no mapa ou no WhatsApp.">📋 Copiar endereço</button><a class="cbtn" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoMapa(e))}" target="_blank" rel="noopener">🗺️ Maps</a></div>`:''}
-        <div class="meta">${e.turno==='apos'?'':`<span class="tag">${esc(turnoTxt(e))}</span>`}${localTagHTML(e)}${condTag(e)}${V&&e.frete?`<span class="tag">${real(e.frete)}</span>`:''}${V&&ajusteTxt(e)?`<span class="tag">${esc(ajusteTxt(e))}</span>`:''}${notasTagHTML(e)}${pagTagHTML(e,true)}<span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span></div>
+        <div class="meta">${e.turno==='apos'?'':`<span class="tag">${esc(turnoTxt(e))}</span>`}${localTagHTML(e)}${condTag(e)}${fe&&V&&e.frete?`<span class="tag">${real(e.frete)}</span>`:''}${fe&&V&&ajusteTxt(e)?`<span class="tag">${esc(ajusteTxt(e))}</span>`:''}${notasTagHTML(e)}${fe?pagTagHTML(e,true):''}<span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span></div>
         ${itens?`<div class="items">${itens}</div>`:''}
         ${e.observacao?`<div class="items">Obs.: ${esc(e.observacao)}</div>`:''}
         ${(e.postits||[]).length?`<div class="postits">${e.postits.map(p=>`<div class="postit">${esc(p.texto)}</div>`).join('')}</div>`:''}
+        ${fe?'':valorHTML(e,V)}
         ${nm||e.criadoEm?`<div class="meta">${[nm?'por '+esc(nm):'',lancadaTxt(e)].filter(Boolean).join(' · ')}</div>`:''}
         ${e.status==='entregue'?`<div class="cbtns"><button type="button" class="cbtn" data-min="${esc(e.id)}">▴ Minimizar</button></div>`:''}
       </div>

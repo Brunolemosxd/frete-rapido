@@ -47,6 +47,10 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   REGRA: copiar endereço NUNCA leva o apartamento/complemento (usa `enderecoMapa`, só rua, número e bairro), nem no detalhe. Detalhe da entrega tem botão fixo "← Voltar para o mural" no alto.
 - Flecha de direção embaixo da foto: ← azul (Araçá até Terra de Areia), → vermelha (Guará até Nova Tramandaí),
   ↑ cinza (centro e resto; Zona Nova é cinza). Pendentes com mesma flecha ficam juntas em cada turno. Editável na tabela.
+- Caixa grande do valor no pé do cartão (pendente/problema; entregue fica como antes), cor pela forma de pagamento:
+  "💰 Cobrar R$ X" (todos veem), "R$ X pago no Pix", "junto com a nota", "frete na nota", "por conta do vendedor Fulano".
+  Embaixo: "Tabela R$ 70 + R$ 10 de Ana" (ajuste em amarelo), condomínio ou valor combinado. Sem "Ver valores": só a forma
+  de pagamento, sem valor (e sem ajuste). Valor/ajuste/pagamento saíram das etiquetas do meio nesses cartões.
 - Linha "por Ana · às 14:32" no cartão: hora em que foi lançada (`criadoEm`; se não foi hoje, "29/10 às 14:32").
 - Quem carregou: Tiago (sem H) ou Bruno, no menu ao segurar o cartão; aparece embaixo da foto.
 - Problema: motivo em faixa vermelha grande no topo do cartão; motivos cadastráveis (`config/motivos`).
