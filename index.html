@@ -149,6 +149,10 @@ section.hr h3{color:#6b3fd0;font-size:14px}
 .gitem{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:15px;font-weight:600}
 .card.prio .grp{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.45)}
 .card.prio .glbl,.card.prio .gsub{color:#fff;opacity:.9}
+/* formulário em blocos: nota, cliente, dia/turno, frete */
+.fgrp{border:1.5px solid var(--line);border-top:5px solid var(--accent);border-radius:16px;padding:12px;display:grid;gap:16px;background:var(--surface);box-shadow:var(--shadow)}
+.fglbl{font-family:var(--display);font-weight:700;font-size:21px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:-4px}
+.fg-nota{border-top-color:#7a4a21}.fg-cli{border-top-color:var(--accent)}.fg-ent{border-top-color:#6b3fd0}.fg-frete{border-top-color:var(--ok)}
 .tfone{font-size:12px;font-weight:700;text-align:center;line-height:1.2;font-variant-numeric:tabular-nums;color:var(--fg)}
 .card.prio .tfone{color:#fff}
 .tcol .cbtn{padding:5px 6px;font-size:12px;width:100%;justify-content:center}
@@ -796,36 +800,44 @@ function abrirForm(ed){
   const vends=[...new Set([...VENDEDORES,st.fretePor,st.ajustePor].filter(Boolean))];
   const nomesHTML=vends.length?vends.map(v=>`<button type="button" class="chip" data-v="${esc(v)}">${esc(v)}</button>`).join(''):'<span class="hint">Nenhum vendedor cadastrado ainda. O Bruno cadastra no painel.</span>';
   abrirSheet(`<h2>${ed?'Editar entrega':'Nova entrega'}</h2>
-    <div class="field"><span class="lbl">Foto da nota${ed?'':' '+R}</span><div class="photobtn" id="fotobox"><div class="thumb" id="fthumb"></div><button type="button" class="btn" id="fbtn">📷 Tirar foto</button></div>
-      <div class="fextras" id="fextras"></div><button type="button" class="btn addbtn" id="fmaisfoto">+ Outra foto da nota</button></div>
-    <div class="field"><span class="lbl">Notas ${R} — quantas e onde estão</span><div class="notas2" id="fnotas">
-      <div class="cont loja"><span>Na loja</span><div class="step"><button type="button" data-n="notasLoja" data-d="-1" aria-label="Uma nota a menos na loja">−</button><b id="nloja">0</b><button type="button" data-n="notasLoja" data-d="1" aria-label="Uma nota a mais na loja">+</button></div></div>
-      <div class="cont dep"><span>No depósito</span><div class="step"><button type="button" data-n="notasDeposito" data-d="-1" aria-label="Uma nota a menos no depósito">−</button><b id="ndep">0</b><button type="button" data-n="notasDeposito" data-d="1" aria-label="Uma nota a mais no depósito">+</button></div></div>
-    </div></div>
-    <div class="chips"><button type="button" class="chip prio" id="fprio">Prioridade</button></div>
-    <div class="field"><span class="lbl">Dia</span><div class="chips" id="cdia">${dChips.map(([v,t])=>`<button type="button" class="chip" data-v="${v}">${t}</button>`).join('')}<input type="date" id="fdata" style="width:auto;flex:1;min-width:140px"></div></div>
-    <div class="field"><span class="lbl">Turno</span><div class="chips" id="cturno"><button type="button" class="chip" data-v="qualquer">Qualquer turno</button><button type="button" class="chip" data-v="manha">Manhã</button><button type="button" class="chip" data-v="tarde">Tarde</button><button type="button" class="chip" data-v="apos">Depois das…</button></div>
-      <input type="time" id="fhora" ${st.turno==='apos'?'':'hidden'}></div>
-    <div class="field"><span class="lbl">Nome do cliente como está na nota ${R}</span>
-      <div class="row"><input type="text" id="fcli" autocomplete="off" autocapitalize="words" placeholder="Nome" aria-label="Nome (como está na nota)" required><input type="text" id="fsob" autocomplete="off" autocapitalize="words" placeholder="Sobrenome" aria-label="Sobrenome (como está na nota)" required></div></div>
-    <div class="field"><label for="fone">Telefone ${R}</label><input type="tel" id="fone" inputmode="numeric" autocomplete="off" placeholder="(00) 00000-0000" required>
-      <div id="fconts" style="display:grid;gap:8px"></div><button type="button" class="btn addbtn" id="fmaiscont">+ Outro contato (opcional)</button></div>
-    <div class="field bai"><label for="fbai">Bairro / localidade ${R}</label><input type="text" id="fbai" autocomplete="off" placeholder="Comece a digitar o bairro" required>
-      <div class="sugs" id="fsugs" hidden></div>
-      <div class="chips"><button type="button" class="chip" id="fcond">É condomínio</button></div></div>
-    <div class="field"><label for="fend">Rua ${R} — só o nome, sem número</label><input type="text" id="fend" autocomplete="off" autocapitalize="words" placeholder="Ex.: Rua das Tulipas" required></div>
-    <div class="field"><label for="fnum">Número ${R}</label><div class="row"><input type="text" id="fnum" inputmode="numeric" autocomplete="off" placeholder="Ex.: 3252" maxlength="6" style="flex:0 1 140px"><button type="button" class="chip" id="fsn">☐ Sem número</button></div></div>
-    <div class="field"><label for="fcomp">AP ou quadra e lote (opcional)</label><input type="text" id="fcomp" autocomplete="off" placeholder="Ex.: Ap 302, Bloco B · Quadra 5, Lote 12" maxlength="80"></div>
-    <div class="field"><span class="lbl">Valor do frete ${R}</span>
-      <div class="fretebox" id="fbox"></div>
-      <div class="field" id="bajv"><span class="lbl">Qual vendedor mudou o valor</span><div class="chips" id="cajv" role="group" aria-label="Qual vendedor mudou o valor">${nomesHTML}</div></div>
-      <span class="lbl">Como o frete é pago ${R}</span>
-      <div class="pags" id="fpags">${Object.entries(PAGAMENTOS).map(([k,t])=>`<button type="button" class="chip" data-pag="${k}">${t}</button>`).join('')}</div>
-      <div class="field" id="bvend"><span class="lbl">Qual vendedor paga o frete</span><div class="chips" id="cvend" role="group" aria-label="Qual vendedor paga o frete">${nomesHTML}</div></div></div>
-    <div class="field"><span class="lbl">Produtos — toque para pôr na lista</span>
-      <div class="prods" id="fprods">${PRODUTOS.map(p=>`<button type="button" class="prod" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div>
-      <div class="row"><input type="text" id="fitem" placeholder="Outro produto" enterkeyhint="done"><button type="button" class="btn" id="fadd">Adicionar</button></div>
-      <div class="plist" id="fitens"></div></div>
+    <div class="fgrp fg-nota"><div class="fglbl">📄 Nota e produtos</div>
+      <div class="field"><span class="lbl">Foto da nota${ed?'':' '+R}</span><div class="photobtn" id="fotobox"><div class="thumb" id="fthumb"></div><button type="button" class="btn" id="fbtn">📷 Tirar foto</button></div>
+        <div class="fextras" id="fextras"></div><button type="button" class="btn addbtn" id="fmaisfoto">+ Outra foto da nota</button></div>
+      <div class="field"><span class="lbl">Notas ${R} — quantas e onde estão</span><div class="notas2" id="fnotas">
+        <div class="cont loja"><span>Na loja</span><div class="step"><button type="button" data-n="notasLoja" data-d="-1" aria-label="Uma nota a menos na loja">−</button><b id="nloja">0</b><button type="button" data-n="notasLoja" data-d="1" aria-label="Uma nota a mais na loja">+</button></div></div>
+        <div class="cont dep"><span>No depósito</span><div class="step"><button type="button" data-n="notasDeposito" data-d="-1" aria-label="Uma nota a menos no depósito">−</button><b id="ndep">0</b><button type="button" data-n="notasDeposito" data-d="1" aria-label="Uma nota a mais no depósito">+</button></div></div>
+      </div></div>
+      <div class="field"><span class="lbl">Produtos — toque para pôr na lista</span>
+        <div class="prods" id="fprods">${PRODUTOS.map(p=>`<button type="button" class="prod" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div>
+        <div class="row"><input type="text" id="fitem" placeholder="Outro produto" enterkeyhint="done"><button type="button" class="btn" id="fadd">Adicionar</button></div>
+        <div class="plist" id="fitens"></div></div>
+    </div>
+    <div class="fgrp fg-cli"><div class="fglbl">👤 Cliente</div>
+      <div class="field"><span class="lbl">Nome do cliente como está na nota ${R}</span>
+        <div class="row"><input type="text" id="fcli" autocomplete="off" autocapitalize="words" placeholder="Nome" aria-label="Nome (como está na nota)" required><input type="text" id="fsob" autocomplete="off" autocapitalize="words" placeholder="Sobrenome" aria-label="Sobrenome (como está na nota)" required></div></div>
+      <div class="field"><label for="fone">Telefone ${R}</label><input type="tel" id="fone" inputmode="numeric" autocomplete="off" placeholder="(00) 00000-0000" required>
+        <div id="fconts" style="display:grid;gap:8px"></div><button type="button" class="btn addbtn" id="fmaiscont">+ Outro contato (opcional)</button></div>
+      <div class="field bai"><label for="fbai">Bairro / localidade ${R}</label><input type="text" id="fbai" autocomplete="off" placeholder="Comece a digitar o bairro" required>
+        <div class="sugs" id="fsugs" hidden></div>
+        <div class="chips"><button type="button" class="chip" id="fcond">É condomínio</button></div></div>
+      <div class="field"><label for="fend">Rua ${R} — só o nome, sem número</label><input type="text" id="fend" autocomplete="off" autocapitalize="words" placeholder="Ex.: Rua das Tulipas" required></div>
+      <div class="field"><label for="fnum">Número ${R}</label><div class="row"><input type="text" id="fnum" inputmode="numeric" autocomplete="off" placeholder="Ex.: 3252" maxlength="6" style="flex:0 1 140px"><button type="button" class="chip" id="fsn">☐ Sem número</button></div></div>
+      <div class="field"><label for="fcomp">AP ou quadra e lote (opcional)</label><input type="text" id="fcomp" autocomplete="off" placeholder="Ex.: Ap 302, Bloco B · Quadra 5, Lote 12" maxlength="80"></div>
+    </div>
+    <div class="fgrp fg-ent"><div class="fglbl">🚚 Dia e turno da entrega</div>
+      <div class="chips"><button type="button" class="chip prio" id="fprio">Prioridade</button></div>
+      <div class="field"><span class="lbl">Dia</span><div class="chips" id="cdia">${dChips.map(([v,t])=>`<button type="button" class="chip" data-v="${v}">${t}</button>`).join('')}<input type="date" id="fdata" style="width:auto;flex:1;min-width:140px"></div></div>
+      <div class="field"><span class="lbl">Turno</span><div class="chips" id="cturno"><button type="button" class="chip" data-v="qualquer">Qualquer turno</button><button type="button" class="chip" data-v="manha">Manhã</button><button type="button" class="chip" data-v="tarde">Tarde</button><button type="button" class="chip" data-v="apos">Depois das…</button></div>
+        <input type="time" id="fhora" ${st.turno==='apos'?'':'hidden'}></div>
+    </div>
+    <div class="fgrp fg-frete"><div class="fglbl">💰 Frete</div>
+      <div class="field"><span class="lbl">Valor do frete ${R}</span>
+        <div class="fretebox" id="fbox"></div>
+        <div class="field" id="bajv"><span class="lbl">Qual vendedor mudou o valor</span><div class="chips" id="cajv" role="group" aria-label="Qual vendedor mudou o valor">${nomesHTML}</div></div>
+        <span class="lbl">Como o frete é pago ${R}</span>
+        <div class="pags" id="fpags">${Object.entries(PAGAMENTOS).map(([k,t])=>`<button type="button" class="chip" data-pag="${k}">${t}</button>`).join('')}</div>
+        <div class="field" id="bvend"><span class="lbl">Qual vendedor paga o frete</span><div class="chips" id="cvend" role="group" aria-label="Qual vendedor paga o frete">${nomesHTML}</div></div></div>
+    </div>
     <div class="field"><label for="fobs">Observação (opcional)</label><textarea id="fobs" rows="3" placeholder="Ex.: subir pela escada, portão azul, ligar antes"></textarea></div>
     <div class="actions two"><button type="button" class="btn ghost" id="fcancel">Cancelar</button><button type="button" class="btn pri" id="fsave">${ed?'Salvar':'Lançar no mural'}</button></div>`,
   s=>{

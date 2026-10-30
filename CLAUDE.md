@@ -31,6 +31,9 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
 - Nova entrega: foto da nota obrigatória (só para entrega nova) + fotos extras; contagem de notas na loja/depósito
   (mínimo 1); prioridade (cartão vermelho no topo); dia padrão Hoje; turno padrão "Qualquer turno";
   nome e sobrenome como na nota (obrigatórios); telefone com DDD; contatos extras; bloqueia mesmo telefone no mesmo dia.
+- Formulário de nova entrega em blocos (caixas com faixa colorida em cima): "📄 Nota e produtos" (foto, notas, produtos),
+  "👤 Cliente" (nome, telefone, contatos, bairro, condomínio, rua, número, AP), "🚚 Dia e turno da entrega" (prioridade,
+  dia, turno) e "💰 Frete" (valor, ajuste, pagamento); observação por último.
 - Bairro: precisa ser escolhido da tabela (sugestões sem acento). Valor travado da tabela (`config/fretes`, editável no
   painel; valor null = "a consultar", aí pede valor combinado). Caixinha "É condomínio": tabela até R$ 100 vira R$ 100;
   acima de 100 fica a tabela. Ajuste −50 a +50 sempre com o vendedor que mudou.
