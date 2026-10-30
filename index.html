@@ -110,6 +110,12 @@ section.hr h3{color:#6b3fd0;font-size:14px}
 .chip[data-pag="nota"][aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
 .items{font-size:14px;color:var(--muted);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .obs{font-size:13px;color:var(--bad)}
+.end{font-size:14px;line-height:1.3;color:var(--fg);overflow-wrap:anywhere}
+.end b{font-weight:600}
+.card.prio .end{color:#fff}
+/* botão de voltar sempre visível no alto do detalhe */
+.voltar{position:sticky;top:-10px;z-index:2;justify-self:start;display:inline-flex;align-items:center;gap:6px;margin:-4px 0 -6px;
+  background:var(--accent);color:var(--accent-fg);border:0;border-radius:99px;padding:10px 16px;font-weight:700;font-size:16px;box-shadow:var(--shadow)}
 .avuso{padding:10px 14px;font-weight:700;font-size:15px;text-align:center}
 .avuso.medio{background:#f4c430;color:#3d2e00}
 .avuso.alto{background:#c53030;color:#fff}
@@ -399,6 +405,7 @@ function cardHTML(e){
         ${pr?'<div><span class="pill pprio">⬆ Prioridade</span></div>':''}
         ${hr?horaHTML(e):''}
         <div class="who">${esc(e.cliente||'Sem nome')}${e.bairro?` <span style="font-weight:400;color:var(--muted)">· ${esc(e.bairro)}</span>`:''}</div>
+        ${e.endereco?`<div class="end">📍 ${esc(e.endereco)}${e.complemento?` · <b>${esc(e.complemento)}</b>`:''}</div>`:''}
         <div class="meta">${e.turno==='apos'?'':`<span class="tag">${esc(turnoTxt(e))}</span>`}${localTagHTML(e)}${condTag(e)}${V&&e.frete?`<span class="tag">${real(e.frete)}</span>`:''}${V&&ajusteTxt(e)?`<span class="tag">${esc(ajusteTxt(e))}</span>`:''}${notasTagHTML(e)}${pagTagHTML(e,true)}<span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span></div>
         ${itens?`<div class="items">${itens}</div>`:''}
         ${e.observacao?`<div class="items">Obs.: ${esc(e.observacao)}</div>`:''}
@@ -623,7 +630,8 @@ function confirmarApagar(id){
 }
 function abrirDetalhe(id){
   const e=entregas.find(x=>x.id===id);if(!e)return;const src=fotoSrc(e),its=itensDe(e),V=P.verValores;
-  abrirSheet(`<h2>${esc(e.cliente||'Entrega')}</h2>
+  abrirSheet(`<button type="button" class="voltar" data-x>← Voltar para o mural</button>
+    <h2>${esc(e.cliente||'Entrega')}</h2>
     ${e.status==='problema'?`<div class="probfaixa"><span class="ic" aria-hidden="true">⚠</span><span>${esc(e.obs||'Problema na entrega')}</span></div>`:''}
     ${horaHTML(e)}
     <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span>${e.turno==='apos'?'':`<span class="tag">${esc(turnoTxt(e))}</span>`}${localTagHTML(e)}${condTag(e)}${notasTagHTML(e)}${pagTagHTML(e)}</div>
@@ -651,6 +659,7 @@ function abrirDetalhe(id){
   s.addEventListener('click',async ev=>{
     const rm=ev.target.closest('[data-rm]');
     if(rm){const lista=(e.postits||[]).filter((_,i)=>i!==+rm.dataset.rm);e.postits=lista;render();abrirDetalhe(id);if(await salvar(id,{postits:lista,atualizadoEm:Date.now()}))toast('Post-it tirado');return}
+    if(ev.target.closest('[data-x]')){fechar();return}
     const a=ev.target.closest('[data-a]')?.dataset.a;if(a==='entregue'){fechar();setStatus(id,'entregue')}if(a==='postit')abrirPostit(id);if(a==='mais')abrirAcoes(id);if(a==='copiar')copiar(soDig(e.fone));const cp=ev.target.closest('[data-copiar]');if(cp)copiar(cp.dataset.copiar,cp.dataset.msg);});
   });
 }
