@@ -407,10 +407,12 @@ function pegarFoto(cb){const f=$('#file');f.value='';f.onchange=async()=>{const 
   let b;try{b=await reduzir(file,1600,.8)}catch{toast('Não consegui ler essa foto.');return}cb(b)};f.click()}
 const condTag=e=>e.condominio?'<span class="tag">🏢 Condomínio</span>':'';
 // o mapa se perde com "ap 302", "bloco B" etc.; vai só rua, número e bairro
-function enderecoMapa(e){
-  if(e.rua!==undefined)return e.rua+(e.numero?', '+e.numero:'')+(e.bairro?', '+e.bairro:'');
-  const rua=String(e.endereco||'').replace(/[,\-–]?\s*\b(ap|apt|apto|apartamento|bl|bloco|torre|sala|cj|conjunto|casa|lote|lt|quadra|qd)\b\.?\s*(n[º°o.]?\s*)?([0-9]+|[a-z])\b.*$/i,'').trim()||e.endereco||'';
-  return rua+(e.bairro?', '+e.bairro:'')}
+// só rua e número (é o que vai no "Copiar endereço": sem AP e sem bairro)
+function enderecoRua(e){
+  if(e.rua!==undefined)return e.rua+(e.numero?', '+e.numero:'');
+  return String(e.endereco||'').replace(/[,\-–]?\s*\b(ap|apt|apto|apartamento|bl|bloco|torre|sala|cj|conjunto|casa|lote|lt|quadra|qd)\b\.?\s*(n[º°o.]?\s*)?([0-9]+|[a-z])\b.*$/i,'').trim()||e.endereco||''}
+// o mapa leva o bairro junto, para achar o lugar certo
+function enderecoMapa(e){return enderecoRua(e)+(e.bairro?', '+e.bairro:'')}
 function ajusteTxt(e){const a=ajusteDe(e);if(!a.por&&!a.valor)return '';return a.por+' '+(a.valor?(a.valor>0?'+':'−')+real(Math.abs(a.valor)):'pôs a mais')}
 // pagamento aparece para todos: o entregador precisa saber se cobra ou não
 function pagTagHTML(e,cartao){const p=pagamentoDe(e);
@@ -488,7 +490,7 @@ function cardHTML(e){
           <div class="glbl">👤 Cliente</div>
           <div class="who">${esc(e.cliente||'Sem nome')}</div>
           ${e.endereco||e.bairro?`<div class="end">📍 ${esc(e.endereco)}${e.complemento?` · <b>${esc(e.complemento)}</b>`:''}${e.bairro?`${e.endereco?' — ':''}<span class="bai2">${esc(e.bairro)}</span>`:''}${e.condominio?' · 🏢 Condomínio':''}</div>`:''}
-          ${e.endereco?`<div class="cbtns"><button type="button" class="cbtn" data-copiar="${esc(enderecoMapa(e))}" data-msg="Endereço copiado (sem o apartamento). É só colar no mapa ou no WhatsApp.">📋 Copiar endereço</button><a class="cbtn" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoMapa(e))}" target="_blank" rel="noopener">🗺️ Maps</a></div>`:''}
+          ${e.endereco?`<div class="cbtns"><button type="button" class="cbtn" data-copiar="${esc(enderecoRua(e))}" data-msg="Endereço copiado (só rua e número). É só colar no mapa ou no WhatsApp.">📋 Copiar endereço</button><a class="cbtn" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoMapa(e))}" target="_blank" rel="noopener">🗺️ Maps</a></div>`:''}
           ${e.fone?foneHTML(e.fone):''}${(e.contatos||[]).filter(c=>c.fone).map(c=>foneHTML(c.fone,c.nome||'Outro')).join('')}
         </div>
         <div class="grp">
@@ -729,7 +731,7 @@ function abrirDetalhe(id){
     <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span>${e.turno==='apos'?'':`<span class="tag">${esc(turnoTxt(e))}</span>`}${localTagHTML(e)}${condTag(e)}${notasTagHTML(e)}${pagTagHTML(e)}</div>
     ${src?`<div class="photo"><img id="dfoto" src="${esc(src)}" alt="Foto da nota"></div>`:''}
     ${e.fotosExtras?`<div id="dextras" style="display:grid;gap:8px"></div>`:''}
-    <div class="det">${e.endereco?`<div><span class="lbl">Endereço</span><div class="fonerow"><span style="user-select:all">${esc(e.endereco)}${e.complemento?`<br><b>${esc(e.complemento)}</b>`:''}</span><button type="button" class="btn sm" data-copiar="${esc(enderecoMapa(e))}" data-msg="Endereço copiado (sem o apartamento). É só colar no mapa ou no WhatsApp.">📋 Copiar</button></div>
+    <div class="det">${e.endereco?`<div><span class="lbl">Endereço</span><div class="fonerow"><span style="user-select:all">${esc(e.endereco)}${e.complemento?`<br><b>${esc(e.complemento)}</b>`:''}</span><button type="button" class="btn sm" data-copiar="${esc(enderecoRua(e))}" data-msg="Endereço copiado (só rua e número). É só colar no mapa ou no WhatsApp.">📋 Copiar</button></div>
       <div class="fonerow" style="margin-top:6px"><a class="btn sm mapa" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoMapa(e))}" target="_blank" rel="noopener">🗺️ Google Maps</a><a class="btn sm mapa" href="https://waze.com/ul?q=${encodeURIComponent(enderecoMapa(e))}&navigate=yes" target="_blank" rel="noopener">🚗 Waze</a></div></div>`:''}
     ${e.bairro?`<div><span class="lbl">Bairro</span><br>${esc(e.bairro)}</div>`:''}
     ${e.fone?`<div><span class="lbl">Telefone</span><div class="fonerow"><span style="user-select:all">${esc(e.fone)}</span><button type="button" class="btn sm" data-a="copiar">📋 Copiar</button></div></div>`:''}

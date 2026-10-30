@@ -49,7 +49,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   com bairro em azul, 🏢 condomínio, botões "📋 Copiar endereço" e "🗺️ Maps", telefone e outros contatos, cada um com
   "📋 Copiar"); bloco "📦 Nota e produtos" (notas na loja/depósito e um produto por linha com o lugar); depois Obs.,
   post-its, caixa do valor e "por Ana · às 14:32". Coluna da esquerda: foto, frete na nota, flecha, quem carregou.
-  REGRA: copiar endereço NUNCA leva o apartamento/complemento (usa `enderecoMapa`, só rua, número e bairro), nem no detalhe. Detalhe da entrega tem botão fixo "← Voltar para o mural" no alto.
+  REGRA: copiar endereço leva SÓ rua e número (`enderecoRua`): nunca AP/complemento nem bairro, também no detalhe.
+  O Maps/Waze usa `enderecoMapa` (rua, número e bairro). Detalhe da entrega tem botão fixo "← Voltar para o mural" no alto.
 - Flecha de direção embaixo da foto: ← azul (Araçá até Terra de Areia), → vermelha (Guará até Nova Tramandaí),
   ↑ cinza (centro e resto; Zona Nova é cinza). Pendentes com mesma flecha ficam juntas em cada turno. Editável na tabela.
 - Caixa grande do valor no pé do cartão (pendente/problema; entregue fica como antes), cor pela forma de pagamento:
