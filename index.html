@@ -416,8 +416,8 @@ function enderecoRua(e){
   // (número de quadra/lote não é número de casa)
   if(/\b(lote|lt|quadra|qd)\b\.?\s*\d/i.test(e.endereco||''))return base;
   const en=separarEndereco(e),rua=(en.rua||base).replace(/\s*\b(casa|n[º°o]?)\.?$/i,'').trim();return en.numero?rua+', '+en.numero:base}
-// o mapa leva o bairro junto, para achar o lugar certo
-function enderecoMapa(e){return enderecoRua(e)+(e.bairro?', '+e.bairro:'')}
+// o mapa (Maps e Waze) pesquisa só rua e número, igual ao copiar; se cair longe, a pessoa põe o bairro na hora
+function enderecoMapa(e){return enderecoRua(e)}
 function ajusteTxt(e){const a=ajusteDe(e);if(!a.por&&!a.valor)return '';return a.por+' '+(a.valor?(a.valor>0?'+':'−')+real(Math.abs(a.valor)):'pôs a mais')}
 // pagamento aparece para todos: o entregador precisa saber se cobra ou não
 function pagTagHTML(e,cartao){const p=pagamentoDe(e);

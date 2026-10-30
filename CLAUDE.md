@@ -44,13 +44,13 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
 - Endereço em 3 campos: Rua (só letras: números são tirados ao digitar), Número (só números, obrigatório, ou "Sem número")
   e "AP ou quadra e lote" (opcional, letras e números). Grava `rua`, `numero`, `semNumero`, `complemento` e também
   `endereco` = "Rua, Número" (ou "Rua, S/N") para o resto do app. Entregas antigas: `separarEndereco` divide ao editar
-  (número que estava no complemento vai para o Número). Mapa (Google Maps/Waze) usa só rua, número e bairro.
+  (número que estava no complemento vai para o Número). Mapa (Google Maps/Waze) usa só rua e número.
 - Cartão organizado em blocos: no alto turno + situação; bloco "👤 Cliente" (nome, "📍 endereço · complemento — Bairro"
   com bairro em azul, 🏢 condomínio, botões "📋 Copiar endereço" e "🗺️ Maps", telefone e outros contatos, cada um com
   "📋 Copiar"); bloco "📦 Nota e produtos" (notas na loja/depósito e um produto por linha com o lugar); depois Obs.,
   post-its, caixa do valor e "por Ana · às 14:32". Coluna da esquerda: foto, frete na nota, flecha, quem carregou.
   REGRA: copiar endereço leva SÓ rua e número (`enderecoRua`): nunca AP/complemento nem bairro, também no detalhe.
-  O Maps/Waze usa `enderecoMapa` (rua, número e bairro).
+  O Maps/Waze também pesquisa SÓ rua e número (`enderecoMapa` = `enderecoRua`), sem bairro; se cair longe, põem o bairro na hora.
   Entregas antigas (sem `rua`): se o número ficou depois de "casa" ou no complemento, `enderecoRua` acha e junta; número de quadra/lote não conta. Detalhe da entrega tem botão fixo "← Voltar para o mural" no alto.
 - Flecha de direção embaixo da foto: ← azul (Araçá até Terra de Areia), → vermelha (Guará até Nova Tramandaí),
   ↑ cinza (centro e resto; Zona Nova é cinza). Pendentes com mesma flecha ficam juntas em cada turno. Editável na tabela.
