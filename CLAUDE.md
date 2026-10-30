@@ -34,7 +34,10 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
 - Bairro: precisa ser escolhido da tabela (sugestões sem acento). Valor travado da tabela (`config/fretes`, editável no
   painel; valor null = "a consultar", aí pede valor combinado). Caixinha "É condomínio": tabela até R$ 100 vira R$ 100;
   acima de 100 fica a tabela. Ajuste −50 a +50 sempre com o vendedor que mudou.
-- Pagamento do frete: cobrar na entrega, já pago no Pix, dinheiro junto com a nota, por conta do vendedor (com nome).
+- Pagamento do frete: cobrar na entrega, já pago no Pix, dinheiro junto com a nota, frete na nota (Bruno lança; faixa vermelha
+  "Frete na nota" embaixo da foto; conta como já pago), por conta do vendedor (com nome).
+- Turno "Depois das HH:MM": faixa roxa com relógio "🕒 Só depois das HH:MM" no cartão e no detalhe (sempre, não muda com a hora).
+- Cores de local: Loja = azul fraquinho (#cfe5fb), Depósito = marrom (#7a4a21), iguais nos dois temas (etiquetas, produtos, notas, formulário).
 - Endereço sem o apartamento + campo "Apartamento / complemento". Mapa (Google Maps/Waze) usa só rua, número e bairro.
 - Flecha de direção embaixo da foto: ← azul (Araçá até Terra de Areia), → vermelha (Guará até Nova Tramandaí),
   ↑ cinza (centro e resto; Zona Nova é cinza). Pendentes com mesma flecha ficam juntas em cada turno. Editável na tabela.

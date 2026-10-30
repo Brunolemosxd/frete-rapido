@@ -84,6 +84,30 @@ section.prio h3{color:var(--bad);font-size:14px}
 .meta{display:flex;gap:6px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
 .tag{border:1px solid var(--line);border-radius:6px;padding:1px 7px;color:var(--fg)}
 .tag.dep{border-color:var(--accent);color:var(--accent)}
+/* loja = azul fraquinho, depósito = marrom (iguais nos dois temas) */
+.tag.loja,.pill.loja,.lc.loja{background:#cfe5fb;color:#164a7a;border-color:#a9cdf2}
+.tag.dep,.pill.dep,.lc.dep{background:#7a4a21;color:#fff;border-color:#7a4a21}
+.lc{border-radius:5px;padding:0 5px;font-weight:600;font-size:.92em;border:1px solid}
+.cont.loja{background:#cfe5fb;border-color:#a9cdf2;color:#164a7a}
+.cont.dep{background:#7a4a21;border-color:#7a4a21;color:#fff}
+.cont.dep .step button{background:#fff;color:#7a4a21;border-color:#fff}
+.cont.loja .step button{background:#fff;color:#164a7a;border-color:#a9cdf2}
+.seg button[data-l="loja"][aria-pressed="true"]{background:#cfe5fb;color:#164a7a}
+.seg button[data-l="deposito"][aria-pressed="true"]{background:#7a4a21;color:#fff}
+/* entrega só depois de um horário: relógio roxo bem visível */
+.hora{display:inline-flex;align-items:center;gap:6px;background:#6b3fd0;color:#fff;border-radius:8px;padding:3px 10px;
+  font-family:var(--display);font-weight:700;font-size:19px;line-height:1.15;text-transform:uppercase;letter-spacing:.02em}
+.hora .rel{font-size:20px}
+.card.prio .hora{background:#fff;color:#6b3fd0}
+.card.prio .tag.loja{color:#164a7a;border-color:#a9cdf2}.card.prio .tag.dep{border-color:#7a4a21}
+.card.hr .face{box-shadow:inset 0 0 0 2px #6b3fd0,var(--shadow)}
+section.hr h3{color:#6b3fd0;font-size:14px}
+:root[data-theme="dark"] section.hr h3{color:#b79cf5}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) section.hr h3{color:#b79cf5}}
+/* frete na nota: faixa vermelha embaixo da foto */
+.fnota{background:#c53030;color:#fff;border-radius:6px;padding:2px 3px;font-size:11px;font-weight:800;text-align:center;line-height:1.15;text-transform:uppercase;width:100%}
+.card.prio .fnota{background:#fff;color:#c53030}
+.chip[data-pag="nota"][aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
 .items{font-size:14px;color:var(--muted);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .obs{font-size:13px;color:var(--bad)}
 .avuso{padding:10px 14px;font-weight:700;font-size:15px;text-align:center}
@@ -263,7 +287,7 @@ input.err{border-color:var(--bad)}
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="comum.js?v=20261030a"></script>
+<script src="comum.js?v=20261030b"></script>
 <script>
 (function(){
 const $=s=>document.querySelector(s);
@@ -298,6 +322,8 @@ function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTim
 function fotoSrc(e){return e.thumb||e.fotoData||''}
 const podeEditar=e=>P.editarTodas||(P.lancar&&e.criadoPorUid===me.uid);
 function turnoTxt(e){return e.turno==='apos'?'Depois das '+(e.hora||'—'):(TURNOS[e.turno]||'Qualquer turno')}
+// entrega "Depois das HH:MM": relógio em destaque para ninguém sair antes da hora
+const horaHTML=e=>e.turno==='apos'?`<div><span class="hora"><span class="rel" aria-hidden="true">🕒</span>Só depois das ${esc(e.hora||'—')}</span></div>`:'';
 function ordemTurno(e){return {manha:0,tarde:1,apos:2}[e.turno]??3}
 const PRODUTOS=['Geladeira','Freezer','Fogão','Cooktop','Forno elétrico','Micro-ondas','Coifa','Lava-louças','Máquina de lavar','Lava e seca','Tanquinho','Secadora','Ar-condicionado','TV','Colchão','Cama box','Sofá','Guarda-roupa','Cômoda','Armário de cozinha','Mesa e cadeiras','Rack / painel'];
 const LOC={loja:'Loja',deposito:'Depósito'};
@@ -307,11 +333,12 @@ const qtdNome=i=>(i.qtd>1?i.qtd+'× ':'')+i.nome;
 function locais(e){const its=itensDe(e),s=new Set(its.map(i=>i.local).filter(Boolean));if(!its.length)s.add(e.local==='deposito'?'deposito':'loja');
   return {txt:s.size>1?'Loja + Depósito':s.has('deposito')?'Depósito':'Loja',dep:s.has('deposito')}}
 // quantas notas fiscais e onde estão; entregas antigas só tinham "mais de uma nota"
-function notasTxt(e){const l=+e.notasLoja||0,d=+e.notasDeposito||0;if(!l&&!d)return '';
-  const p=(n,t)=>n?`${n} ${n===1?'nota':'notas'} ${t}`:'';return [p(l,'na loja'),p(d,'no depósito')].filter(Boolean).join(' · ')}
-function notasTagHTML(e){const t=notasTxt(e);if(t)return `<span class="pill ${(+e.notasLoja||0)+(+e.notasDeposito||0)>1?'p-bad':'p-frete'}">📄 ${esc(t)}</span>`;
+function notasTagHTML(e){const l=+e.notasLoja||0,d=+e.notasDeposito||0;
+  if(l||d){const p=(n,t,c)=>n?`<span class="pill ${c}">📄 ${n} ${n===1?'nota':'notas'} ${t}</span>`:'';
+    return (l+d>1?`<span class="pill p-bad">📎 ${l+d} notas</span>`:'')+p(l,'na loja','loja')+p(d,'no depósito','dep')}
   return e.variasNotas?'<span class="pill p-bad">📎 Mais de uma nota</span>':''}
-function localTagHTML(e){const l=locais(e);return `<span class="tag ${l.dep?'dep':''}">${l.txt}</span>`}
+function localTagHTML(e){const l=locais(e);return l.txt==='Loja + Depósito'?'<span class="tag loja">Loja</span><span class="tag dep">Depósito</span>':`<span class="tag ${l.dep?'dep':'loja'}">${l.txt}</span>`}
+const locHTML=k=>k?`<span class="lc ${k==='deposito'?'dep':'loja'}">${LOC[k]}</span>`:'';
 function soDig(v){return String(v||'').replace(/\D/g,'')}
 function fmtFone(v){const d=soDig(v).slice(0,11);if(!d)return '';if(d.length<3)return '('+d;
   const a=d.slice(0,2),r=d.slice(2);if(r.length<=4)return `(${a}) ${r}`;const k=r.length>8?5:4;return `(${a}) ${r.slice(0,k)}-${r.slice(k)}`}
@@ -333,10 +360,12 @@ function enderecoMapa(e){const rua=String(e.endereco||'').replace(/[,\-–]?\s*\
 function enderecoCompleto(e){return [e.endereco,e.complemento].filter(Boolean).join(', ')+(e.bairro?' - '+e.bairro:'')}
 function ajusteTxt(e){const a=ajusteDe(e);if(!a.por&&!a.valor)return '';return a.por+' '+(a.valor?(a.valor>0?'+':'−')+real(Math.abs(a.valor)):'pôs a mais')}
 // pagamento aparece para todos: o entregador precisa saber se cobra ou não
-function pagTagHTML(e){const p=pagamentoDe(e);
+function pagTagHTML(e,cartao){const p=pagamentoDe(e);
   if(p==='entrega')return e.frete?`<span class="pill p-pend">💰 Cobrar ${real(e.frete)}</span>`:'';
   if(p==='pix')return '<span class="pill p-ok">✓ Pago no Pix</span>';
   if(p==='junto')return '<span class="pill p-ok">💵 Dinheiro junto com a nota</span>';
+  // no cartão o "frete na nota" já aparece embaixo da foto
+  if(p==='nota')return cartao?'':'<span class="pill p-bad">🧾 Frete na nota</span>';
   if(p==='vendedor')return `<span class="pill p-frete">Por conta: ${esc(e.fretePor)}</span>`;
   return '<span class="pill p-ok">✓ Frete pago</span>'}
 function real(n){return Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
@@ -359,18 +388,19 @@ $('#days').addEventListener('click',e=>{const b=e.target.closest('.day');if(!b)r
 /* ---------- lista ---------- */
 function cardHTML(e){
   const src=fotoSrc(e),nm=e.criadoPorNome,V=P.verValores;
-  const itens=itensDe(e).map(i=>qtdNome(i)+(i.local?` (${LOC[i.local]})`:'')).join(' · ');
-  const pr=e.prioridade&&e.status!=='entregue';
-  return `<div class="card st-${e.status}${pr?' prio':''}" data-id="${esc(e.id)}">
+  const itens=itensDe(e).map(i=>esc(qtdNome(i))+(i.local?' '+locHTML(i.local):'')).join(' · ');
+  const pr=e.prioridade&&e.status!=='entregue',hr=e.turno==='apos'&&e.status!=='entregue';
+  return `<div class="card st-${e.status}${pr?' prio':''}${hr?' hr':''}" data-id="${esc(e.id)}">
     <div class="under"><span class="l">✓ Entregue</span><span class="r">Problema ✕</span></div>
     <div class="face">
       ${e.status==='problema'?`<div class="probfaixa"><span class="ic" aria-hidden="true">⚠</span><span>${esc(e.obs||'Problema na entrega')}</span></div>`:''}
-      <div class="tcol"><div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>${setaHTML(e)}${carr(e)?`<span class="carr">🚚 ${esc(carr(e))}</span>`:''}</div>
+      <div class="tcol"><div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>${pagamentoDe(e)==='nota'?'<span class="fnota">🧾 Frete na nota</span>':''}${setaHTML(e)}${carr(e)?`<span class="carr">🚚 ${esc(carr(e))}</span>`:''}</div>
       <div class="info">
         ${pr?'<div><span class="pill pprio">⬆ Prioridade</span></div>':''}
+        ${hr?horaHTML(e):''}
         <div class="who">${esc(e.cliente||'Sem nome')}${e.bairro?` <span style="font-weight:400;color:var(--muted)">· ${esc(e.bairro)}</span>`:''}</div>
-        <div class="meta"><span class="tag">${esc(turnoTxt(e))}</span>${localTagHTML(e)}${condTag(e)}${V&&e.frete?`<span class="tag">${real(e.frete)}</span>`:''}${V&&ajusteTxt(e)?`<span class="tag">${esc(ajusteTxt(e))}</span>`:''}${notasTagHTML(e)}${pagTagHTML(e)}<span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span></div>
-        ${itens?`<div class="items">${esc(itens)}</div>`:''}
+        <div class="meta">${e.turno==='apos'?'':`<span class="tag">${esc(turnoTxt(e))}</span>`}${localTagHTML(e)}${condTag(e)}${V&&e.frete?`<span class="tag">${real(e.frete)}</span>`:''}${V&&ajusteTxt(e)?`<span class="tag">${esc(ajusteTxt(e))}</span>`:''}${notasTagHTML(e)}${pagTagHTML(e,true)}<span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span></div>
+        ${itens?`<div class="items">${itens}</div>`:''}
         ${e.observacao?`<div class="items">Obs.: ${esc(e.observacao)}</div>`:''}
         ${(e.postits||[]).length?`<div class="postits">${e.postits.map(p=>`<div class="postit">${esc(p.texto)}</div>`).join('')}</div>`:''}
         ${nm?`<div class="meta">por ${esc(nm)}</div>`:''}
@@ -400,7 +430,7 @@ function render(){
     for(const t of ['manha','tarde','apos','']){
       const g=abertas.filter(e=>!e.prioridade).filter(e=>(e.turno||'')===t||(t===''&&!TURNOS[e.turno])).sort(porDirecao);
       if(!g.length)continue;
-      html+=`<section><h3>${t==='apos'?'Depois de horário':t?TURNOS[t]:'Qualquer turno'}</h3><div class="list">${g.map(cardHTML).join('')}</div></section>`;
+      html+=`<section${t==='apos'?' class="hr"':''}><h3>${t==='apos'?'🕒 Só depois de um horário':t?TURNOS[t]:'Qualquer turno'}</h3><div class="list">${g.map(cardHTML).join('')}</div></section>`;
     }
     if(!abertas.length)html+=`<div class="empty"><strong>Tudo entregue! 🎉</strong></div>`;
     if(feitas.length)html+=`<section class="feitas"><h3>Entregues (${feitas.length})</h3><div class="list">${feitas.map(cardHTML).join('')}</div></section>`;
@@ -595,7 +625,8 @@ function abrirDetalhe(id){
   const e=entregas.find(x=>x.id===id);if(!e)return;const src=fotoSrc(e),its=itensDe(e),V=P.verValores;
   abrirSheet(`<h2>${esc(e.cliente||'Entrega')}</h2>
     ${e.status==='problema'?`<div class="probfaixa"><span class="ic" aria-hidden="true">⚠</span><span>${esc(e.obs||'Problema na entrega')}</span></div>`:''}
-    <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span><span class="tag">${esc(turnoTxt(e))}</span>${localTagHTML(e)}${condTag(e)}${notasTagHTML(e)}${pagTagHTML(e)}</div>
+    ${horaHTML(e)}
+    <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span>${e.turno==='apos'?'':`<span class="tag">${esc(turnoTxt(e))}</span>`}${localTagHTML(e)}${condTag(e)}${notasTagHTML(e)}${pagTagHTML(e)}</div>
     ${src?`<div class="photo"><img id="dfoto" src="${esc(src)}" alt="Foto da nota"></div>`:''}
     ${e.fotosExtras?`<div id="dextras" style="display:grid;gap:8px"></div>`:''}
     <div class="det">${e.endereco?`<div><span class="lbl">Endereço</span><div class="fonerow"><span style="user-select:all">${esc(e.endereco)}${e.complemento?`<br><b>${esc(e.complemento)}</b>`:''}</span><button type="button" class="btn sm" data-copiar="${esc(enderecoCompleto(e))}" data-msg="Endereço copiado. É só colar no WhatsApp ou no mapa.">📋 Copiar</button></div>
@@ -604,8 +635,8 @@ function abrirDetalhe(id){
     ${e.fone?`<div><span class="lbl">Telefone</span><div class="fonerow"><span style="user-select:all">${esc(e.fone)}</span><button type="button" class="btn sm" data-a="copiar">📋 Copiar</button></div></div>`:''}
     ${(e.contatos||[]).map(c=>`<div><span class="lbl">Outro contato${c.nome?' — '+esc(c.nome):''}</span><div class="fonerow"><span style="user-select:all">${esc(c.fone)}</span><button type="button" class="btn sm" data-copiar="${esc(soDig(c.fone))}">📋 Copiar</button></div></div>`).join('')}
     ${V&&e.frete?`<div><span class="lbl">Valor do frete</span><br><b>${real(e.frete)}</b>${e.freteBase!==undefined&&ajusteDe(e).valor?` <span class="hint">(${e.freteConsultar?'combinado':e.condominio&&e.freteTabela<=100?'condomínio':'tabela'} ${real(e.freteBase)} ${ajusteDe(e).valor>0?'+':'−'} ${real(Math.abs(ajusteDe(e).valor))} de ${esc(ajusteDe(e).por)})</span>`:''}</div>`:''}
-    <div><span class="lbl">Pagamento do frete</span><br>${{entrega:'Cobrar na entrega'+(e.frete?' — '+real(e.frete):''),pix:'Já pago no Pix',junto:'Dinheiro junto com a nota',vendedor:'Por conta do vendedor '+esc(e.fretePor||''),pago:'Já pago'}[pagamentoDe(e)]}</div>
-    ${its.length?`<div><span class="lbl">Produtos</span><ul>${its.map(i=>`<li>${esc(qtdNome(i))}${i.local?` — <b>${LOC[i.local]}</b>`:''}</li>`).join('')}</ul></div>`:''}
+    <div><span class="lbl">Pagamento do frete</span><br>${{entrega:'Cobrar na entrega'+(e.frete?' — '+real(e.frete):''),pix:'Já pago no Pix',junto:'Dinheiro junto com a nota',nota:'<b style="color:var(--bad)">🧾 Frete na nota</b>',vendedor:'Por conta do vendedor '+esc(e.fretePor||''),pago:'Já pago'}[pagamentoDe(e)]}</div>
+    ${its.length?`<div><span class="lbl">Produtos</span><ul>${its.map(i=>`<li>${esc(qtdNome(i))}${i.local?' — '+locHTML(i.local):''}</li>`).join('')}</ul></div>`:''}
     ${e.observacao?`<div><span class="lbl">Observação</span><br>${esc(e.observacao)}</div>`:''}
     ${e.criadoPorNome?`<div><span class="lbl">Lançada por</span><br>${esc(e.criadoPorNome)}</div>`:''}
     ${(e.postits||[]).length?`<div><span class="lbl">Post-its</span><div class="postits">${e.postits.map((p,i)=>`<div class="postit full"><div class="tx">${esc(p.texto)}<div class="pm">${esc([quando(p.em),p.porNome].filter(Boolean).join(' · '))}</div></div><button type="button" data-rm="${i}" aria-label="Tirar post-it">×</button></div>`).join('')}</div></div>`:''}
@@ -662,8 +693,8 @@ function abrirForm(ed){
     <div class="field"><span class="lbl">Foto da nota${ed?'':' '+R}</span><div class="photobtn" id="fotobox"><div class="thumb" id="fthumb"></div><button type="button" class="btn" id="fbtn">📷 Tirar foto</button></div>
       <div class="fextras" id="fextras"></div><button type="button" class="btn addbtn" id="fmaisfoto">+ Outra foto da nota</button></div>
     <div class="field"><span class="lbl">Notas ${R} — quantas e onde estão</span><div class="notas2" id="fnotas">
-      <div class="cont"><span>Na loja</span><div class="step"><button type="button" data-n="notasLoja" data-d="-1" aria-label="Uma nota a menos na loja">−</button><b id="nloja">0</b><button type="button" data-n="notasLoja" data-d="1" aria-label="Uma nota a mais na loja">+</button></div></div>
-      <div class="cont"><span>No depósito</span><div class="step"><button type="button" data-n="notasDeposito" data-d="-1" aria-label="Uma nota a menos no depósito">−</button><b id="ndep">0</b><button type="button" data-n="notasDeposito" data-d="1" aria-label="Uma nota a mais no depósito">+</button></div></div>
+      <div class="cont loja"><span>Na loja</span><div class="step"><button type="button" data-n="notasLoja" data-d="-1" aria-label="Uma nota a menos na loja">−</button><b id="nloja">0</b><button type="button" data-n="notasLoja" data-d="1" aria-label="Uma nota a mais na loja">+</button></div></div>
+      <div class="cont dep"><span>No depósito</span><div class="step"><button type="button" data-n="notasDeposito" data-d="-1" aria-label="Uma nota a menos no depósito">−</button><b id="ndep">0</b><button type="button" data-n="notasDeposito" data-d="1" aria-label="Uma nota a mais no depósito">+</button></div></div>
     </div></div>
     <div class="chips"><button type="button" class="chip prio" id="fprio">Prioridade</button></div>
     <div class="field"><span class="lbl">Dia</span><div class="chips" id="cdia">${dChips.map(([v,t])=>`<button type="button" class="chip" data-v="${v}">${t}</button>`).join('')}<input type="date" id="fdata" style="width:auto;flex:1;min-width:140px"></div></div>
@@ -818,7 +849,7 @@ function abrirForm(ed){
         const fotosExtras=[];for(const x of extras)fotosExtras.push(x.blob?await fotoGrande(x.blob):x.src);
         const ls=new Set(st.itens.map(i=>i.local));
         const dados={cliente:st.cliente,clienteNome:st.clienteNome,clienteSobrenome:st.clienteSobrenome,fone:st.fone,bairro:st.bairro,endereco:st.endereco,complemento:st.complemento,observacao:st.observacao,freteBase:baseFrete(),freteTabela:st.loc.valor,condominio:st.condominio,freteConsultar:st.loc.valor===null,freteAjuste:st.ajuste,ajustePor:st.ajuste?st.ajustePor:'',frete:totalFrete(),
-          pagamento:st.pag,fretePago:st.pag==='pix'||st.pag==='junto',fretePor:st.pag==='vendedor'?st.fretePor:'',aMaisPor:'',aMaisValor:0,prioridade:st.prioridade,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
+          pagamento:st.pag,fretePago:st.pag==='pix'||st.pag==='junto'||st.pag==='nota',fretePor:st.pag==='vendedor'?st.fretePor:'',aMaisPor:'',aMaisValor:0,prioridade:st.prioridade,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
           itens:st.itens.map(i=>({nome:i.nome,local:i.local,qtd:i.qtd})),local:ls.size>1?'ambos':ls.has('deposito')?'deposito':'loja',
           thumb:st.thumb||null,fotoData:st.fotoData||null,contatos:contOk,fotosExtras:fotosExtras.length,atualizadoEm:Date.now()};
         let ok;

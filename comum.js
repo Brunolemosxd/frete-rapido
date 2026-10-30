@@ -55,7 +55,7 @@ function direcaoPadrao(nome) {
 }
 const DIRECOES = { norte: { seta: '←', nome: 'Lado de Araçá a Terra de Areia' }, centro: { seta: '↑', nome: 'Centro' }, sul: { seta: '→', nome: 'Lado de Guará a Tramandaí' } };
 const AJUSTES = [-50, -40, -30, -20, -10, 10, 20, 30, 40, 50];
-const PAGAMENTOS = { entrega: 'Cobrar na entrega', pix: 'Já pago no Pix', junto: 'Dinheiro junto com a nota', vendedor: 'Por conta do vendedor' };
+const PAGAMENTOS = { entrega: 'Cobrar na entrega', pix: 'Já pago no Pix', junto: 'Dinheiro junto com a nota', nota: 'Frete na nota', vendedor: 'Por conta do vendedor' };
 // Ajuste de valor feito pelo vendedor (entregas antigas usavam aMaisPor/aMaisValor)
 function ajusteDe(e) {
   if (e.freteAjuste !== undefined) return { valor: +e.freteAjuste || 0, por: e.ajustePor || '' };
