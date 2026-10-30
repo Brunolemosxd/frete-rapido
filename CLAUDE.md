@@ -42,8 +42,10 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   e "AP ou quadra e lote" (opcional, letras e números). Grava `rua`, `numero`, `semNumero`, `complemento` e também
   `endereco` = "Rua, Número" (ou "Rua, S/N") para o resto do app. Entregas antigas: `separarEndereco` divide ao editar
   (número que estava no complemento vai para o Número). Mapa (Google Maps/Waze) usa só rua, número e bairro.
-- Cartão mostra "📍 endereço · complemento — Bairro" (bairro em azul, negrito) embaixo do nome; o bairro saiu da linha do nome.
-  Embaixo do endereço: botões "📋 Copiar endereço" e "🗺️ Maps". Embaixo da flecha: telefone + "📋 Copiar".
+- Cartão organizado em blocos: no alto turno + situação; bloco "👤 Cliente" (nome, "📍 endereço · complemento — Bairro"
+  com bairro em azul, 🏢 condomínio, botões "📋 Copiar endereço" e "🗺️ Maps", telefone e outros contatos, cada um com
+  "📋 Copiar"); bloco "📦 Nota e produtos" (notas na loja/depósito e um produto por linha com o lugar); depois Obs.,
+  post-its, caixa do valor e "por Ana · às 14:32". Coluna da esquerda: foto, frete na nota, flecha, quem carregou.
   REGRA: copiar endereço NUNCA leva o apartamento/complemento (usa `enderecoMapa`, só rua, número e bairro), nem no detalhe. Detalhe da entrega tem botão fixo "← Voltar para o mural" no alto.
 - Flecha de direção embaixo da foto: ← azul (Araçá até Terra de Areia), → vermelha (Guará até Nova Tramandaí),
   ↑ cinza (centro e resto; Zona Nova é cinza). Pendentes com mesma flecha ficam juntas em cada turno. Editável na tabela.

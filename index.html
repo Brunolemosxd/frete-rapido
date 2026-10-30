@@ -136,6 +136,19 @@ section.hr h3{color:#6b3fd0;font-size:14px}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .v-vend .vtit{color:#b79cf5}}
 .card.prio .vbox{background:#fff;border-color:#fff}.card.prio .vbox .vdet{color:#17212b}
 .card.prio .v-cobrar .vtit{color:#b7791f}.card.prio .v-pago .vtit{color:#2f855a}.card.prio .v-nota .vtit{color:#c53030}.card.prio .v-vend .vtit{color:#6b3fd0}
+/* blocos do cartão: tudo do cliente junto, tudo da nota junto */
+.grp{border:1.5px solid var(--line);background:var(--bg);border-radius:12px;padding:8px 10px;display:grid;gap:6px}
+.glbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.grp .who{white-space:normal}
+.gfone{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;font-size:15px}
+.grp .cbtns{display:grid;grid-template-columns:1fr auto}
+.grp .cbtns .cbtn,.gfone .cbtn{font-size:13px;padding:6px 8px;justify-content:center;white-space:nowrap}
+.gsub{color:var(--muted);font-size:13px}
+.gfone b{white-space:nowrap}
+.gitens{display:grid;gap:4px}
+.gitem{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:15px;font-weight:600}
+.card.prio .grp{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.45)}
+.card.prio .glbl,.card.prio .gsub{color:#fff;opacity:.9}
 .tfone{font-size:12px;font-weight:700;text-align:center;line-height:1.2;font-variant-numeric:tabular-nums;color:var(--fg)}
 .card.prio .tfone{color:#fff}
 .tcol .cbtn{padding:5px 6px;font-size:12px;width:100%;justify-content:center}
@@ -257,7 +270,7 @@ input.err{border-color:var(--bad)}
 .fx .thumb{width:64px;height:64px}
 .fx button{position:absolute;top:-6px;right:-6px;border:0;background:var(--bad);color:#fff;border-radius:99px;width:24px;height:24px;line-height:1;font-size:14px;box-shadow:0 0 0 2px var(--surface)}
 .thumb{position:relative}
-.tcol{flex:0 0 78px;display:grid;gap:4px;align-content:start;justify-items:center}
+.tcol{flex:0 0 70px;display:grid;gap:4px;align-content:start;justify-items:center}
 .tcol .thumb{width:64px}
 .seta{font-size:34px;font-weight:900;line-height:.9}
 .seta.s-norte{color:#2b6fd6}.seta.s-sul{color:#d63333}.seta.s-centro{color:#8a96a3}
@@ -453,25 +466,35 @@ function miniHTML(e){
 function cardHTML(e){
   if(e.status==='entregue'&&!expandidas.has(e.id))return miniHTML(e);
   const src=fotoSrc(e),nm=e.criadoPorNome,V=P.verValores;
-  const itens=itensDe(e).map(i=>esc(qtdNome(i))+(i.local?' '+locHTML(i.local):'')).join(' · ');
   const fe=e.status==='entregue';
   const pr=e.prioridade&&e.status!=='entregue',hr=e.turno==='apos'&&e.status!=='entregue';
+  const foneHTML=(f,nome)=>`<div class="gfone"><span>📞 ${nome?`<span class="gsub">${esc(nome)}:</span> `:''}<b>${esc(f)}</b></span><button type="button" class="cbtn" data-copiar="${esc(soDig(f))}">📋 Copiar</button></div>`;
+  // cada produto numa linha, com o lugar (loja/depósito) bem à vista
+  const itens=itensDe(e).map(i=>`<div class="gitem"><span>${esc(qtdNome(i))}</span>${locHTML(i.local)}</div>`).join('');
   return `<div class="card st-${e.status}${pr?' prio':''}${hr?' hr':''}" data-id="${esc(e.id)}">
     <div class="under"><span class="l">✓ Entregue</span><span class="r">Problema ✕</span></div>
     <div class="face">
       ${e.status==='problema'?`<div class="probfaixa"><span class="ic" aria-hidden="true">⚠</span><span>${esc(e.obs||'Problema na entrega')}</span></div>`:''}
-      <div class="tcol"><div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>${pagamentoDe(e)==='nota'?'<span class="fnota">🧾 Frete na nota</span>':''}${setaHTML(e)}${e.fone?`<span class="tfone">${esc(e.fone).replace(') ',')<br>')}</span><button type="button" class="cbtn" data-copiar="${esc(soDig(e.fone))}">📋 Copiar</button>`:''}${carr(e)?`<span class="carr">🚚 ${esc(carr(e))}</span>`:''}</div>
+      <div class="tcol"><div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>${pagamentoDe(e)==='nota'?'<span class="fnota">🧾 Frete na nota</span>':''}${setaHTML(e)}${carr(e)?`<span class="carr">🚚 ${esc(carr(e))}</span>`:''}</div>
       <div class="info">
         ${pr?'<div><span class="pill pprio">⬆ Prioridade</span></div>':''}
         ${hr?horaHTML(e):''}
-        <div class="who">${esc(e.cliente||'Sem nome')}</div>
-        ${e.endereco||e.bairro?`<div class="end">📍 ${esc(e.endereco)}${e.complemento?` · <b>${esc(e.complemento)}</b>`:''}${e.bairro?`${e.endereco?' — ':''}<span class="bai2">${esc(e.bairro)}</span>`:''}</div>`:''}
-        ${e.endereco?`<div class="cbtns"><button type="button" class="cbtn" data-copiar="${esc(enderecoMapa(e))}" data-msg="Endereço copiado (sem o apartamento). É só colar no mapa ou no WhatsApp.">📋 Copiar endereço</button><a class="cbtn" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoMapa(e))}" target="_blank" rel="noopener">🗺️ Maps</a></div>`:''}
-        <div class="meta">${e.turno==='apos'?'':`<span class="tag">${esc(turnoTxt(e))}</span>`}${localTagHTML(e)}${condTag(e)}${fe&&V&&e.frete?`<span class="tag">${real(e.frete)}</span>`:''}${fe&&V&&ajusteTxt(e)?`<span class="tag">${esc(ajusteTxt(e))}</span>`:''}${notasTagHTML(e)}${fe?pagTagHTML(e,true):''}<span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span></div>
-        ${itens?`<div class="items">${itens}</div>`:''}
+        <div class="meta">${e.turno==='apos'?'':`<span class="tag">${esc(turnoTxt(e))}</span>`}<span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span></div>
+        <div class="grp">
+          <div class="glbl">👤 Cliente</div>
+          <div class="who">${esc(e.cliente||'Sem nome')}</div>
+          ${e.endereco||e.bairro?`<div class="end">📍 ${esc(e.endereco)}${e.complemento?` · <b>${esc(e.complemento)}</b>`:''}${e.bairro?`${e.endereco?' — ':''}<span class="bai2">${esc(e.bairro)}</span>`:''}${e.condominio?' · 🏢 Condomínio':''}</div>`:''}
+          ${e.endereco?`<div class="cbtns"><button type="button" class="cbtn" data-copiar="${esc(enderecoMapa(e))}" data-msg="Endereço copiado (sem o apartamento). É só colar no mapa ou no WhatsApp.">📋 Copiar endereço</button><a class="cbtn" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoMapa(e))}" target="_blank" rel="noopener">🗺️ Maps</a></div>`:''}
+          ${e.fone?foneHTML(e.fone):''}${(e.contatos||[]).filter(c=>c.fone).map(c=>foneHTML(c.fone,c.nome||'Outro')).join('')}
+        </div>
+        <div class="grp">
+          <div class="glbl">📦 Nota e produtos</div>
+          <div class="meta">${itens?'':localTagHTML(e)}${notasTagHTML(e)}</div>
+          ${itens?`<div class="gitens">${itens}</div>`:''}
+        </div>
         ${e.observacao?`<div class="items">Obs.: ${esc(e.observacao)}</div>`:''}
         ${(e.postits||[]).length?`<div class="postits">${e.postits.map(p=>`<div class="postit">${esc(p.texto)}</div>`).join('')}</div>`:''}
-        ${fe?'':valorHTML(e,V)}
+        ${fe?`<div class="meta">${V&&e.frete?`<span class="tag">${real(e.frete)}</span>`:''}${V&&ajusteTxt(e)?`<span class="tag">${esc(ajusteTxt(e))}</span>`:''}${pagTagHTML(e,true)}</div>`:valorHTML(e,V)}
         ${nm||e.criadoEm?`<div class="meta">${[nm?'por '+esc(nm):'',lancadaTxt(e)].filter(Boolean).join(' · ')}</div>`:''}
         ${e.status==='entregue'?`<div class="cbtns"><button type="button" class="cbtn" data-min="${esc(e.id)}">▴ Minimizar</button></div>`:''}
       </div>
