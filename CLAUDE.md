@@ -46,7 +46,7 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   ↑ cinza (centro e resto; Zona Nova é cinza). Pendentes com mesma flecha ficam juntas em cada turno. Editável na tabela.
 - Quem carregou: Tiago (sem H) ou Bruno, no menu ao segurar o cartão; aparece embaixo da foto.
 - Problema: motivo em faixa vermelha grande no topo do cartão; motivos cadastráveis (`config/motivos`).
-- Entregues descem para "Entregues". Faixa de dias vai até ~3 meses para a frente.
+- Entregues descem para "Entregues" minimizadas (uma linha: ✓ nome · bairro · quem carregou); um toque abre no tamanho normal, botão "▴ Minimizar" fecha de novo (só na memória da página). Faixa de dias vai até ~3 meses para a frente.
 - Pasta "Produtos que vão com outras notas" (`notasjuntas`, por dia): cada item tem várias fotos + detalhe;
   "Entregue, arquivar" leva para "📦 Arquivados".
 - Fotos com mais de 60 dias são apagadas quando o Bruno abre o mural/painel.
