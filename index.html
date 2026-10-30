@@ -390,6 +390,9 @@ function pagTagHTML(e,cartao){const p=pagamentoDe(e);
   if(p==='nota')return cartao?'':'<span class="pill p-bad">🧾 Frete na nota</span>';
   if(p==='vendedor')return `<span class="pill p-frete">Por conta: ${esc(e.fretePor)}</span>`;
   return '<span class="pill p-ok">✓ Frete pago</span>'}
+// hora em que a entrega foi lançada no mural (com o dia, se não foi hoje)
+function lancadaTxt(e){if(!e.criadoEm)return '';const d=new Date(e.criadoEm),h=d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  return ds(d)===hoje()?'às '+h:d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' às '+h}
 function real(n){return Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
 
 /* ---------- dias ---------- */
@@ -434,7 +437,7 @@ function cardHTML(e){
         ${itens?`<div class="items">${itens}</div>`:''}
         ${e.observacao?`<div class="items">Obs.: ${esc(e.observacao)}</div>`:''}
         ${(e.postits||[]).length?`<div class="postits">${e.postits.map(p=>`<div class="postit">${esc(p.texto)}</div>`).join('')}</div>`:''}
-        ${nm?`<div class="meta">por ${esc(nm)}</div>`:''}
+        ${nm||e.criadoEm?`<div class="meta">${[nm?'por '+esc(nm):'',lancadaTxt(e)].filter(Boolean).join(' · ')}</div>`:''}
         ${e.status==='entregue'?`<div class="cbtns"><button type="button" class="cbtn" data-min="${esc(e.id)}">▴ Minimizar</button></div>`:''}
       </div>
     </div></div>`;

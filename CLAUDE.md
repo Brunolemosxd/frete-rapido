@@ -44,6 +44,7 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   REGRA: copiar endereço NUNCA leva o apartamento/complemento (usa `enderecoMapa`, só rua, número e bairro), nem no detalhe. Detalhe da entrega tem botão fixo "← Voltar para o mural" no alto.
 - Flecha de direção embaixo da foto: ← azul (Araçá até Terra de Areia), → vermelha (Guará até Nova Tramandaí),
   ↑ cinza (centro e resto; Zona Nova é cinza). Pendentes com mesma flecha ficam juntas em cada turno. Editável na tabela.
+- Linha "por Ana · às 14:32" no cartão: hora em que foi lançada (`criadoEm`; se não foi hoje, "29/10 às 14:32").
 - Quem carregou: Tiago (sem H) ou Bruno, no menu ao segurar o cartão; aparece embaixo da foto.
 - Problema: motivo em faixa vermelha grande no topo do cartão; motivos cadastráveis (`config/motivos`).
 - Entregues descem para "Entregues" minimizadas (uma linha: ✓ nome · bairro · quem carregou); um toque abre no tamanho normal, botão "▴ Minimizar" fecha de novo (só na memória da página). Faixa de dias vai até ~3 meses para a frente.
