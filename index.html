@@ -410,7 +410,12 @@ const condTag=e=>e.condominio?'<span class="tag">🏢 Condomínio</span>':'';
 // só rua e número (é o que vai no "Copiar endereço": sem AP e sem bairro)
 function enderecoRua(e){
   if(e.rua!==undefined)return e.rua+(e.numero?', '+e.numero:'');
-  return String(e.endereco||'').replace(/[,\-–]?\s*\b(ap|apt|apto|apartamento|bl|bloco|torre|sala|cj|conjunto|casa|lote|lt|quadra|qd)\b\.?\s*(n[º°o.]?\s*)?([0-9]+|[a-z])\b.*$/i,'').trim()||e.endereco||''}
+  const base=String(e.endereco||'').replace(/[,\-–]?\s*\b(ap|apt|apto|apartamento|bl|bloco|torre|sala|cj|conjunto|casa|lote|lt|quadra|qd)\b\.?\s*(n[º°o.]?\s*)?([0-9]+|[a-z])\b.*$/i,'').trim()||e.endereco||'';
+  if(/\d/.test(base))return base;
+  // entregas antigas: o número pode ter ficado depois de "casa" ou no complemento; o número vai sempre junto
+  // (número de quadra/lote não é número de casa)
+  if(/\b(lote|lt|quadra|qd)\b\.?\s*\d/i.test(e.endereco||''))return base;
+  const en=separarEndereco(e),rua=(en.rua||base).replace(/\s*\b(casa|n[º°o]?)\.?$/i,'').trim();return en.numero?rua+', '+en.numero:base}
 // o mapa leva o bairro junto, para achar o lugar certo
 function enderecoMapa(e){return enderecoRua(e)+(e.bairro?', '+e.bairro:'')}
 function ajusteTxt(e){const a=ajusteDe(e);if(!a.por&&!a.valor)return '';return a.por+' '+(a.valor?(a.valor>0?'+':'−')+real(Math.abs(a.valor)):'pôs a mais')}
