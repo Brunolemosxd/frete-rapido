@@ -50,6 +50,7 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   "📋 Copiar"); bloco "📦 Nota e produtos" (notas na loja/depósito e um produto por linha com o lugar); depois Obs.,
   post-its, caixa do valor e "por Ana · às 14:32". Coluna da esquerda: foto, frete na nota, flecha, quem carregou.
   REGRA: copiar endereço leva SÓ rua e número (`enderecoRua`): nunca AP/complemento nem bairro, também no detalhe.
+  Telefone e contatos: botão verde do WhatsApp (`waLink`: https://wa.me/55+DDD+número, abre conversa nova) + "📋 Copiar", no cartão e no detalhe.
   O Maps/Waze também pesquisa SÓ rua e número (`enderecoMapa` = `enderecoRua`), sem bairro; se cair longe, põem o bairro na hora.
   Entregas antigas (sem `rua`): se o número ficou depois de "casa" ou no complemento, `enderecoRua` acha e junta; número de quadra/lote não conta. Detalhe da entrega tem botão fixo "← Voltar para o mural" no alto.
 - Flecha de direção embaixo da foto: ← azul (Araçá até Terra de Areia), → vermelha (Guará até Nova Tramandaí),
