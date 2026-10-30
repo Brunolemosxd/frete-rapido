@@ -39,7 +39,9 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
 - Turno "Depois das HH:MM": faixa roxa com relógio "🕒 Só depois das HH:MM" no cartão e no detalhe (sempre, não muda com a hora).
 - Cores de local: Loja = azul fraquinho (#cfe5fb), Depósito = marrom (#7a4a21), iguais nos dois temas (etiquetas, produtos, notas, formulário).
 - Endereço sem o apartamento + campo "Apartamento / complemento". Mapa (Google Maps/Waze) usa só rua, número e bairro.
-- Cartão mostra "📍 endereço · complemento — Bairro" (bairro em azul, negrito) embaixo do nome; o bairro saiu da linha do nome. Detalhe da entrega tem botão fixo "← Voltar para o mural" no alto.
+- Cartão mostra "📍 endereço · complemento — Bairro" (bairro em azul, negrito) embaixo do nome; o bairro saiu da linha do nome.
+  Embaixo do endereço: botões "📋 Copiar endereço" e "🗺️ Maps". Embaixo da flecha: telefone + "📋 Copiar".
+  REGRA: copiar endereço NUNCA leva o apartamento/complemento (usa `enderecoMapa`, só rua, número e bairro), nem no detalhe. Detalhe da entrega tem botão fixo "← Voltar para o mural" no alto.
 - Flecha de direção embaixo da foto: ← azul (Araçá até Terra de Areia), → vermelha (Guará até Nova Tramandaí),
   ↑ cinza (centro e resto; Zona Nova é cinza). Pendentes com mesma flecha ficam juntas em cada turno. Editável na tabela.
 - Quem carregou: Tiago (sem H) ou Bruno, no menu ao segurar o cartão; aparece embaixo da foto.

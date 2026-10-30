@@ -96,8 +96,8 @@ section.prio h3{color:var(--bad);font-size:14px}
 .seg button[data-l="deposito"][aria-pressed="true"]{background:#7a4a21;color:#fff}
 /* entrega só depois de um horário: relógio roxo bem visível */
 .hora{display:inline-flex;align-items:center;gap:6px;background:#6b3fd0;color:#fff;border-radius:8px;padding:3px 10px;
-  font-family:var(--display);font-weight:700;font-size:19px;line-height:1.15;text-transform:uppercase;letter-spacing:.02em}
-.hora .rel{font-size:20px}
+  font-family:var(--display);font-weight:700;font-size:18px;line-height:1.15;text-transform:uppercase;letter-spacing:0;white-space:nowrap}
+.hora .rel{font-size:18px}
 .card.prio .hora{background:#fff;color:#6b3fd0}
 .card.prio .tag.loja{color:#164a7a;border-color:#a9cdf2}.card.prio .tag.dep{border-color:#7a4a21}
 .card.hr .face{box-shadow:inset 0 0 0 2px #6b3fd0,var(--shadow)}
@@ -114,6 +114,13 @@ section.hr h3{color:#6b3fd0;font-size:14px}
 .end b{font-weight:600}
 .end .bai2{font-weight:700;color:var(--accent)}
 .card.prio .end .bai2{color:#fff;text-decoration:underline}
+/* botões dentro do cartão (copiar, mapa): não abrem o detalhe nem arrastam o cartão */
+.cbtns{display:flex;gap:6px;flex-wrap:wrap}
+.cbtn{display:inline-flex;align-items:center;gap:4px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg);border-radius:10px;padding:6px 10px;font-weight:600;font-size:14px;text-decoration:none;line-height:1.1}
+.card.prio .cbtn{background:#fff;color:#7a1414;border-color:#fff}
+.tfone{font-size:12px;font-weight:700;text-align:center;line-height:1.2;font-variant-numeric:tabular-nums;color:var(--fg)}
+.card.prio .tfone{color:#fff}
+.tcol .cbtn{padding:5px 6px;font-size:12px;width:100%;justify-content:center}
 .card.prio .end{color:#fff}
 /* botão de voltar sempre visível no alto do detalhe */
 .voltar{position:sticky;top:-10px;z-index:2;justify-self:start;display:inline-flex;align-items:center;gap:6px;margin:-4px 0 -6px;
@@ -232,7 +239,7 @@ input.err{border-color:var(--bad)}
 .fx .thumb{width:64px;height:64px}
 .fx button{position:absolute;top:-6px;right:-6px;border:0;background:var(--bad);color:#fff;border-radius:99px;width:24px;height:24px;line-height:1;font-size:14px;box-shadow:0 0 0 2px var(--surface)}
 .thumb{position:relative}
-.tcol{flex:0 0 64px;display:grid;gap:4px;align-content:start;justify-items:center}
+.tcol{flex:0 0 78px;display:grid;gap:4px;align-content:start;justify-items:center}
 .tcol .thumb{width:64px}
 .seta{font-size:34px;font-weight:900;line-height:.9}
 .seta.s-norte{color:#2b6fd6}.seta.s-sul{color:#d63333}.seta.s-centro{color:#8a96a3}
@@ -365,7 +372,6 @@ const condTag=e=>e.condominio?'<span class="tag">🏢 Condomínio</span>':'';
 // o mapa se perde com "ap 302", "bloco B" etc.; vai só rua, número e bairro
 function enderecoMapa(e){const rua=String(e.endereco||'').replace(/[,\-–]?\s*\b(ap|apt|apto|apartamento|bl|bloco|torre|sala|cj|conjunto|casa|lote|lt|quadra|qd)\b\.?\s*(n[º°o.]?\s*)?([0-9]+|[a-z])\b.*$/i,'').trim()||e.endereco||'';
   return rua+(e.bairro?', '+e.bairro:'')}
-function enderecoCompleto(e){return [e.endereco,e.complemento].filter(Boolean).join(', ')+(e.bairro?' - '+e.bairro:'')}
 function ajusteTxt(e){const a=ajusteDe(e);if(!a.por&&!a.valor)return '';return a.por+' '+(a.valor?(a.valor>0?'+':'−')+real(Math.abs(a.valor)):'pôs a mais')}
 // pagamento aparece para todos: o entregador precisa saber se cobra ou não
 function pagTagHTML(e,cartao){const p=pagamentoDe(e);
@@ -402,12 +408,13 @@ function cardHTML(e){
     <div class="under"><span class="l">✓ Entregue</span><span class="r">Problema ✕</span></div>
     <div class="face">
       ${e.status==='problema'?`<div class="probfaixa"><span class="ic" aria-hidden="true">⚠</span><span>${esc(e.obs||'Problema na entrega')}</span></div>`:''}
-      <div class="tcol"><div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>${pagamentoDe(e)==='nota'?'<span class="fnota">🧾 Frete na nota</span>':''}${setaHTML(e)}${carr(e)?`<span class="carr">🚚 ${esc(carr(e))}</span>`:''}</div>
+      <div class="tcol"><div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>${pagamentoDe(e)==='nota'?'<span class="fnota">🧾 Frete na nota</span>':''}${setaHTML(e)}${e.fone?`<span class="tfone">${esc(e.fone).replace(') ',')<br>')}</span><button type="button" class="cbtn" data-copiar="${esc(soDig(e.fone))}">📋 Copiar</button>`:''}${carr(e)?`<span class="carr">🚚 ${esc(carr(e))}</span>`:''}</div>
       <div class="info">
         ${pr?'<div><span class="pill pprio">⬆ Prioridade</span></div>':''}
         ${hr?horaHTML(e):''}
         <div class="who">${esc(e.cliente||'Sem nome')}</div>
         ${e.endereco||e.bairro?`<div class="end">📍 ${esc(e.endereco)}${e.complemento?` · <b>${esc(e.complemento)}</b>`:''}${e.bairro?`${e.endereco?' — ':''}<span class="bai2">${esc(e.bairro)}</span>`:''}</div>`:''}
+        ${e.endereco?`<div class="cbtns"><button type="button" class="cbtn" data-copiar="${esc(enderecoMapa(e))}" data-msg="Endereço copiado (sem o apartamento). É só colar no mapa ou no WhatsApp.">📋 Copiar endereço</button><a class="cbtn" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoMapa(e))}" target="_blank" rel="noopener">🗺️ Maps</a></div>`:''}
         <div class="meta">${e.turno==='apos'?'':`<span class="tag">${esc(turnoTxt(e))}</span>`}${localTagHTML(e)}${condTag(e)}${V&&e.frete?`<span class="tag">${real(e.frete)}</span>`:''}${V&&ajusteTxt(e)?`<span class="tag">${esc(ajusteTxt(e))}</span>`:''}${notasTagHTML(e)}${pagTagHTML(e,true)}<span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span></div>
         ${itens?`<div class="items">${itens}</div>`:''}
         ${e.observacao?`<div class="items">Obs.: ${esc(e.observacao)}</div>`:''}
@@ -457,7 +464,7 @@ function ouvirNotas(){
   },()=>{});
 }
 function notasDoDia(d){return notasJ.filter(n=>n.data===d).sort((a,b)=>(b.em||0)-(a.em||0))}
-$('#main').addEventListener('click',e=>{if(e.target.closest('#pasta'))abrirPasta()});
+$('#main').addEventListener('click',e=>{if(e.target.closest('#pasta'))abrirPasta();const cp=e.target.closest('[data-copiar]');if(cp)copiar(cp.dataset.copiar,cp.dataset.msg)});
 // cada item é um cliente/entrega e pode ter várias fotos (entregas antigas tinham uma foto só)
 let verArquivados=false;
 const fotosDe=n=>Array.isArray(n.fotos)?n.fotos:(n.fotoData?[n.fotoData]:[]);
@@ -533,7 +540,7 @@ function confirmarTirarFoto(id){
 /* ---------- gestos ---------- */
 let g=null;
 $('#main').addEventListener('pointerdown',ev=>{
-  const card=ev.target.closest('.card');if(!card)return;
+  const card=ev.target.closest('.card');if(!card||ev.target.closest('.cbtn'))return;
   g={card,id:card.dataset.id,x:ev.clientX,y:ev.clientY,dx:0,moved:false,long:false,face:card.querySelector('.face')};
   g.timer=setTimeout(()=>{if(g&&!g.moved){g.long=true;navigator.vibrate?.(30);abrirAcoes(g.id)}},480);
 });
@@ -639,7 +646,7 @@ function abrirDetalhe(id){
     <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span>${e.turno==='apos'?'':`<span class="tag">${esc(turnoTxt(e))}</span>`}${localTagHTML(e)}${condTag(e)}${notasTagHTML(e)}${pagTagHTML(e)}</div>
     ${src?`<div class="photo"><img id="dfoto" src="${esc(src)}" alt="Foto da nota"></div>`:''}
     ${e.fotosExtras?`<div id="dextras" style="display:grid;gap:8px"></div>`:''}
-    <div class="det">${e.endereco?`<div><span class="lbl">Endereço</span><div class="fonerow"><span style="user-select:all">${esc(e.endereco)}${e.complemento?`<br><b>${esc(e.complemento)}</b>`:''}</span><button type="button" class="btn sm" data-copiar="${esc(enderecoCompleto(e))}" data-msg="Endereço copiado. É só colar no WhatsApp ou no mapa.">📋 Copiar</button></div>
+    <div class="det">${e.endereco?`<div><span class="lbl">Endereço</span><div class="fonerow"><span style="user-select:all">${esc(e.endereco)}${e.complemento?`<br><b>${esc(e.complemento)}</b>`:''}</span><button type="button" class="btn sm" data-copiar="${esc(enderecoMapa(e))}" data-msg="Endereço copiado (sem o apartamento). É só colar no mapa ou no WhatsApp.">📋 Copiar</button></div>
       <div class="fonerow" style="margin-top:6px"><a class="btn sm mapa" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoMapa(e))}" target="_blank" rel="noopener">🗺️ Google Maps</a><a class="btn sm mapa" href="https://waze.com/ul?q=${encodeURIComponent(enderecoMapa(e))}&navigate=yes" target="_blank" rel="noopener">🚗 Waze</a></div></div>`:''}
     ${e.bairro?`<div><span class="lbl">Bairro</span><br>${esc(e.bairro)}</div>`:''}
     ${e.fone?`<div><span class="lbl">Telefone</span><div class="fonerow"><span style="user-select:all">${esc(e.fone)}</span><button type="button" class="btn sm" data-a="copiar">📋 Copiar</button></div></div>`:''}
