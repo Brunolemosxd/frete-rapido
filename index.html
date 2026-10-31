@@ -396,7 +396,14 @@ function localTagHTML(e){const l=locais(e);return l.txt==='Loja + Depósito'?'<s
 const locHTML=k=>k?`<span class="lc ${k==='deposito'?'dep':'loja'}">${LOC[k]}</span>`:'';
 // abre conversa nova no WhatsApp com o número (Brasil: 55 + DDD + número), sem precisar salvar o contato
 const WA_ICO='<svg class="waico" viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.2c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.7 12.7-12.7S23 3 16 3zm0 23.2c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.3 1.3-4-.3-.4c-1.1-1.7-1.7-3.7-1.7-5.7C5.4 9.8 10.2 5.1 16 5.1s10.6 4.7 10.6 10.5S21.8 26.2 16 26.2zm5.8-7.9c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.6-1.6-1-.9-1.6-1.9-1.8-2.2-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.3.3-.6.1-.2 0-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.8s1.2 3.2 1.4 3.5c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg>';
-function waLink(f){const d=soDig(f);return 'https://wa.me/'+(d.length<=11?'55':'')+d}
+// mensagem já escrita na conversa; quem envia é a pessoa, apertando "enviar" no próprio WhatsApp
+const LOJA='Lojas Colombo';
+const nomeBonito=t=>String(t||'').trim().toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
+function msgWA(e,outro){
+  const nome=nomeBonito(e.clienteNome||String(e.cliente||'').split(' ')[0]);
+  return outro?`Olá, tudo bom? Tenho uma entrega da ${LOJA} para ${nomeBonito(e.cliente)||'o cliente'}. Tem alguém em casa a partir de agora para receber a entrega?`
+    :`Olá, tudo bom${nome?', '+nome:''}? Tenho uma entrega para fazer da ${LOJA}. Você está em casa a partir de agora para receber a sua entrega?`}
+function waLink(f,e,outro){const d=soDig(f);return 'https://wa.me/'+(d.length<=11?'55':'')+d+(e?'?text='+encodeURIComponent(msgWA(e,outro)):'')}
 function soDig(v){return String(v||'').replace(/\D/g,'')}
 function fmtFone(v){const d=soDig(v).slice(0,11);if(!d)return '';if(d.length<3)return '('+d;
   const a=d.slice(0,2),r=d.slice(2);if(r.length<=4)return `(${a}) ${r}`;const k=r.length>8?5:4;return `(${a}) ${r.slice(0,k)}-${r.slice(k)}`}
@@ -485,7 +492,7 @@ function cardHTML(e){
   const src=fotoSrc(e),nm=e.criadoPorNome,V=P.verValores;
   const fe=e.status==='entregue';
   const pr=e.prioridade&&e.status!=='entregue',hr=e.turno==='apos'&&e.status!=='entregue';
-  const foneHTML=(f,nome)=>`<div class="gfone"><span>${nome?`<span class="gsub">${esc(nome)}:</span> `:''}<b>${esc(f)}</b></span><a class="cbtn wa" href="${waLink(f)}" target="_blank" rel="noopener" aria-label="Chamar no WhatsApp">${WA_ICO}</a><button type="button" class="cbtn" data-copiar="${esc(soDig(f))}">📋 Copiar</button></div>`;
+  const foneHTML=(f,nome,outro)=>`<div class="gfone"><span>${nome?`<span class="gsub">${esc(nome)}:</span> `:''}<b>${esc(f)}</b></span><a class="cbtn wa" href="${waLink(f,e,outro)}" target="_blank" rel="noopener" aria-label="Chamar no WhatsApp">${WA_ICO}</a><button type="button" class="cbtn" data-copiar="${esc(soDig(f))}">📋 Copiar</button></div>`;
   // cada produto numa linha, com o lugar (loja/depósito) bem à vista
   const itens=itensDe(e).map(i=>`<div class="gitem"><span>${esc(qtdNome(i))}</span>${locHTML(i.local)}</div>`).join('');
   return `<div class="card st-${e.status}${pr?' prio':''}${hr?' hr':''}" data-id="${esc(e.id)}">
@@ -502,7 +509,7 @@ function cardHTML(e){
           <div class="who">${esc(e.cliente||'Sem nome')}</div>
           ${e.endereco||e.bairro?`<div class="end">📍 ${esc(e.endereco)}${e.complemento?` · <b>${esc(e.complemento)}</b>`:''}${e.bairro?`${e.endereco?' — ':''}<span class="bai2">${esc(e.bairro)}</span>`:''}${e.condominio?' · 🏢 Condomínio':''}</div>`:''}
           ${e.endereco?`<div class="cbtns"><button type="button" class="cbtn" data-copiar="${esc(enderecoRua(e))}" data-msg="Endereço copiado (só rua e número). É só colar no mapa ou no WhatsApp.">📋 Copiar endereço</button><a class="cbtn" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoMapa(e))}" target="_blank" rel="noopener">🗺️ Maps</a></div>`:''}
-          ${e.fone?foneHTML(e.fone):''}${(e.contatos||[]).filter(c=>c.fone).map(c=>foneHTML(c.fone,c.nome||'Outro')).join('')}
+          ${e.fone?foneHTML(e.fone):''}${(e.contatos||[]).filter(c=>c.fone).map(c=>foneHTML(c.fone,c.nome||'Outro',true)).join('')}
         </div>
         <div class="grp">
           <div class="glbl">📦 Nota e produtos</div>
@@ -745,8 +752,8 @@ function abrirDetalhe(id){
     <div class="det">${e.endereco?`<div><span class="lbl">Endereço</span><div class="fonerow"><span style="user-select:all">${esc(e.endereco)}${e.complemento?`<br><b>${esc(e.complemento)}</b>`:''}</span><button type="button" class="btn sm" data-copiar="${esc(enderecoRua(e))}" data-msg="Endereço copiado (só rua e número). É só colar no mapa ou no WhatsApp.">📋 Copiar</button></div>
       <div class="fonerow" style="margin-top:6px"><a class="btn sm mapa" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoMapa(e))}" target="_blank" rel="noopener">🗺️ Google Maps</a><a class="btn sm mapa" href="https://waze.com/ul?q=${encodeURIComponent(enderecoMapa(e))}&navigate=yes" target="_blank" rel="noopener">🚗 Waze</a></div></div>`:''}
     ${e.bairro?`<div><span class="lbl">Bairro</span><br>${esc(e.bairro)}</div>`:''}
-    ${e.fone?`<div><span class="lbl">Telefone</span><div class="fonerow"><span style="user-select:all">${esc(e.fone)}</span><a class="btn sm wa" href="${waLink(e.fone)}" target="_blank" rel="noopener">${WA_ICO} WhatsApp</a><button type="button" class="btn sm" data-a="copiar">📋 Copiar</button></div></div>`:''}
-    ${(e.contatos||[]).map(c=>`<div><span class="lbl">Outro contato${c.nome?' — '+esc(c.nome):''}</span><div class="fonerow"><span style="user-select:all">${esc(c.fone)}</span><a class="btn sm wa" href="${waLink(c.fone)}" target="_blank" rel="noopener">${WA_ICO} WhatsApp</a><button type="button" class="btn sm" data-copiar="${esc(soDig(c.fone))}">📋 Copiar</button></div></div>`).join('')}
+    ${e.fone?`<div><span class="lbl">Telefone</span><div class="fonerow"><span style="user-select:all">${esc(e.fone)}</span><a class="btn sm wa" href="${waLink(e.fone,e)}" target="_blank" rel="noopener">${WA_ICO} WhatsApp</a><button type="button" class="btn sm" data-a="copiar">📋 Copiar</button></div></div>`:''}
+    ${(e.contatos||[]).map(c=>`<div><span class="lbl">Outro contato${c.nome?' — '+esc(c.nome):''}</span><div class="fonerow"><span style="user-select:all">${esc(c.fone)}</span><a class="btn sm wa" href="${waLink(c.fone,e,true)}" target="_blank" rel="noopener">${WA_ICO} WhatsApp</a><button type="button" class="btn sm" data-copiar="${esc(soDig(c.fone))}">📋 Copiar</button></div></div>`).join('')}
     ${V&&e.frete?`<div><span class="lbl">Valor do frete</span><br><b>${real(e.frete)}</b>${e.freteBase!==undefined&&ajusteDe(e).valor?` <span class="hint">(${e.freteConsultar?'combinado':e.condominio&&e.freteTabela<=100?'condomínio':'tabela'} ${real(e.freteBase)} ${ajusteDe(e).valor>0?'+':'−'} ${real(Math.abs(ajusteDe(e).valor))} de ${esc(ajusteDe(e).por)})</span>`:''}</div>`:''}
     <div><span class="lbl">Pagamento do frete</span><br>${{entrega:'Cobrar na entrega'+(e.frete?' — '+real(e.frete):''),pix:'Já pago no Pix',junto:'Dinheiro junto com a nota',nota:'<b style="color:var(--bad)">🧾 Frete na nota</b>',vendedor:'Por conta do vendedor '+esc(e.fretePor||''),pago:'Já pago'}[pagamentoDe(e)]}</div>
     ${its.length?`<div><span class="lbl">Produtos</span><ul>${its.map(i=>`<li>${esc(qtdNome(i))}${i.local?' — '+locHTML(i.local):''}</li>`).join('')}</ul></div>`:''}
