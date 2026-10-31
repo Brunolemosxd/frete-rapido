@@ -53,7 +53,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   Telefone e contatos: botão verde do WhatsApp (`waLink`: https://wa.me/55+DDD+número, abre conversa nova) + "📋 Copiar", no cartão e no detalhe.
   O WhatsApp abre com a mensagem já escrita (`msgWA`, `?text=`); a pessoa revisa e aperta enviar (nada é enviado sozinho).
   Mensagem curta (até ~600 letras, para o cliente não precisar tocar em "ler mais"), com ícones, uma ideia por linha:
-  saudação com o primeiro nome (outro contato: "para {Nome Sobrenome}") · 🏠 está em casa a partir de agora? ·
+  saudação com o primeiro nome (outro contato: "para {Nome Sobrenome}") + "Meu nome é {quem manda}, freteiro da Lojas Colombo."
+  (nome do cadastro; "freteiro" para o Bruno e função entregador, os outros só "da Lojas Colombo") · 🏠 está em casa a partir de agora? ·
   🏢 térreo, elevador ou escada (R$ 20 por andar, por item; Colombo não se responsabiliza por avaria na escada) ·
   só se "Cobrar na entrega": 💰 valor total + Pix ou dinheiro, sem cartão; 🔑 chave Pix (`config/mensagem.pix`, o Bruno
   põe no painel → Ajustes; vazio = não manda); ⚠️ sem ninguém para acertar, pagar antes de sair do depósito ·

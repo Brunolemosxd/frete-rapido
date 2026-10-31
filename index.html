@@ -404,8 +404,10 @@ const nomeBonito=t=>String(t||'').trim().toLowerCase().replace(/(^|\s)\S/g,c=>c.
 function msgWA(e,outro){
   const nome=nomeBonito(e.clienteNome||String(e.cliente||'').split(' ')[0]);
   const cobrar=pagamentoDe(e)==='entrega'&&Number(e.frete)>0;
-  const l=[outro?`Olá, tudo bom? 😊 Tenho uma entrega da ${LOJA} para ${nomeBonito(e.cliente)||'o cliente'}.`
-      :`Olá, tudo bom${nome?', '+nome:''}? 😊 Tenho uma entrega da ${LOJA} para você.`,'',
+  // quem manda se apresenta com o nome do cadastro; o Bruno e os entregadores como freteiro
+  const eu=me?nomeBonito(String(me.nome||'').split(' ')[0]):'',quem=eu?` Meu nome é ${eu}, ${me.admin||me.funcao==='entregador'?'freteiro da ':'da '}${LOJA}.`:'';
+  const l=[outro?`Olá, tudo bom? 😊${quem} Tenho uma entrega${quem?'':' da '+LOJA} para ${nomeBonito(e.cliente)||'o cliente'}.`
+      :`Olá, tudo bom${nome?', '+nome:''}? 😊${quem} Tenho uma entrega${quem?'':' da '+LOJA} para você.`,'',
     outro?'🏠 Tem alguém em casa a partir de agora para receber?':'🏠 Você está em casa a partir de agora para receber?',
     '🏢 É térreo, elevador ou escada? Por escada cobramos R$ 20 por andar, por item (a Colombo não se responsabiliza por avaria na escada).'];
   if(cobrar){l.push(`💰 Frete: ${real(e.frete)} (o valor que te passaram na loja), no Pix ou dinheiro. Não aceitamos cartão.`);
