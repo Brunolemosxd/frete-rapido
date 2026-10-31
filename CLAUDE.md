@@ -51,12 +51,13 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   post-its, caixa do valor e "por Ana · às 14:32". Coluna da esquerda: foto, frete na nota, flecha, quem carregou.
   REGRA: copiar endereço leva SÓ rua e número (`enderecoRua`): nunca AP/complemento nem bairro, também no detalhe.
   Telefone e contatos: botão verde do WhatsApp (`waLink`: https://wa.me/55+DDD+número, abre conversa nova) + "📋 Copiar", no cartão e no detalhe.
-  O WhatsApp abre com a mensagem já escrita (`msgWA`, `?text=`); a pessoa revisa e aperta enviar (nada é enviado sozinho):
-  cliente: "Olá, tudo bom, {Nome}? Tenho uma entrega para fazer da Lojas Colombo. Você está em casa a partir de agora para
-  receber a sua entrega?"; outro contato: "Olá, tudo bom? Tenho uma entrega da Lojas Colombo para {Nome Sobrenome}. Tem alguém
-  em casa a partir de agora para receber a entrega?". Nunca pôr valores internos (ajuste/vendedor) na mensagem.
-  Se o frete é "Cobrar na entrega", acrescenta: " O valor do frete que foi passado na loja é de R$ X, para acertar na
-  entrega, no Pix ou em dinheiro (não aceitamos cartão)." (R$ X = total que o cliente paga). Bruno pode querer mudar o texto.
+  O WhatsApp abre com a mensagem já escrita (`msgWA`, `?text=`); a pessoa revisa e aperta enviar (nada é enviado sozinho).
+  Mensagem curta (até ~600 letras, para o cliente não precisar tocar em "ler mais"), com ícones, uma ideia por linha:
+  saudação com o primeiro nome (outro contato: "para {Nome Sobrenome}") · 🏠 está em casa a partir de agora? ·
+  🏢 térreo, elevador ou escada (R$ 20 por andar, por item; Colombo não se responsabiliza por avaria na escada) ·
+  só se "Cobrar na entrega": 💰 valor total + Pix ou dinheiro, sem cartão; 🔑 chave Pix (`config/mensagem.pix`, o Bruno
+  põe no painel → Ajustes; vazio = não manda); ⚠️ sem ninguém para acertar, pagar antes de sair do depósito ·
+  📦 conferir na entrega; abrir e descartar embalagem é com o cliente. Nunca pôr valores internos (ajuste/vendedor).
   O Maps/Waze também pesquisa SÓ rua e número (`enderecoMapa` = `enderecoRua`), sem bairro; se cair longe, põem o bairro na hora.
   Entregas antigas (sem `rua`): se o número ficou depois de "casa" ou no complemento, `enderecoRua` acha e junta; número de quadra/lote não conta. Detalhe da entrega tem botão fixo "← Voltar para o mural" no alto.
 - Flecha de direção embaixo da foto: ← azul (Araçá até Terra de Areia), → vermelha (Guará até Nova Tramandaí),

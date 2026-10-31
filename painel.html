@@ -172,6 +172,11 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
       <div class="row"><input type="text" id="mnovo" maxlength="60" placeholder="Novo motivo" style="flex:1;min-width:0;width:auto"><button type="button" class="btn pri" id="madd">Cadastrar</button></div>
     </div>
     <div class="card">
+      <strong>Chave Pix da loja</strong>
+      <p class="muted" style="margin:0">Vai na mensagem pronta do WhatsApp quando o frete é para acertar na entrega. Deixe vazio para não mandar.</p>
+      <div class="row"><input type="text" id="pixkey" maxlength="80" autocomplete="off" placeholder="CNPJ, telefone, e-mail ou chave aleatória" style="flex:1;min-width:0;width:auto"><button type="button" class="btn pri" id="pixsalvar">Salvar</button></div>
+    </div>
+    <div class="card">
       <strong>Uso do plano grátis hoje</strong>
       <div id="usoTxt" class="muted">Carregando…</div>
       <div class="barra" id="usoBarra"><i style="width:0"></i></div>
@@ -372,6 +377,8 @@ $('#tsalvar').addEventListener('click',async e=>{const l=tabela.map(t=>({nome:t.
   try{await db.collection('config').doc('fretes').set({lista:l,atualizadoEm:Date.now()});tabelaMexida=false;toast('Tabela de fretes salva. Vale para as próximas entregas.')}catch(er){erro(er)}b.disabled=false});
 let motivos=[...MOTIVOS_PADRAO],pararM=null;
 function renderMotivos(){$('#mlista').innerHTML=motivos.map((m,i)=>`<span class="chip" style="display:inline-flex;gap:8px;align-items:center">${esc(m)}<button type="button" data-mdel="${i}" aria-label="Apagar o motivo ${esc(m)}" style="border:0;background:var(--line);border-radius:99px;width:24px;height:24px;line-height:1">×</button></span>`).join('')||'<span class="muted">Nenhum motivo. Cadastre pelo menos um.</span>'}
+$('#pixsalvar').addEventListener('click',()=>{const v=$('#pixkey').value.trim();
+  db.collection('config').doc('mensagem').set({pix:v,atualizadoEm:Date.now()},{merge:true}).then(()=>toast(v?'Chave Pix salva':'Chave Pix tirada da mensagem')).catch(erro)});
 function salvarMotivos(l,msg){return db.collection('config').doc('motivos').set({lista:l,atualizadoEm:Date.now()}).then(()=>toast(msg)).catch(erro)}
 $('#madd').addEventListener('click',()=>{const v=$('#mnovo').value.trim().replace(/\s+/g,' ');if(!v){toast('Escreva o motivo.');$('#mnovo').focus();return}
   if(motivos.some(x=>x.toLowerCase()===v.toLowerCase())){toast('Esse motivo já está na lista.');return}
@@ -393,6 +400,7 @@ auth.onAuthStateChanged(u=>{
   if(!ehAdmin(u)){telaLogin(`Só o administrador entra no painel. Você entrou como <b>${esc(u.email)}</b>.`,true);return}
   $('#login').hidden=true;$('#app').hidden=false;mostrarAba(aba);
   pararT=db.collection('config').doc('fretes').onSnapshot(d=>{if(tabelaMexida)return;const l=d.exists&&d.data().lista;tabela=(Array.isArray(l)&&l.length?l:FRETES_PADRAO).map(x=>({...x}));renderTabela()},()=>{});
+  db.collection('config').doc('mensagem').get().then(d=>{$('#pixkey').value=d.exists?(d.data().pix||''):''}).catch(()=>{});
   pararM=db.collection('config').doc('motivos').onSnapshot(d=>{const l=d.exists&&d.data().lista;motivos=Array.isArray(l)?l:[...MOTIVOS_PADRAO];renderMotivos()},()=>{});
   pararP=db.collection('usuarios').onSnapshot(s=>{contarSnap(s);pessoas=s.docs.map(d=>({id:d.id,...d.data()}));renderPessoas()},e=>erro(e));
   limparFotosAntigas().catch(()=>{});

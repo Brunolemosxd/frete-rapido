@@ -360,6 +360,7 @@ function setaHTML(e){const d=direcaoDe(e);return d?`<span class="seta s-${d}" ti
 const MOTIVOS_BASE=typeof MOTIVOS_PADRAO!=='undefined'?MOTIVOS_PADRAO:['Cliente ausente','Endereço errado','Produto faltando','Produto avariado','Não coube no carro','Remarcar'];
 let MOTIVOS=[...MOTIVOS_BASE];
 let TABELA=FRETES_PADRAO.map(x=>({...x}));
+let PIX='';// chave Pix da loja (o Bruno põe no painel); vai na mensagem do WhatsApp
 let me=null,P={},VENDEDORES=[],pararEntregas=null,pararNotas=null,notasDe=null;
 let notasJ=[],pastaAberta=false;
 let entregas=[],loaded=false,dia=ds(new Date());
@@ -399,12 +400,19 @@ const WA_ICO='<svg class="waico" viewBox="0 0 32 32" aria-hidden="true"><path fi
 // mensagem já escrita na conversa; quem envia é a pessoa, apertando "enviar" no próprio WhatsApp
 const LOJA='Lojas Colombo';
 const nomeBonito=t=>String(t||'').trim().toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
+// curta de propósito: o cliente tem que ler tudo sem tocar em "ler mais"
 function msgWA(e,outro){
   const nome=nomeBonito(e.clienteNome||String(e.cliente||'').split(' ')[0]);
-  // frete para acertar na entrega: avisa o valor (o total que o cliente paga, nunca a divisão interna) e como pagar
-  const cobrar=pagamentoDe(e)==='entrega'&&Number(e.frete)>0?` O valor do frete que foi passado na loja é de ${real(e.frete)}, para acertar na entrega, no Pix ou em dinheiro (não aceitamos cartão).`:'';
-  return (outro?`Olá, tudo bom? Tenho uma entrega da ${LOJA} para ${nomeBonito(e.cliente)||'o cliente'}. Tem alguém em casa a partir de agora para receber a entrega?`
-    :`Olá, tudo bom${nome?', '+nome:''}? Tenho uma entrega para fazer da ${LOJA}. Você está em casa a partir de agora para receber a sua entrega?`)+cobrar}
+  const cobrar=pagamentoDe(e)==='entrega'&&Number(e.frete)>0;
+  const l=[outro?`Olá, tudo bom? 😊 Tenho uma entrega da ${LOJA} para ${nomeBonito(e.cliente)||'o cliente'}.`
+      :`Olá, tudo bom${nome?', '+nome:''}? 😊 Tenho uma entrega da ${LOJA} para você.`,'',
+    outro?'🏠 Tem alguém em casa a partir de agora para receber?':'🏠 Você está em casa a partir de agora para receber?',
+    '🏢 É térreo, elevador ou escada? Por escada cobramos R$ 20 por andar, por item (a Colombo não se responsabiliza por avaria na escada).'];
+  if(cobrar){l.push(`💰 Frete: ${real(e.frete)} (o valor que te passaram na loja), no Pix ou dinheiro. Não aceitamos cartão.`);
+    if(PIX)l.push(`🔑 Pix: ${PIX}`);
+    l.push('⚠️ Se não tiver ninguém para acertar na entrega, o frete precisa ser pago antes de sairmos do depósito.')}
+  l.push('📦 Confira a mercadoria na entrega. Abrir a embalagem e descartar é com o cliente: não levamos as embalagens.');
+  return l.join('\n')}
 function waLink(f,e,outro){const d=soDig(f);return 'https://wa.me/'+(d.length<=11?'55':'')+d+(e?'?text='+encodeURIComponent(msgWA(e,outro)):'')}
 function soDig(v){return String(v||'').replace(/\D/g,'')}
 function fmtFone(v){const d=soDig(v).slice(0,11);if(!d)return '';if(d.length<3)return '('+d;
@@ -1030,6 +1038,7 @@ auth.onAuthStateChanged(async u=>{
   $('#unome').textContent='Olá, '+me.nome.split(' ')[0];$('#upainel').hidden=!me.admin;$('#fab').hidden=!P.lancar;
   try{const c=await db.collection('config').doc('equipe').get();VENDEDORES=c.exists?(c.data().vendedores||[]):[]}catch{}
   try{const tf=await db.collection('config').doc('fretes').get();const l=tf.exists&&tf.data().lista;TABELA=Array.isArray(l)&&l.length?l:FRETES_PADRAO.map(x=>({...x}))}catch{}
+  try{const mg=await db.collection('config').doc('mensagem').get();PIX=mg.exists?String(mg.data().pix||'').trim():''}catch{}
   try{const mo=await db.collection('config').doc('motivos').get();const l=mo.exists&&mo.data().lista;MOTIVOS=Array.isArray(l)&&l.length?l:[...MOTIVOS_BASE]}catch{}
   render();
   // só as entregas recentes e futuras; o histórico fica no painel
