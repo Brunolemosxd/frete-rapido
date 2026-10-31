@@ -55,6 +55,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   cliente: "Olá, tudo bom, {Nome}? Tenho uma entrega para fazer da Lojas Colombo. Você está em casa a partir de agora para
   receber a sua entrega?"; outro contato: "Olá, tudo bom? Tenho uma entrega da Lojas Colombo para {Nome Sobrenome}. Tem alguém
   em casa a partir de agora para receber a entrega?". Nunca pôr valores internos (ajuste/vendedor) na mensagem.
+  Se o frete é "Cobrar na entrega", acrescenta: " O valor do frete que foi passado na loja é de R$ X, para acertar na
+  entrega, no Pix ou em dinheiro (não aceitamos cartão)." (R$ X = total que o cliente paga). Bruno pode querer mudar o texto.
   O Maps/Waze também pesquisa SÓ rua e número (`enderecoMapa` = `enderecoRua`), sem bairro; se cair longe, põem o bairro na hora.
   Entregas antigas (sem `rua`): se o número ficou depois de "casa" ou no complemento, `enderecoRua` acha e junta; número de quadra/lote não conta. Detalhe da entrega tem botão fixo "← Voltar para o mural" no alto.
 - Flecha de direção embaixo da foto: ← azul (Araçá até Terra de Areia), → vermelha (Guará até Nova Tramandaí),

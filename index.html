@@ -401,8 +401,10 @@ const LOJA='Lojas Colombo';
 const nomeBonito=t=>String(t||'').trim().toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
 function msgWA(e,outro){
   const nome=nomeBonito(e.clienteNome||String(e.cliente||'').split(' ')[0]);
-  return outro?`Olá, tudo bom? Tenho uma entrega da ${LOJA} para ${nomeBonito(e.cliente)||'o cliente'}. Tem alguém em casa a partir de agora para receber a entrega?`
-    :`Olá, tudo bom${nome?', '+nome:''}? Tenho uma entrega para fazer da ${LOJA}. Você está em casa a partir de agora para receber a sua entrega?`}
+  // frete para acertar na entrega: avisa o valor (o total que o cliente paga, nunca a divisão interna) e como pagar
+  const cobrar=pagamentoDe(e)==='entrega'&&Number(e.frete)>0?` O valor do frete que foi passado na loja é de ${real(e.frete)}, para acertar na entrega, no Pix ou em dinheiro (não aceitamos cartão).`:'';
+  return (outro?`Olá, tudo bom? Tenho uma entrega da ${LOJA} para ${nomeBonito(e.cliente)||'o cliente'}. Tem alguém em casa a partir de agora para receber a entrega?`
+    :`Olá, tudo bom${nome?', '+nome:''}? Tenho uma entrega para fazer da ${LOJA}. Você está em casa a partir de agora para receber a sua entrega?`)+cobrar}
 function waLink(f,e,outro){const d=soDig(f);return 'https://wa.me/'+(d.length<=11?'55':'')+d+(e?'?text='+encodeURIComponent(msgWA(e,outro)):'')}
 function soDig(v){return String(v||'').replace(/\D/g,'')}
 function fmtFone(v){const d=soDig(v).slice(0,11);if(!d)return '';if(d.length<3)return '('+d;
