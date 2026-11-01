@@ -23,6 +23,7 @@ O script:
 - confere a sintaxe do `comum.js` e de cada `<script>` do `index.html` e `painel.html`;
 - confere se `comum.js?v=` é igual nos dois (regra 1);
 - abre o mural como **Bruno**, **entregador (Tiago)** e **vendedor (Ana)**, em tema claro e escuro;
+- confere se nada passa da borda do cartão num celular estreito (360 px);
 - abre o painel em todas as abas;
 - tira fotos de tela e lista, por cartão, o que vai no Copiar endereço, no Maps, na caixa de valor e na mensagem do WhatsApp;
 - sai com código 1 se achar problema.

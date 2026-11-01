@@ -67,6 +67,12 @@ async function main(){
           if(quem==='bruno')c.wa.forEach(w=>console.log('    wa: '+w.replace(/\n/g,' ⏎ ').slice(0,160)+'…'))}}}
     erros.forEach(e=>prob.push(`Erro no mural (${quem}/${tema}): ${e}`));await page.close();
   }
+  // celular estreito (360 px): nada pode passar da borda do cartão
+  {const {page,erros}=await abrir(browser,{largura:360});
+    const fora=await page.$$eval('.card:not(.mini)',cs=>cs.flatMap(c=>{const r=c.getBoundingClientRect();
+      return [...c.querySelectorAll('.face *')].filter(x=>{const q=x.getBoundingClientRect();return q.width&&q.right>r.right+1}).map(x=>c.dataset.id+':'+(x.className||x.tagName))}));
+    if(fora.length)prob.push('Passou da borda do cartão em tela de 360 px: '+[...new Set(fora)].slice(0,8).join(', '));
+    erros.forEach(e=>prob.push(`Erro no mural (360 px): ${e}`));await page.close()}
   {const {page,erros}=await abrir(browser,{arquivo:'painel.html'});
     for(const b of await page.$$('.tabs [data-t]')){const t=await b.getAttribute('data-t');await b.click();await page.waitForTimeout(400);
       await page.screenshot({path:path.join(saida,`painel-${t}.png`),fullPage:true})}
