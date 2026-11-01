@@ -11,6 +11,7 @@ e a lista de conferência. Tudo em português do Brasil, explicado de forma simp
 ## 1. Antes de mexer
 - `git pull origin main` (o Bruno às vezes muda coisas pelo celular).
 - Ler o trecho envolvido (as funções do cartão são `cardHTML`, `valorHTML`, `msgWA`, `enderecoRua`; o formulário é `abrirForm`).
+- Antes de deixar algo fixo no código (texto, lista, valor), ver se não é melhor o Bruno poder mudar no painel → Ajustes (`config/geral`, `config/mensagem`).
 - Se o pedido não estiver claro, mas der para entender o objetivo, fazer e explicar a escolha. Perguntar só se for decisão dele.
 
 ## 2. Testar (sem internet, com Firebase de mentira)
@@ -41,6 +42,7 @@ const {chromium}=require('playwright');
 ```
 - `quem`: `'bruno'` (admin), `'entregador'` (sem ver valores), `'vendedor'` (lança e vê valores).
 - `arquivo:'painel.html'` abre o painel (só funciona como Bruno). As abas são `[data-t="pessoas|valores|ajustes"]`.
+- Ajustes do painel: `extra:{config:{geral:{...},mensagem:{...}}}` (sem eles valem `GERAL_PADRAO` e `MSG_PADRAO` do comum.js).
 - Entregas de exemplo em `fakefb.js`: nova com AP, cobrar com ajuste, prioridade, entregue, problema, endereços antigos, por conta do vendedor, amanhã.
 - Foto da nota no formulário: `page.click('#fbtn')` e depois `page.setInputFiles('#file', {name:'a.png',mimeType:'image/png',buffer:...})`.
 - Abrir edição: tocar no nome do cartão, depois `[data-a="mais"]` e `[data-a="editar"]`.

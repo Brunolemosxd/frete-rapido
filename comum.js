@@ -62,6 +62,47 @@ function ajusteDe(e) {
   return e.aMaisPor ? { valor: +e.aMaisValor || 0, por: e.aMaisPor } : { valor: 0, por: '' };
 }
 function pagamentoDe(e) { return e.pagamento || (e.fretePor ? 'vendedor' : e.fretePago ? 'pago' : 'entrega'); }
+// Ajustes gerais que o Bruno muda no painel (config/geral); estes são os valores de fábrica
+const GERAL_PADRAO = {
+  loja: 'Lojas Colombo',
+  carregadores: ['Tiago', 'Bruno'],
+  produtos: ['Geladeira', 'Freezer', 'Fogão', 'Cooktop', 'Forno elétrico', 'Micro-ondas', 'Coifa', 'Lava-louças', 'Máquina de lavar', 'Lava e seca', 'Tanquinho', 'Secadora',
+    'Ar-condicionado', 'TV', 'Colchão', 'Cama box', 'Sofá', 'Guarda-roupa', 'Cômoda', 'Armário de cozinha', 'Mesa e cadeiras', 'Rack / painel'],
+  condominio: 100
+};
+function geralDe(d) {
+  d = d || {};
+  const lista = (l, p) => Array.isArray(l) && l.length ? l : p;
+  return { loja: String(d.loja || '').trim() || GERAL_PADRAO.loja, carregadores: lista(d.carregadores, GERAL_PADRAO.carregadores),
+    produtos: lista(d.produtos, GERAL_PADRAO.produtos), condominio: Number(d.condominio) > 0 ? Number(d.condominio) : GERAL_PADRAO.condominio };
+}
+
+// Mensagem pronta do WhatsApp (config/mensagem). Palavras entre chaves são trocadas:
+// {nome} primeiro nome do cliente · {cliente} nome completo · {apresentacao} "Meu nome é Bruno, freteiro da Lojas Colombo."
+// {loja} · {valor} frete a cobrar · {pix} chave Pix · {cobrar} lugar da parte de cobrança (some quando o frete já está pago)
+const MSG_PADRAO = {
+  texto: 'Olá, tudo bom, {nome}? 😊 {apresentacao} Tenho uma entrega para você.\n\n🏠 Você está em casa a partir de agora para receber?\n🏢 É térreo, elevador ou escada? Por escada cobramos R$ 20 por andar, por item (a Colombo não se responsabiliza por avaria na escada).\n{cobrar}\n📦 Confira a mercadoria na entrega. Abrir a embalagem e descartar é com o cliente: não levamos as embalagens.',
+  textoOutro: 'Olá, tudo bom? 😊 {apresentacao} Tenho uma entrega para {cliente}.\n\n🏠 Tem alguém em casa a partir de agora para receber?\n🏢 É térreo, elevador ou escada? Por escada cobramos R$ 20 por andar, por item (a Colombo não se responsabiliza por avaria na escada).\n{cobrar}\n📦 Confira a mercadoria na entrega. Abrir a embalagem e descartar é com o cliente: não levamos as embalagens.',
+  textoCobrar: '💰 Frete: {valor} (o valor que te passaram na loja), no Pix ou dinheiro. Não aceitamos cartão.\n🔑 Pix: {pix}\n⚠️ Se não tiver ninguém para acertar na entrega, o frete precisa ser pago antes de sairmos do depósito.'
+};
+function mensagemDe(d) {
+  d = d || {};
+  const t = k => typeof d[k] === 'string' && d[k].trim() ? d[k] : MSG_PADRAO[k];
+  return { pix: String(d.pix || '').trim(), texto: t('texto'), textoOutro: t('textoOutro'), textoCobrar: t('textoCobrar') };
+}
+// v = {nome, cliente, apresentacao, loja, valor, pix, cobrar (true/false), textoCobrar}
+function montarMsg(tpl, v) {
+  const semPix = l => v.pix || !l.includes('{pix}');
+  const troca = t => t.replace(/\{(\w+)\}/g, (m, k) => k !== 'cobrar' && k in v ? String(v[k] ?? '') : m);
+  const bloco = v.cobrar ? String(v.textoCobrar || '').split('\n').filter(semPix).join('\n') : '';
+  const linhas = [];
+  for (const l of String(tpl || '').split('\n').filter(semPix)) {
+    if (l.trim() === '{cobrar}') { if (bloco) linhas.push(...bloco.split('\n')); }
+    else linhas.push(l.split('{cobrar}').join(bloco));
+  }
+  return linhas.map(l => troca(l).replace(/,\s*\?/g, '?').replace(/ {2,}/g, ' ').trimEnd()).join('\n').trim();
+}
+
 const TODAS = Object.fromEntries(Object.keys(PERMS).map(k => [k, true]));
 
 firebase.initializeApp(FIREBASE_CONFIG);

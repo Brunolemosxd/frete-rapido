@@ -109,6 +109,8 @@ th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute
 td.n,th.n{text-align:right}
 .tblwrap{overflow-x:auto}
 .hbar{height:6px;border-radius:0 4px 4px 0;background:var(--bar);min-width:2px;margin:4px 0 0 auto}
+textarea{width:100%;font:inherit;font-size:15px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg);resize:vertical;line-height:1.4}
+.prev{white-space:pre-wrap;background:#dcf8c6;color:#111;border-radius:10px;padding:10px 12px;font-size:15px;line-height:1.4;overflow-wrap:anywhere}
 details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:4px 0}
 .login{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
 .login .box{width:100%;max-width:380px;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:28px 20px;display:grid;gap:16px;text-align:center}
@@ -172,9 +174,26 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
       <div class="row"><input type="text" id="mnovo" maxlength="60" placeholder="Novo motivo" style="flex:1;min-width:0;width:auto"><button type="button" class="btn pri" id="madd">Cadastrar</button></div>
     </div>
     <div class="card">
-      <strong>Chave Pix da loja</strong>
-      <p class="muted" style="margin:0">Vai na mensagem pronta do WhatsApp quando o frete é para acertar na entrega. Deixe vazio para não mandar.</p>
-      <div class="row"><input type="text" id="pixkey" maxlength="80" autocomplete="off" placeholder="CNPJ, telefone, e-mail ou chave aleatória" style="flex:1;min-width:0;width:auto"><button type="button" class="btn pri" id="pixsalvar">Salvar</button></div>
+      <strong>Loja e entregas</strong>
+      <div class="field"><label for="gloja">Nome da loja (vai na mensagem do WhatsApp)</label><input type="text" id="gloja" maxlength="60" autocomplete="off"></div>
+      <div class="field"><label for="gcond">Condomínio: valor mínimo do frete (R$)</label><input type="text" id="gcond" inputmode="numeric" maxlength="4" autocomplete="off" style="max-width:140px"></div>
+      <div class="field"><span class="lbl">Quem carrega o caminhão</span><div class="chips" id="gcarr"></div>
+        <div class="row"><input type="text" id="gcarrnovo" maxlength="30" placeholder="Nome" style="flex:1;min-width:0;width:auto"><button type="button" class="btn" data-add="carregadores">Adicionar</button></div></div>
+      <div class="field"><span class="lbl">Produtos (botões da nova entrega)</span><div class="chips" id="gprod"></div>
+        <div class="row"><input type="text" id="gprodnovo" maxlength="40" placeholder="Produto" style="flex:1;min-width:0;width:auto"><button type="button" class="btn" data-add="produtos">Adicionar</button></div></div>
+      <div class="row"><button type="button" class="btn ghost" id="gpadrao">Voltar ao padrão</button><span class="sp"></span><button type="button" class="btn pri" id="gsalvar">Salvar</button></div>
+    </div>
+    <div class="card">
+      <strong>Mensagem do WhatsApp</strong>
+      <p class="muted" style="margin:0">Aparece já escrita quando alguém toca no botão verde. As palavras entre chaves são trocadas sozinhas:
+        <b>{nome}</b> primeiro nome do cliente · <b>{cliente}</b> nome completo · <b>{apresentacao}</b> "Meu nome é Bruno, freteiro da loja." ·
+        <b>{loja}</b> · <b>{valor}</b> frete a cobrar · <b>{pix}</b> chave Pix · <b>{cobrar}</b> onde entra a parte de cobrança (some quando o frete já está pago).</p>
+      <div class="field"><label for="pixkey">Chave Pix da loja (vazio = a linha do Pix não vai)</label><input type="text" id="pixkey" maxlength="80" autocomplete="off" placeholder="CNPJ, telefone, e-mail ou chave aleatória"></div>
+      <div class="field"><label for="mtexto">Mensagem para o cliente</label><textarea id="mtexto" rows="8"></textarea></div>
+      <div class="field"><label for="mcobrar">Parte de cobrança (só quando o frete é para acertar na entrega)</label><textarea id="mcobrar" rows="4"></textarea></div>
+      <div class="field"><label for="moutro">Mensagem para outro contato (ex.: filha, vizinho)</label><textarea id="moutro" rows="8"></textarea></div>
+      <div class="field"><span class="lbl">Como o cliente vai ver (exemplo com frete a cobrar)</span><div class="prev" id="mprev"></div><div class="muted" id="mconta"></div></div>
+      <div class="row"><button type="button" class="btn ghost" id="mpadrao">Voltar ao texto padrão</button><span class="sp"></span><button type="button" class="btn pri" id="msalvar">Salvar</button></div>
     </div>
     <div class="card">
       <strong>Uso do plano grátis hoje</strong>
@@ -196,7 +215,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="comum.js?v=20261030b"></script>
+<script src="comum.js?v=20261101a"></script>
 <script>
 (function(){
 const $=s=>document.querySelector(s);
@@ -210,7 +229,9 @@ let pessoas=[],pararP=null,pararUso=null;
 
 /* ---------- abas ---------- */
 let aba='pessoas';
-function mostrarAba(t){aba=t;document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===t));
+// caixas de texto crescem até mostrar a mensagem inteira (só dá para medir com a aba aberta)
+function crescerCaixas(){document.querySelectorAll('#t-ajustes textarea').forEach(t=>{if(!t.offsetParent)return;t.style.height='auto';t.style.height=t.scrollHeight+4+'px'})}
+function mostrarAba(t){aba=t;setTimeout(crescerCaixas,0);document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===t));
   for(const k of ['pessoas','valores','ajustes'])$('#t-'+k).hidden=k!==t;
   if(t==='valores')carregarValores()}
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(b)mostrarAba(b.dataset.t)});
@@ -377,8 +398,44 @@ $('#tsalvar').addEventListener('click',async e=>{const l=tabela.map(t=>({nome:t.
   try{await db.collection('config').doc('fretes').set({lista:l,atualizadoEm:Date.now()});tabelaMexida=false;toast('Tabela de fretes salva. Vale para as próximas entregas.')}catch(er){erro(er)}b.disabled=false});
 let motivos=[...MOTIVOS_PADRAO],pararM=null;
 function renderMotivos(){$('#mlista').innerHTML=motivos.map((m,i)=>`<span class="chip" style="display:inline-flex;gap:8px;align-items:center">${esc(m)}<button type="button" data-mdel="${i}" aria-label="Apagar o motivo ${esc(m)}" style="border:0;background:var(--line);border-radius:99px;width:24px;height:24px;line-height:1">×</button></span>`).join('')||'<span class="muted">Nenhum motivo. Cadastre pelo menos um.</span>'}
-$('#pixsalvar').addEventListener('click',()=>{const v=$('#pixkey').value.trim();
-  db.collection('config').doc('mensagem').set({pix:v,atualizadoEm:Date.now()},{merge:true}).then(()=>toast(v?'Chave Pix salva':'Chave Pix tirada da mensagem')).catch(erro)});
+/* ---------- loja e entregas (config/geral) ---------- */
+let geral=geralDe(null);
+// as caixas de texto só são preenchidas ao carregar ou voltar ao padrão (para não apagar o que está sendo digitado)
+function preencherGeral(){$('#gloja').value=geral.loja;$('#gcond').value=geral.condominio;renderGeral()}
+function renderGeral(){
+  const chips=(l,k)=>l.map((x,i)=>`<span class="chip" style="display:inline-flex;gap:8px;align-items:center">${esc(x)}<button type="button" data-gdel="${k}" data-i="${i}" aria-label="Tirar ${esc(x)}" style="border:0;background:none;padding:0;font-size:16px;line-height:1">×</button></span>`).join('');
+  $('#gcarr').innerHTML=chips(geral.carregadores,'carregadores');$('#gprod').innerHTML=chips(geral.produtos,'produtos');
+}
+document.addEventListener('click',e=>{
+  const d=e.target.closest('[data-gdel]');if(d){const k=d.dataset.gdel;geral[k]=geral[k].filter((_,i)=>i!==+d.dataset.i);renderGeral();return}
+  const a=e.target.closest('[data-add]');if(a){const k=a.dataset.add,inp=$(k==='produtos'?'#gprodnovo':'#gcarrnovo'),v=inp.value.trim().replace(/\s+/g,' ');
+    if(!v){inp.focus();return}if(geral[k].some(x=>x.toLowerCase()===v.toLowerCase())){toast('Já está na lista.');return}
+    geral[k]=[...geral[k],v];inp.value='';renderGeral();toast('Adicionado. Toque em Salvar para valer no mural.')}
+});
+$('#gpadrao').addEventListener('click',()=>{geral=geralDe(null);preencherGeral();previa();toast('Voltou ao padrão. Toque em Salvar para valer no mural.')});
+$('#gsalvar').addEventListener('click',()=>{
+  const loja=$('#gloja').value.trim().replace(/\s+/g,' '),cond=Number(String($('#gcond').value).replace(/\D/g,''));
+  if(!loja){toast('Escreva o nome da loja.');$('#gloja').focus();return}
+  if(!(cond>0)){toast('Coloque o valor do condomínio.');$('#gcond').focus();return}
+  if(!geral.carregadores.length||!geral.produtos.length){toast('Deixe pelo menos um nome e um produto.');return}
+  geral={...geral,loja,condominio:cond};
+  db.collection('config').doc('geral').set({...geral,atualizadoEm:Date.now()}).then(()=>{preencherGeral();toast('Salvo. Vale no mural quando ele for aberto de novo.')}).catch(erro)});
+
+/* ---------- mensagem do WhatsApp (config/mensagem) ---------- */
+function msgDaTela(){return {pix:$('#pixkey').value.trim(),texto:$('#mtexto').value,textoCobrar:$('#mcobrar').value,textoOutro:$('#moutro').value}}
+function previa(){
+  const m=mensagemDe(msgDaTela()),loja=$('#gloja').value.trim()||geral.loja;
+  const t=montarMsg(m.texto,{nome:'Maria',cliente:'Maria Souza',apresentacao:`Meu nome é Bruno, freteiro da ${loja}.`,loja,valor:real(80),pix:m.pix,cobrar:true,textoCobrar:m.textoCobrar});
+  $('#mprev').textContent=t;const n=[...t].length;
+  $('#mconta').innerHTML=`${n} letras${n>700?' · <b style="color:var(--bad)">Comprida: o cliente pode ter que tocar em "ler mais".</b>':''}`;
+  crescerCaixas();
+}
+function renderMsg(d){const m=mensagemDe(d);$('#pixkey').value=m.pix;$('#mtexto').value=m.texto;$('#mcobrar').value=m.textoCobrar;$('#moutro').value=m.textoOutro;previa()}
+['#pixkey','#mtexto','#mcobrar','#moutro','#gloja'].forEach(s=>$(s).addEventListener('input',previa));
+$('#mpadrao').addEventListener('click',()=>{renderMsg({pix:$('#pixkey').value});toast('Voltou ao texto padrão. Toque em Salvar para valer no mural.')});
+$('#msalvar').addEventListener('click',()=>{const m=msgDaTela();
+  if(!m.texto.trim()||!m.textoOutro.trim()){toast('A mensagem não pode ficar vazia. Use "Voltar ao texto padrão".');return}
+  db.collection('config').doc('mensagem').set({...m,atualizadoEm:Date.now()}).then(()=>toast('Mensagem salva. Vale no mural quando ele for aberto de novo.')).catch(erro)});
 function salvarMotivos(l,msg){return db.collection('config').doc('motivos').set({lista:l,atualizadoEm:Date.now()}).then(()=>toast(msg)).catch(erro)}
 $('#madd').addEventListener('click',()=>{const v=$('#mnovo').value.trim().replace(/\s+/g,' ');if(!v){toast('Escreva o motivo.');$('#mnovo').focus();return}
   if(motivos.some(x=>x.toLowerCase()===v.toLowerCase())){toast('Esse motivo já está na lista.');return}
@@ -400,7 +457,8 @@ auth.onAuthStateChanged(u=>{
   if(!ehAdmin(u)){telaLogin(`Só o administrador entra no painel. Você entrou como <b>${esc(u.email)}</b>.`,true);return}
   $('#login').hidden=true;$('#app').hidden=false;mostrarAba(aba);
   pararT=db.collection('config').doc('fretes').onSnapshot(d=>{if(tabelaMexida)return;const l=d.exists&&d.data().lista;tabela=(Array.isArray(l)&&l.length?l:FRETES_PADRAO).map(x=>({...x}));renderTabela()},()=>{});
-  db.collection('config').doc('mensagem').get().then(d=>{$('#pixkey').value=d.exists?(d.data().pix||''):''}).catch(()=>{});
+  db.collection('config').doc('geral').get().then(d=>{geral=geralDe(d.exists?d.data():null);preencherGeral();previa()}).catch(()=>preencherGeral());
+  db.collection('config').doc('mensagem').get().then(d=>renderMsg(d.exists?d.data():null)).catch(()=>renderMsg(null));
   pararM=db.collection('config').doc('motivos').onSnapshot(d=>{const l=d.exists&&d.data().lista;motivos=Array.isArray(l)?l:[...MOTIVOS_PADRAO];renderMotivos()},()=>{});
   pararP=db.collection('usuarios').onSnapshot(s=>{contarSnap(s);pessoas=s.docs.map(d=>({id:d.id,...d.data()}));renderPessoas()},e=>erro(e));
   limparFotosAntigas().catch(()=>{});

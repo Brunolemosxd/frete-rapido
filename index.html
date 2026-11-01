@@ -340,7 +340,7 @@ input.err{border-color:var(--bad)}
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="comum.js?v=20261030b"></script>
+<script src="comum.js?v=20261101a"></script>
 <script>
 (function(){
 const $=s=>document.querySelector(s);
@@ -349,7 +349,7 @@ const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','
 const TURNOS={manha:'Manhã',tarde:'Tarde',apos:'Depois das'};
 const ST={pendente:['Pendente','p-pend'],entregue:['Entregue','p-ok'],problema:['Problema','p-bad']};
 // quem carrega o caminhão (aparece no menu ao segurar o cartão)
-const CARREGADORES=['Tiago','Bruno'];
+let GERAL=geralDe(null),MSG=mensagemDe(null);// o Bruno muda no painel → Ajustes (config/geral e config/mensagem)
 // entregas marcadas antes da correção do nome mostram o nome certo
 const carr=e=>e.carregadoPor==='Thiago'?'Tiago':(e.carregadoPor||'');
 // direção pelo bairro (vale o que está na tabela de fretes agora)
@@ -360,7 +360,6 @@ function setaHTML(e){const d=direcaoDe(e);return d?`<span class="seta s-${d}" ti
 const MOTIVOS_BASE=typeof MOTIVOS_PADRAO!=='undefined'?MOTIVOS_PADRAO:['Cliente ausente','Endereço errado','Produto faltando','Produto avariado','Não coube no carro','Remarcar'];
 let MOTIVOS=[...MOTIVOS_BASE];
 let TABELA=FRETES_PADRAO.map(x=>({...x}));
-let PIX='';// chave Pix da loja (o Bruno põe no painel); vai na mensagem do WhatsApp
 let me=null,P={},VENDEDORES=[],pararEntregas=null,pararNotas=null,notasDe=null;
 let notasJ=[],pastaAberta=false;
 let entregas=[],loaded=false,dia=ds(new Date());
@@ -381,7 +380,7 @@ function turnoTxt(e){return e.turno==='apos'?'Depois das '+(e.hora||'—'):(TURN
 // entrega "Depois das HH:MM": relógio em destaque para ninguém sair antes da hora
 const horaHTML=e=>e.turno==='apos'?`<div><span class="hora"><span class="rel" aria-hidden="true">🕒</span>Só depois das ${esc(e.hora||'—')}</span></div>`:'';
 function ordemTurno(e){return {manha:0,tarde:1,apos:2}[e.turno]??3}
-const PRODUTOS=['Geladeira','Freezer','Fogão','Cooktop','Forno elétrico','Micro-ondas','Coifa','Lava-louças','Máquina de lavar','Lava e seca','Tanquinho','Secadora','Ar-condicionado','TV','Colchão','Cama box','Sofá','Guarda-roupa','Cômoda','Armário de cozinha','Mesa e cadeiras','Rack / painel'];
+// botões de produtos: config/geral (painel)
 const LOC={loja:'Loja',deposito:'Depósito'};
 // entregas antigas guardavam itens como texto e um único local para tudo
 function itensDe(e){return (e.itens||[]).map(i=>typeof i==='string'?{nome:i,local:e.local||'loja',qtd:1}:{nome:i.nome||'',local:i.local||null,qtd:Math.max(1,+i.qtd||1)})}
@@ -398,23 +397,14 @@ const locHTML=k=>k?`<span class="lc ${k==='deposito'?'dep':'loja'}">${LOC[k]}</s
 // abre conversa nova no WhatsApp com o número (Brasil: 55 + DDD + número), sem precisar salvar o contato
 const WA_ICO='<svg class="waico" viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.4.7 4.7 1.9 6.7L3 29l6.9-2.2c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.7 12.7-12.7S23 3 16 3zm0 23.2c-1.9 0-3.8-.5-5.4-1.5l-.4-.2-4.1 1.3 1.3-4-.3-.4c-1.1-1.7-1.7-3.7-1.7-5.7C5.4 9.8 10.2 5.1 16 5.1s10.6 4.7 10.6 10.5S21.8 26.2 16 26.2zm5.8-7.9c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.6-1.6-1-.9-1.6-1.9-1.8-2.2-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.3.3-.6.1-.2 0-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.1-1.2 2.8s1.2 3.2 1.4 3.5c.2.2 2.4 3.6 5.7 5 .8.3 1.4.5 1.9.7.8.3 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg>';
 // mensagem já escrita na conversa; quem envia é a pessoa, apertando "enviar" no próprio WhatsApp
-const LOJA='Lojas Colombo';
 const nomeBonito=t=>String(t||'').trim().toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
 // curta de propósito: o cliente tem que ler tudo sem tocar em "ler mais"
 function msgWA(e,outro){
-  const nome=nomeBonito(e.clienteNome||String(e.cliente||'').split(' ')[0]);
-  const cobrar=pagamentoDe(e)==='entrega'&&Number(e.frete)>0;
   // quem manda se apresenta com o nome do cadastro; o Bruno e os entregadores como freteiro
-  const eu=me?nomeBonito(String(me.nome||'').split(' ')[0]):'',quem=eu?` Meu nome é ${eu}, ${me.admin||me.funcao==='entregador'?'freteiro da ':'da '}${LOJA}.`:'';
-  const l=[outro?`Olá, tudo bom? 😊${quem} Tenho uma entrega${quem?'':' da '+LOJA} para ${nomeBonito(e.cliente)||'o cliente'}.`
-      :`Olá, tudo bom${nome?', '+nome:''}? 😊${quem} Tenho uma entrega${quem?'':' da '+LOJA} para você.`,'',
-    outro?'🏠 Tem alguém em casa a partir de agora para receber?':'🏠 Você está em casa a partir de agora para receber?',
-    '🏢 É térreo, elevador ou escada? Por escada cobramos R$ 20 por andar, por item (a Colombo não se responsabiliza por avaria na escada).'];
-  if(cobrar){l.push(`💰 Frete: ${real(e.frete)} (o valor que te passaram na loja), no Pix ou dinheiro. Não aceitamos cartão.`);
-    if(PIX)l.push(`🔑 Pix: ${PIX}`);
-    l.push('⚠️ Se não tiver ninguém para acertar na entrega, o frete precisa ser pago antes de sairmos do depósito.')}
-  l.push('📦 Confira a mercadoria na entrega. Abrir a embalagem e descartar é com o cliente: não levamos as embalagens.');
-  return l.join('\n')}
+  const eu=me?nomeBonito(String(me.nome||'').split(' ')[0]):'';
+  return montarMsg(outro?MSG.textoOutro:MSG.texto,{nome:nomeBonito(e.clienteNome||String(e.cliente||'').split(' ')[0]),cliente:nomeBonito(e.cliente)||'o cliente',
+    apresentacao:eu?`Meu nome é ${eu}, ${me.admin||me.funcao==='entregador'?'freteiro da ':'da '}${GERAL.loja}.`:'',loja:GERAL.loja,
+    valor:real(e.frete),pix:MSG.pix,cobrar:pagamentoDe(e)==='entrega'&&Number(e.frete)>0,textoCobrar:MSG.textoCobrar})}
 function waLink(f,e,outro){const d=soDig(f);return 'https://wa.me/'+(d.length<=11?'55':'')+d+(e?'?text='+encodeURIComponent(msgWA(e,outro)):'')}
 function soDig(v){return String(v||'').replace(/\D/g,'')}
 function fmtFone(v){const d=soDig(v).slice(0,11);if(!d)return '';if(d.length<3)return '('+d;
@@ -466,9 +456,9 @@ function valorHTML(e,V){
   const cls={entrega:'v-cobrar',pix:'v-pago',junto:'v-pago',nota:'v-nota',vendedor:'v-vend',pago:'v-pago'}[p]||'';
   let det='';
   if(V&&e.freteBase!==undefined){
-    const base=e.freteConsultar?'Valor combinado':e.condominio&&e.freteTabela<=100?'Condomínio':'Tabela';
+    const base=e.freteConsultar?'Valor combinado':e.condominio&&e.freteBase!==e.freteTabela?'Condomínio':'Tabela';
     if(aj.valor)det=`${base} ${real(e.freteBase)} <span class="vaj">${aj.valor>0?'+':'−'} ${real(Math.abs(aj.valor))} de ${esc(aj.por||'?')}</span>`;
-    else if(e.freteConsultar||(e.condominio&&e.freteTabela<=100))det=`${base} ${real(e.freteBase)}`;
+    else if(e.freteConsultar||(e.condominio&&e.freteBase!==e.freteTabela))det=`${base} ${real(e.freteBase)}`;
   }else if(V&&aj.por)det=`<span class="vaj">${esc(ajusteTxt(e))}</span>`;
   return `<div class="vbox ${cls}"><div class="vtit">${tit}</div>${det?`<div class="vdet">${det}</div>`:''}</div>`;
 }
@@ -703,7 +693,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')fechar()});
 function abrirAcoes(id){
   const e=entregas.find(x=>x.id===id);if(!e)return;
   abrirSheet(`<h2>${esc(e.cliente||'Entrega')}</h2>
-    ${P.marcar||podeEditar(e)?`<div class="field"><span class="lbl">Quem carregou</span><div class="chips">${CARREGADORES.map(n=>`<button type="button" class="chip" data-carr="${esc(n)}" aria-pressed="${carr(e)===n}">🚚 ${esc(n)}</button>`).join('')}</div></div>`:''}
+    ${P.marcar||podeEditar(e)?`<div class="field"><span class="lbl">Quem carregou</span><div class="chips">${GERAL.carregadores.map(n=>`<button type="button" class="chip" data-carr="${esc(n)}" aria-pressed="${carr(e)===n}">🚚 ${esc(n)}</button>`).join('')}</div></div>`:''}
     ${P.marcar?'<div class="actions two"><button class="btn ok" data-a="entregue">✓ Entregue</button><button class="btn bad" data-a="problema">✕ Problema</button></div>':''}
     <div class="actions">${P.marcar&&e.status!=='pendente'?'<button class="btn" data-a="pendente">Voltar para pendente</button>':''}
     <button class="btn post" data-a="postit">📝 Colar post-it</button>
@@ -766,7 +756,7 @@ function abrirDetalhe(id){
     ${e.bairro?`<div><span class="lbl">Bairro</span><br>${esc(e.bairro)}</div>`:''}
     ${e.fone?`<div><span class="lbl">Telefone</span><div class="fonerow"><span style="user-select:all">${esc(e.fone)}</span><a class="btn sm wa" href="${waLink(e.fone,e)}" target="_blank" rel="noopener">${WA_ICO} WhatsApp</a><button type="button" class="btn sm" data-a="copiar">📋 Copiar</button></div></div>`:''}
     ${(e.contatos||[]).map(c=>`<div><span class="lbl">Outro contato${c.nome?' — '+esc(c.nome):''}</span><div class="fonerow"><span style="user-select:all">${esc(c.fone)}</span><a class="btn sm wa" href="${waLink(c.fone,e,true)}" target="_blank" rel="noopener">${WA_ICO} WhatsApp</a><button type="button" class="btn sm" data-copiar="${esc(soDig(c.fone))}">📋 Copiar</button></div></div>`).join('')}
-    ${V&&e.frete?`<div><span class="lbl">Valor do frete</span><br><b>${real(e.frete)}</b>${e.freteBase!==undefined&&ajusteDe(e).valor?` <span class="hint">(${e.freteConsultar?'combinado':e.condominio&&e.freteTabela<=100?'condomínio':'tabela'} ${real(e.freteBase)} ${ajusteDe(e).valor>0?'+':'−'} ${real(Math.abs(ajusteDe(e).valor))} de ${esc(ajusteDe(e).por)})</span>`:''}</div>`:''}
+    ${V&&e.frete?`<div><span class="lbl">Valor do frete</span><br><b>${real(e.frete)}</b>${e.freteBase!==undefined&&ajusteDe(e).valor?` <span class="hint">(${e.freteConsultar?'combinado':e.condominio&&e.freteBase!==e.freteTabela?'condomínio':'tabela'} ${real(e.freteBase)} ${ajusteDe(e).valor>0?'+':'−'} ${real(Math.abs(ajusteDe(e).valor))} de ${esc(ajusteDe(e).por)})</span>`:''}</div>`:''}
     <div><span class="lbl">Pagamento do frete</span><br>${{entrega:'Cobrar na entrega'+(e.frete?' — '+real(e.frete):''),pix:'Já pago no Pix',junto:'Dinheiro junto com a nota',nota:'<b style="color:var(--bad)">🧾 Frete na nota</b>',vendedor:'Por conta do vendedor '+esc(e.fretePor||''),pago:'Já pago'}[pagamentoDe(e)]}</div>
     ${its.length?`<div><span class="lbl">Produtos</span><ul>${its.map(i=>`<li>${esc(qtdNome(i))}${i.local?' — '+locHTML(i.local):''}</li>`).join('')}</ul></div>`:''}
     ${e.observacao?`<div><span class="lbl">Observação</span><br>${esc(e.observacao)}</div>`:''}
@@ -840,7 +830,7 @@ function abrirForm(ed){
         <div class="cont dep"><span>No depósito</span><div class="step"><button type="button" data-n="notasDeposito" data-d="-1" aria-label="Uma nota a menos no depósito">−</button><b id="ndep">0</b><button type="button" data-n="notasDeposito" data-d="1" aria-label="Uma nota a mais no depósito">+</button></div></div>
       </div></div>
       <div class="field"><span class="lbl">Produtos — toque para pôr na lista</span>
-        <div class="prods" id="fprods">${PRODUTOS.map(p=>`<button type="button" class="prod" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div>
+        <div class="prods" id="fprods">${GERAL.produtos.map(p=>`<button type="button" class="prod" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div>
         <div class="row"><input type="text" id="fitem" placeholder="Outro produto" enterkeyhint="done"><button type="button" class="btn" id="fadd">Adicionar</button></div>
         <div class="plist" id="fitens"></div></div>
     </div>
@@ -908,8 +898,8 @@ function abrirForm(ed){
       st[b.dataset.n]=Math.max(0,Math.min(20,st[b.dataset.n]+ +b.dataset.d));q('#fnotas').classList.remove('err');sync();
       if(antes===1&&st.notasLoja+st.notasDeposito===2)toast('Ponha a foto da outra nota na pasta 📁 do mural.')});
     q('#fprio').addEventListener('click',()=>{st.prioridade=!st.prioridade;sync()});
-    // condomínio: tabela até R$ 100 vira R$ 100; acima de R$ 100 fica o valor da tabela
-    const COND=100;
+    // condomínio: tabela até o valor do condomínio (painel, padrão R$ 100) sobe para ele; acima fica a tabela
+    const COND=GERAL.condominio;
     function baseFrete(){if(!st.loc)return 0;if(st.loc.valor===null)return st.valorCombinado;return st.condominio&&st.loc.valor<=COND?COND:st.loc.valor}
     function totalFrete(){return st.loc?Math.max(0,baseFrete()+st.ajuste):0}
     // o valor da tabela não se digita; só o "a consultar" tem campo de valor
@@ -918,7 +908,7 @@ function abrirForm(ed){
       if(!st.loc){b.innerHTML='<span class="hint" style="text-align:left">Escolha o bairro na lista para aparecer o valor do frete.</span>';return}
       const cons=st.loc.valor===null;
       b.innerHTML=`<div class="base"><span>${esc(st.loc.nome)}</span>${cons?'<span class="hint">Valor a consultar</span>':`<b>🔒 ${real(baseFrete())}</b>`}</div>
-        ${!cons&&st.condominio?`<span class="hint" style="text-align:left">${st.loc.valor<=COND?`Condomínio: R$ 100,00 (tabela ${real(st.loc.valor)})`:`Condomínio, mas a tabela é maior que R$ 100,00: fica o valor da tabela`}</span>`:''}
+        ${!cons&&st.condominio?`<span class="hint" style="text-align:left">${st.loc.valor<=COND?`Condomínio: ${real(COND)} (tabela ${real(st.loc.valor)})`:`Condomínio, mas a tabela é maior que ${real(COND)}: fica o valor da tabela`}</span>`:''}
         ${cons?`<input type="text" id="fcons" inputmode="numeric" autocomplete="off" placeholder="Valor combinado R$ 0,00" value="${st.valorCombinado?real(st.valorCombinado):''}" aria-label="Valor combinado do frete">`:''}
         <span class="lbl">Mudar o valor (opcional)</span>
         <div class="ajs">${AJUSTES.map(v=>`<button type="button" class="chip${v<0?' neg':''}" data-aj="${v}" aria-pressed="${st.ajuste===v}">${v>0?'+':'−'}${Math.abs(v)}</button>`).join('')}</div>
@@ -1040,7 +1030,8 @@ auth.onAuthStateChanged(async u=>{
   $('#unome').textContent='Olá, '+me.nome.split(' ')[0];$('#upainel').hidden=!me.admin;$('#fab').hidden=!P.lancar;
   try{const c=await db.collection('config').doc('equipe').get();VENDEDORES=c.exists?(c.data().vendedores||[]):[]}catch{}
   try{const tf=await db.collection('config').doc('fretes').get();const l=tf.exists&&tf.data().lista;TABELA=Array.isArray(l)&&l.length?l:FRETES_PADRAO.map(x=>({...x}))}catch{}
-  try{const mg=await db.collection('config').doc('mensagem').get();PIX=mg.exists?String(mg.data().pix||'').trim():''}catch{}
+  try{const mg=await db.collection('config').doc('mensagem').get();MSG=mensagemDe(mg.exists?mg.data():null)}catch{}
+  try{const ge=await db.collection('config').doc('geral').get();GERAL=geralDe(ge.exists?ge.data():null)}catch{}
   try{const mo=await db.collection('config').doc('motivos').get();const l=mo.exists&&mo.data().lista;MOTIVOS=Array.isArray(l)&&l.length?l:[...MOTIVOS_BASE]}catch{}
   render();
   // só as entregas recentes e futuras; o histórico fica no painel
