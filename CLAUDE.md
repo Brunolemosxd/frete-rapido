@@ -79,6 +79,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
 - Tema claro/escuro/automático no topo.
 
 ## Como trabalhar
+- Seguir a skill `.claude/skills/frete-rapido/SKILL.md`: teste pronto (`node .claude/skills/frete-rapido/testar.js --saida <pasta>`,
+  Firebase de mentira em `fakefb.js` com entregas de exemplo) e lista de conferência antes de subir.
 - Antes de mexer, ler o trecho envolvido. Depois: `node --check` nos scripts e testar com Playwright usando um Firebase
   falso (sem rede): bloquear gstatic/googleapis e injetar um `window.firebase` de mentira com collection/doc/where/
   onSnapshot (com docChanges)/set (merge e FieldValue.increment)/update/delete; abrir com `file://`.
