@@ -70,7 +70,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
 - Linha "por Ana · às 14:32" no cartão: hora em que foi lançada (`criadoEm`; se não foi hoje, "29/10 às 14:32").
 - Quem carregou: nomes do painel (padrão Tiago e Bruno), no menu ao segurar o cartão; aparece embaixo da foto.
   "🚚 Minhas entregas — Nome": as pendentes que a pessoa marcou com o próprio nome (primeiro nome do cadastro; Thiago = Tiago,
-  `ehMinha`) sobem para uma seção no topo, SÓ no celular dela; para os outros a ordem não muda.
+  `ehMinha`) sobem para uma seção no topo, ACIMA DE TUDO (acima de "Ficaram para trás" e da Prioridade; inclui as atrasadas
+  dela), SÓ no celular dela; para os outros a ordem não muda.
 - Problema: motivo em faixa vermelha grande no topo do cartão; motivos cadastráveis (`config/motivos`).
 - Entregues descem para "Entregues" minimizadas (uma linha: ✓ nome · bairro · quem carregou); um toque abre no tamanho normal, botão "▴ Minimizar" fecha de novo (só na memória da página). Faixa de dias vai até ~3 meses para a frente.
 - Pasta "Produtos que vão com outras notas" (`notasjuntas`, por dia): cada item tem várias fotos + detalhe;

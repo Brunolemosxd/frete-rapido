@@ -545,15 +545,16 @@ function render(){
   </div></div>`;
   const nj=notasDoDia(dia).filter(n=>!n.arquivada).length;
   html+=`<button type="button" class="pasta" id="pasta"><span aria-hidden="true">📁</span>Produtos que vão com outras notas${nj?`<span class="n">${nj}</span>`:''}</button>`;
-  if(atras.length) html+=`<section class="late"><h3>Ficaram para trás (${atras.length})</h3><div class="list">${atras.map(cardHTML).join('')}</div></section>`;
+  // as que eu marquei para carregar ficam em cima de tudo, só no meu celular (para os outros fica tudo como sempre)
+  const minhas=[...atras,...list].filter(e=>e.status!=='entregue'&&ehMinha(e)).sort((a,b)=>(b.prioridade?1:0)-(a.prioridade?1:0)||ordemTurno(a)-ordemTurno(b)||porDirecao(a,b));
+  if(loaded&&minhas.length)html+=`<section class="minhas"><h3>🚚 Minhas entregas — ${esc(nomeBonito(String(me.nome).split(' ')[0]))} (${minhas.length})</h3><div class="list">${minhas.map(cardHTML).join('')}</div></section>`;
+  const atrasOutros=atras.filter(e=>!ehMinha(e));
+  if(atrasOutros.length) html+=`<section class="late"><h3>Ficaram para trás (${atrasOutros.length})</h3><div class="list">${atrasOutros.map(cardHTML).join('')}</div></section>`;
   if(!loaded){html+=`<div class="empty"><strong>Carregando o mural…</strong><span>As entregas agendadas aparecem aqui.</span></div>`}
   else if(!list.length){html+=`<div class="empty"><strong>Nenhuma entrega para ${esc(nomeDia(dia).toLowerCase())}</strong>${P.lancar?'<span>Toque em <b>+ Nova entrega</b> para lançar a nota.</span>':''}</div>`}
   else{
     // as já entregues saem dos turnos e vão para o fim da tela
     const abertas=list.filter(e=>e.status!=='entregue'),feitas=list.filter(e=>e.status==='entregue');
-    // as que eu marquei para carregar sobem para o topo, só no meu celular (para os outros fica tudo como sempre)
-    const minhas=abertas.filter(ehMinha).sort((a,b)=>(b.prioridade?1:0)-(a.prioridade?1:0)||ordemTurno(a)-ordemTurno(b)||porDirecao(a,b));
-    if(minhas.length)html+=`<section class="minhas"><h3>🚚 Minhas entregas — ${esc(nomeBonito(String(me.nome).split(' ')[0]))} (${minhas.length})</h3><div class="list">${minhas.map(cardHTML).join('')}</div></section>`;
     const resto=abertas.filter(e=>!ehMinha(e));
     const prio=resto.filter(e=>e.prioridade).sort(porDirecao);
     if(prio.length)html+=`<section class="prio"><h3>⬆ Prioridade (${prio.length})</h3><div class="list">${prio.map(cardHTML).join('')}</div></section>`;
