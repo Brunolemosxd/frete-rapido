@@ -72,6 +72,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   "🚚 Minhas entregas — Nome": as pendentes que a pessoa marcou com o próprio nome (primeiro nome do cadastro; Thiago = Tiago,
   `ehMinha`) sobem para uma seção no topo, ACIMA DE TUDO (acima de "Ficaram para trás" e da Prioridade; inclui as atrasadas
   dela), SÓ no celular dela; para os outros a ordem não muda.
+  Ao marcar "Entregue" sem ninguém em "Quem carregou", grava como carregador quem marcou (se o primeiro nome dele estiver
+  na lista de carregadores do painel); se já tinha alguém marcado, não muda.
 - Problema: motivo em faixa vermelha grande no topo do cartão; motivos cadastráveis (`config/motivos`).
 - Entregues descem para "Entregues" minimizadas (uma linha: ✓ nome · bairro · quem carregou); um toque abre no tamanho normal, botão "▴ Minimizar" fecha de novo (só na memória da página). Faixa de dias vai até ~3 meses para a frente.
 - Pasta "Produtos que vão com outras notas" (`notasjuntas`, por dia): cada item tem várias fotos + detalhe;

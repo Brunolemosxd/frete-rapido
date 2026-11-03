@@ -689,6 +689,8 @@ async function salvar(id,dados,novo){
 async function setStatus(id,status,obs){
   const e=entregas.find(x=>x.id===id);if(!e)return;
   const d={status,atualizadoEm:Date.now()};if(obs!==undefined)d.obs=obs;
+  // quem marca "entregue" sem ninguém em "Quem carregou" fica como quem carregou (se for um dos carregadores do painel)
+  if(status==='entregue'&&!e.carregadoPor&&me){const n=GERAL.carregadores.find(c=>primeiroNome(c)===primeiroNome(me.nome));if(n){d.carregadoPor=n;d.carregadoEm=Date.now()}}
   Object.assign(e,d);render();
   if(await salvar(id,d)) toast(status==='entregue'?'Marcada como entregue':status==='problema'?'Marcada com problema':'Voltou para pendente');
 }
