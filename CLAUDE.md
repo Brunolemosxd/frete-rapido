@@ -81,6 +81,11 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
 - Fotos com mais de 60 dias são apagadas quando o Bruno abre o mural/painel.
 - Contador de uso do plano grátis (`uso/{dia}`, estimativa): aviso amarelo 70% e vermelho 90%, só para o Bruno.
 - Painel → Valores: gráfico por dia (entregues), totais e tabela por pessoa; entrega com problema não conta em nada.
+- Painel → Acerto (só o Bruno): escolhe o dia; entregas ENTREGUES desse dia (`data`) agrupadas por quem carregou, com
+  cliente, bairro, como pagou e valor. "💵 Para receber dele" = cobrado na entrega em dinheiro + dinheiro junto com a nota;
+  nas "Cobrado na entrega" o Bruno toca 💵 Dinheiro ↔ 📲 Pix (`acertoPix`) se o cliente pagou no Pix na hora. Pix antes,
+  frete na nota e por conta do vendedor aparecem à parte. Botão "✓ Recebi R$ X de Fulano" grava `acertadoEm` nas entregas
+  (Desfazer apaga). Grupo "Sem quem carregou" pede para marcar no mural. Problema/pendente não entram.
 - Tema claro/escuro/automático no topo.
 
 ## Como trabalhar

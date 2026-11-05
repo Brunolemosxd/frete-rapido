@@ -111,6 +111,12 @@ td.n,th.n{text-align:right}
 .hbar{height:6px;border-radius:0 4px 4px 0;background:var(--bar);min-width:2px;margin:4px 0 0 auto}
 textarea{width:100%;font:inherit;font-size:15px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg);resize:vertical;line-height:1.4}
 .prev{white-space:pre-wrap;background:#dcf8c6;color:#111;border-radius:10px;padding:10px 12px;font-size:15px;line-height:1.4;overflow-wrap:anywhere}
+.aresumo{display:grid;gap:4px;border-top:1px solid var(--line);padding-top:8px}
+.aresumo>div{display:flex;justify-content:space-between;gap:10px;font-size:15px}
+.aresumo .amao{font-size:22px;color:var(--ok)}
+.aresumo .atot{border-top:1px dashed var(--line);padding-top:4px;color:var(--muted)}
+tr.ok td{opacity:.7}
+.acard .chip{white-space:nowrap;padding:6px 10px;font-size:14px}
 details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:4px 0}
 .login{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
 .login .box{width:100%;max-width:380px;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:28px 20px;display:grid;gap:16px;text-align:center}
@@ -133,7 +139,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
 <header>
   <div class="wrap">
     <div class="top"><h1>Painel <span>Frete Rápido</span></h1><div class="usr"><a href="./">Mural</a><button type="button" data-tema></button><button type="button" id="usair">Sair</button></div></div>
-    <div class="tabs" role="tablist"><button class="tab" role="tab" data-t="pessoas">Pessoas</button><button class="tab" role="tab" data-t="valores">Valores</button><button class="tab" role="tab" data-t="ajustes">Ajustes</button></div>
+    <div class="tabs" role="tablist"><button class="tab" role="tab" data-t="pessoas">Pessoas</button><button class="tab" role="tab" data-t="acerto">Acerto</button><button class="tab" role="tab" data-t="valores">Valores</button><button class="tab" role="tab" data-t="ajustes">Ajustes</button></div>
   </div>
 </header>
 <div class="avuso" id="avuso" hidden></div>
@@ -142,6 +148,12 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
     <div class="row"><h2>Pessoas</h2><span class="sp"></span><button type="button" class="btn pri" id="novaP">+ Cadastrar pessoa</button></div>
     <p class="muted" style="margin:0">Só entra no mural quem estiver aqui com o acesso liberado. Cada pessoa entra com o Gmail dela.</p>
     <div id="listaP" style="display:grid;gap:10px"></div>
+  </section>
+
+  <section id="t-acerto" style="display:grid;gap:14px" hidden>
+    <div class="row"><h2>Acerto do dia</h2><span class="sp"></span><input type="date" id="adia" aria-label="Dia" style="width:auto"></div>
+    <p class="muted" style="margin:0">Entregas marcadas como entregues no dia, separadas por quem carregou. O valor "Para receber dele" é o que ficou com o freteiro (cobrado na entrega em dinheiro + dinheiro junto com a nota). Se o cliente pagou no Pix na hora, toque em <b>💵 Dinheiro</b> para trocar para <b>📲 Pix</b>.</p>
+    <div id="acerto" style="display:grid;gap:14px"></div>
   </section>
 
   <section id="t-valores" style="display:grid;gap:14px" hidden>
@@ -232,8 +244,8 @@ let aba='pessoas';
 // caixas de texto crescem até mostrar a mensagem inteira (só dá para medir com a aba aberta)
 function crescerCaixas(){document.querySelectorAll('#t-ajustes textarea').forEach(t=>{if(!t.offsetParent)return;t.style.height='auto';t.style.height=t.scrollHeight+4+'px'})}
 function mostrarAba(t){aba=t;setTimeout(crescerCaixas,0);document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===t));
-  for(const k of ['pessoas','valores','ajustes'])$('#t-'+k).hidden=k!==t;
-  if(t==='valores')carregarValores()}
+  for(const k of ['pessoas','acerto','valores','ajustes'])$('#t-'+k).hidden=k!==t;
+  if(t==='valores')carregarValores();if(t==='acerto')carregarAcerto()}
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(b)mostrarAba(b.dataset.t)});
 
 /* ---------- folhas ---------- */
@@ -319,6 +331,65 @@ $('#mes').value=mesAtual();
 $('#mes').addEventListener('change',carregarValores);
 let dadosMes=null;
 // ao vivo: apagar, editar ou marcar problema no mural muda os números na hora
+/* ---------- acerto do dia com cada freteiro (só o Bruno vê) ---------- */
+let pararAcerto=null,diaAcerto=null,dadosAcerto=[];
+const hojeTxt=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+// para onde foi o dinheiro de cada entrega
+function destinoAcerto(e){const p=pagamentoDe(e);
+  if(p==='entrega')return e.acertoPix?'pix':'mao';
+  if(p==='junto')return 'mao';if(p==='pix'||p==='pago')return 'pix';if(p==='nota')return 'nota';if(p==='vendedor')return 'vendedor';return 'mao'}
+const PAG_TXT={entrega:'Cobrado na entrega',pix:'Pago no Pix (antes)',pago:'Já pago',junto:'Dinheiro junto com a nota',nota:'Frete na nota',vendedor:'Por conta do vendedor'};
+function carregarAcerto(){
+  const d=$('#adia').value||hojeTxt();$('#adia').value=d;
+  if(pararAcerto&&diaAcerto===d){renderAcerto();return}
+  pararAcerto&&pararAcerto();diaAcerto=d;$('#acerto').innerHTML='<div class="muted">Carregando…</div>';
+  pararAcerto=db.collection('entregas').where('data','==',d).onSnapshot(snap=>{contarSnap(snap);dadosAcerto=snap.docs.map(x=>({id:x.id,status:'pendente',...x.data()}));if(aba==='acerto')renderAcerto()},
+    ()=>{pararAcerto=null;diaAcerto=null;$('#acerto').innerHTML='<div class="muted">Não consegui carregar. Confira a internet.</div>'});
+}
+$('#adia').addEventListener('change',carregarAcerto);
+function renderAcerto(){
+  const ent=dadosAcerto.filter(e=>e.status==='entregue'),num=v=>Number(v)||0;
+  const pend=dadosAcerto.filter(e=>e.status==='pendente').length,prob=dadosAcerto.filter(e=>e.status==='problema').length;
+  const grupos={};for(const e of ent){const n=(e.carregadoPor==='Thiago'?'Tiago':e.carregadoPor)||'';(grupos[n]=grupos[n]||[]).push(e)}
+  const nomes=Object.keys(grupos).sort((a,b)=>(a?0:1)-(b?0:1)||a.localeCompare(b));
+  let html=pend||prob?`<div class="muted">${pend?`${pend} entrega${pend===1?'':'s'} ainda pendente${pend===1?'':'s'}`:''}${pend&&prob?' · ':''}${prob?`${prob} com problema (não entra na conta)`:''}</div>`:'';
+  if(!ent.length)html+='<div class="card"><span class="muted">Nenhuma entrega marcada como entregue neste dia.</span></div>';
+  for(const n of nomes){
+    const l=grupos[n].sort((a,b)=>(a.cliente||'').localeCompare(b.cliente||'')),soma=k=>l.filter(e=>destinoAcerto(e)===k).reduce((s,e)=>s+num(e.frete),0);
+    const mao=soma('mao'),acertado=l.every(e=>e.acertadoEm);
+    html+=`<div class="card acard">
+      <div class="row"><strong style="font-size:18px">${n?'🚚 '+esc(n):'⚠ Sem quem carregou'}</strong><span class="sp"></span><span class="muted">${l.length} entrega${l.length===1?'':'s'}</span></div>
+      ${n?'':'<p class="muted" style="margin:0">Marque no mural quem carregou (segurar o cartão → Quem carregou) para entrar na conta do freteiro.</p>'}
+      <div class="tblwrap"><table><thead><tr><th>Cliente</th><th>Bairro</th><th>Como pagou</th><th class="n">Valor</th></tr></thead><tbody>
+      ${l.map(e=>{const p=pagamentoDe(e);return `<tr${e.acertadoEm?' class="ok"':''}><td>${esc(e.cliente||'Sem nome')}</td><td>${esc(e.bairro||'')}</td>
+        <td>${p==='entrega'?`<button type="button" class="chip" data-apix="${esc(e.id)}" aria-pressed="${!!e.acertoPix}">${e.acertoPix?'📲 Pix':'💵 Dinheiro'}</button>`:esc(PAG_TXT[p]||'')+(p==='vendedor'&&e.fretePor?' ('+esc(e.fretePor)+')':'')}</td>
+        <td class="n">${real(num(e.frete))}</td></tr>`}).join('')}
+      </tbody></table></div>
+      <div class="aresumo">
+        <div><span>💵 Para receber dele</span><b class="amao">${real(mao)}</b></div>
+        ${soma('pix')?`<div><span>📲 Pago no Pix</span><b>${real(soma('pix'))}</b></div>`:''}
+        ${soma('nota')?`<div><span>🧾 Frete na nota</span><b>${real(soma('nota'))}</b></div>`:''}
+        ${soma('vendedor')?`<div><span>Por conta do vendedor</span><b>${real(soma('vendedor'))}</b></div>`:''}
+        <div class="atot"><span>Total de fretes</span><b>${real(l.reduce((s,e)=>s+num(e.frete),0))}</b></div>
+      </div>
+      ${n?(acertado?`<div class="row"><span class="pill p-ok">✓ Acertado ${esc(new Date(Math.max(...l.map(e=>e.acertadoEm))).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))}</span><span class="sp"></span><button type="button" class="btn ghost" data-desacertar="${esc(n)}">Desfazer</button></div>`
+        :`<button type="button" class="btn pri" data-acertar="${esc(n)}">${mao?`✓ Recebi ${real(mao)} de ${esc(n)}`:'✓ Marcar como acertado'}</button>`):''}
+    </div>`;
+  }
+  if(nomes.length>1){const t=ent.filter(e=>destinoAcerto(e)==='mao').reduce((s,e)=>s+num(e.frete),0);
+    html+=`<div class="card"><div class="row"><strong>Total para receber dos freteiros</strong><span class="sp"></span><b style="font-size:20px">${real(t)}</b></div></div>`}
+  $('#acerto').innerHTML=html;
+}
+$('#acerto').addEventListener('click',async ev=>{
+  const px=ev.target.closest('[data-apix]');
+  if(px){const e=dadosAcerto.find(x=>x.id===px.dataset.apix);if(!e)return;e.acertoPix=!e.acertoPix;renderAcerto();
+    db.collection('entregas').doc(e.id).update({acertoPix:e.acertoPix}).catch(erro);return}
+  const ac=ev.target.closest('[data-acertar],[data-desacertar]');if(!ac)return;
+  const n=ac.dataset.acertar||ac.dataset.desacertar,agora=ac.dataset.acertar?Date.now():null;
+  const l=dadosAcerto.filter(e=>e.status==='entregue'&&((e.carregadoPor==='Thiago'?'Tiago':e.carregadoPor)||'')===n);
+  try{for(const e of l){e.acertadoEm=agora;await db.collection('entregas').doc(e.id).update({acertadoEm:agora})}renderAcerto();toast(agora?'Acerto com '+n+' registrado':'Acerto desfeito')}catch(e){erro(e)}
+});
+
 let pararValores=null,mesOuvido=null;
 function carregarValores(){
   const m=$('#mes').value||mesAtual(),[y,mm]=m.split('-').map(Number),fim=new Date(y,mm,0).getDate();
@@ -452,7 +523,7 @@ $('#gentrar').addEventListener('click',()=>entrarComGoogle().catch(()=>toast('N�
 $('#lsair').addEventListener('click',()=>auth.signOut());
 $('#usair').addEventListener('click',()=>auth.signOut());
 auth.onAuthStateChanged(u=>{
-  pararP&&pararP();pararP=null;pararT&&pararT();pararT=null;pararUso&&pararUso();pararUso=null;pararM&&pararM();pararM=null;pararValores&&pararValores();pararValores=null;mesOuvido=null;fechar();
+  pararP&&pararP();pararP=null;pararT&&pararT();pararT=null;pararUso&&pararUso();pararUso=null;pararM&&pararM();pararM=null;pararValores&&pararValores();pararValores=null;mesOuvido=null;pararAcerto&&pararAcerto();pararAcerto=null;diaAcerto=null;fechar();
   if(!u){telaLogin('Entre com a conta Google do administrador.');return}
   if(!ehAdmin(u)){telaLogin(`Só o administrador entra no painel. Você entrou como <b>${esc(u.email)}</b>.`,true);return}
   $('#login').hidden=true;$('#app').hidden=false;mostrarAba(aba);

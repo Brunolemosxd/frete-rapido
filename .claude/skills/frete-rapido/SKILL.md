@@ -42,7 +42,7 @@ const {chromium}=require('playwright');
   console.log(erros);await b.close()})();
 ```
 - `quem`: `'bruno'` (admin), `'entregador'` (sem ver valores), `'vendedor'` (lança e vê valores).
-- `arquivo:'painel.html'` abre o painel (só funciona como Bruno). As abas são `[data-t="pessoas|valores|ajustes"]`.
+- `arquivo:'painel.html'` abre o painel (só funciona como Bruno). As abas são `[data-t="pessoas|acerto|valores|ajustes"]`.
 - Ajustes do painel: `extra:{config:{geral:{...},mensagem:{...}}}` (sem eles valem `GERAL_PADRAO` e `MSG_PADRAO` do comum.js).
 - Entregas de exemplo em `fakefb.js`: nova com AP, cobrar com ajuste, prioridade, entregue, problema, endereços antigos, por conta do vendedor, amanhã.
 - Foto da nota no formulário: `page.click('#fbtn')` e depois `page.setInputFiles('#file', {name:'a.png',mimeType:'image/png',buffer:...})`.
