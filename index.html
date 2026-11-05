@@ -344,7 +344,7 @@ input.err{border-color:var(--bad)}
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="comum.js?v=20261101a"></script>
+<script src="comum.js?v=20261105a"></script>
 <script>
 (function(){
 const $=s=>document.querySelector(s);
@@ -411,7 +411,7 @@ function msgWA(e,outro){
   const eu=me?nomeBonito(String(me.nome||'').split(' ')[0]):'';
   return montarMsg(outro?MSG.textoOutro:MSG.texto,{nome:nomeBonito(e.clienteNome||String(e.cliente||'').split(' ')[0]),cliente:nomeBonito(e.cliente)||'o cliente',
     apresentacao:eu?`Meu nome é ${eu}, ${me.admin||me.funcao==='entregador'?'freteiro da ':'da '}${GERAL.loja}.`:'',loja:GERAL.loja,
-    valor:real(e.frete),pix:MSG.pix,cobrar:pagamentoDe(e)==='entrega'&&Number(e.frete)>0,textoCobrar:MSG.textoCobrar})}
+    valor:real(e.frete),pix:(me&&pixDoFreteiro(MSG,me.nome))||MSG.pix,cobrar:pagamentoDe(e)==='entrega'&&Number(e.frete)>0,textoCobrar:MSG.textoCobrar})}
 function waLink(f,e,outro){const d=soDig(f);return 'https://wa.me/'+(d.length<=11?'55':'')+d+(e?'?text='+encodeURIComponent(msgWA(e,outro)):'')}
 function soDig(v){return String(v||'').replace(/\D/g,'')}
 function fmtFone(v){const d=soDig(v).slice(0,11);if(!d)return '';if(d.length<3)return '('+d;

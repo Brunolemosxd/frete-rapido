@@ -88,7 +88,15 @@ const MSG_PADRAO = {
 function mensagemDe(d) {
   d = d || {};
   const t = k => typeof d[k] === 'string' && d[k].trim() ? d[k] : MSG_PADRAO[k];
-  return { pix: String(d.pix || '').trim(), texto: t('texto'), textoOutro: t('textoOutro'), textoCobrar: t('textoCobrar') };
+  const pixPor = {};
+  for (const [n, v] of Object.entries(d.pixPor && typeof d.pixPor === 'object' ? d.pixPor : {})) if (String(v || '').trim()) pixPor[n] = String(v).trim();
+  return { pix: String(d.pix || '').trim(), pixPor, texto: t('texto'), textoOutro: t('textoOutro'), textoCobrar: t('textoCobrar') };
+}
+// chave Pix própria do freteiro (pelo primeiro nome; Thiago = Tiago); '' quando ele usa a da loja
+function pixDoFreteiro(m, nome) {
+  const pn = t => semAcento(String(t || '').split(' ')[0]).replace(/^th/, 't');
+  const k = Object.keys(m.pixPor || {}).find(x => pn(x) === pn(nome));
+  return k ? m.pixPor[k] : '';
 }
 // v = {nome, cliente, apresentacao, loja, valor, pix, cobrar (true/false), textoCobrar}
 function montarMsg(tpl, v) {

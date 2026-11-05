@@ -152,7 +152,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
 
   <section id="t-acerto" style="display:grid;gap:14px" hidden>
     <div class="row"><h2>Acerto do dia</h2><span class="sp"></span><input type="date" id="adia" aria-label="Dia" style="width:auto"></div>
-    <p class="muted" style="margin:0">Entregas marcadas como entregues no dia, separadas por quem carregou. O valor "Para receber dele" é o que ficou com o freteiro (cobrado na entrega em dinheiro + dinheiro junto com a nota). Se o cliente pagou no Pix na hora, toque em <b>💵 Dinheiro</b> para trocar para <b>📲 Pix</b>.</p>
+    <p class="muted" style="margin:0">Entregas marcadas como entregues no dia, separadas por quem carregou. O valor "Para receber dele" é o que ficou com o freteiro: cobrado na entrega em dinheiro, dinheiro junto com a nota e, se ele tem Pix próprio (Ajustes), o Pix que o cliente pagou na hora. Se o cliente pagou no Pix na hora, toque em <b>💵 Dinheiro</b> para trocar para <b>📲 Pix</b>.</p>
     <div id="acerto" style="display:grid;gap:14px"></div>
   </section>
 
@@ -201,6 +201,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
         <b>{nome}</b> primeiro nome do cliente · <b>{cliente}</b> nome completo · <b>{apresentacao}</b> "Meu nome é Bruno, freteiro da loja." ·
         <b>{loja}</b> · <b>{valor}</b> frete a cobrar · <b>{pix}</b> chave Pix · <b>{cobrar}</b> onde entra a parte de cobrança (some quando o frete já está pago).</p>
       <div class="field"><label for="pixkey">Chave Pix da loja (vazio = a linha do Pix não vai)</label><input type="text" id="pixkey" maxlength="80" autocomplete="off" placeholder="CNPJ, telefone, e-mail ou chave aleatória"></div>
+      <div class="field"><span class="lbl">Pix de cada freteiro (vai na mensagem que ELE mandar; vazio = usa o Pix da loja)</span><div id="pixfret" style="display:grid;gap:8px"></div></div>
       <div class="field"><label for="mtexto">Mensagem para o cliente</label><textarea id="mtexto" rows="8"></textarea></div>
       <div class="field"><label for="mcobrar">Parte de cobrança (só quando o frete é para acertar na entrega)</label><textarea id="mcobrar" rows="4"></textarea></div>
       <div class="field"><label for="moutro">Mensagem para outro contato (ex.: filha, vizinho)</label><textarea id="moutro" rows="8"></textarea></div>
@@ -227,7 +228,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="comum.js?v=20261101a"></script>
+<script src="comum.js?v=20261105a"></script>
 <script>
 (function(){
 const $=s=>document.querySelector(s);
@@ -335,8 +336,8 @@ let dadosMes=null;
 let pararAcerto=null,diaAcerto=null,dadosAcerto=[];
 const hojeTxt=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 // para onde foi o dinheiro de cada entrega
-function destinoAcerto(e){const p=pagamentoDe(e);
-  if(p==='entrega')return e.acertoPix?'pix':'mao';
+function destinoAcerto(e,pixDele){const p=pagamentoDe(e);
+  if(p==='entrega')return e.acertoPix?(pixDele?'pixdele':'pix'):'mao';
   if(p==='junto')return 'mao';if(p==='pix'||p==='pago')return 'pix';if(p==='nota')return 'nota';if(p==='vendedor')return 'vendedor';return 'mao'}
 const PAG_TXT={entrega:'Cobrado na entrega',pix:'Pago no Pix (antes)',pago:'Já pago',junto:'Dinheiro junto com a nota',nota:'Frete na nota',vendedor:'Por conta do vendedor'};
 function carregarAcerto(){
@@ -354,19 +355,23 @@ function renderAcerto(){
   const nomes=Object.keys(grupos).sort((a,b)=>(a?0:1)-(b?0:1)||a.localeCompare(b));
   let html=pend||prob?`<div class="muted">${pend?`${pend} entrega${pend===1?'':'s'} ainda pendente${pend===1?'':'s'}`:''}${pend&&prob?' · ':''}${prob?`${prob} com problema (não entra na conta)`:''}</div>`:'';
   if(!ent.length)html+='<div class="card"><span class="muted">Nenhuma entrega marcada como entregue neste dia.</span></div>';
+  let totalRec=0;
   for(const n of nomes){
-    const l=grupos[n].sort((a,b)=>(a.cliente||'').localeCompare(b.cliente||'')),soma=k=>l.filter(e=>destinoAcerto(e)===k).reduce((s,e)=>s+num(e.frete),0);
-    const mao=soma('mao'),acertado=l.every(e=>e.acertadoEm);
+    // freteiro com Pix próprio: o Pix cobrado na entrega caiu na conta dele, então também é para repassar
+    const pd=!!(n&&pixDoFreteiro(msgCfg,n));
+    const l=grupos[n].sort((a,b)=>(a.cliente||'').localeCompare(b.cliente||'')),soma=k=>l.filter(e=>destinoAcerto(e,pd)===k).reduce((s,e)=>s+num(e.frete),0);
+    const mao=soma('mao')+soma('pixdele'),acertado=l.every(e=>e.acertadoEm);totalRec+=mao;
     html+=`<div class="card acard">
       <div class="row"><strong style="font-size:18px">${n?'🚚 '+esc(n):'⚠ Sem quem carregou'}</strong><span class="sp"></span><span class="muted">${l.length} entrega${l.length===1?'':'s'}</span></div>
       ${n?'':'<p class="muted" style="margin:0">Marque no mural quem carregou (segurar o cartão → Quem carregou) para entrar na conta do freteiro.</p>'}
       <div class="tblwrap"><table><thead><tr><th>Cliente</th><th>Bairro</th><th>Como pagou</th><th class="n">Valor</th></tr></thead><tbody>
       ${l.map(e=>{const p=pagamentoDe(e);return `<tr${e.acertadoEm?' class="ok"':''}><td>${esc(e.cliente||'Sem nome')}</td><td>${esc(e.bairro||'')}</td>
-        <td>${p==='entrega'?`<button type="button" class="chip" data-apix="${esc(e.id)}" aria-pressed="${!!e.acertoPix}">${e.acertoPix?'📲 Pix':'💵 Dinheiro'}</button>`:esc(PAG_TXT[p]||'')+(p==='vendedor'&&e.fretePor?' ('+esc(e.fretePor)+')':'')}</td>
+        <td>${p==='entrega'?`<button type="button" class="chip" data-apix="${esc(e.id)}" aria-pressed="${!!e.acertoPix}">${e.acertoPix?(pd?'📲 Pix dele':'📲 Pix'):'💵 Dinheiro'}</button>`:esc(PAG_TXT[p]||'')+(p==='vendedor'&&e.fretePor?' ('+esc(e.fretePor)+')':'')}</td>
         <td class="n">${real(num(e.frete))}</td></tr>`}).join('')}
       </tbody></table></div>
       <div class="aresumo">
         <div><span>💵 Para receber dele</span><b class="amao">${real(mao)}</b></div>
+        ${soma('pixdele')?`<div class="muted"><span>em dinheiro ${real(soma('mao'))} + no Pix dele ${real(soma('pixdele'))}</span></div>`:''}
         ${soma('pix')?`<div><span>📲 Pago no Pix</span><b>${real(soma('pix'))}</b></div>`:''}
         ${soma('nota')?`<div><span>🧾 Frete na nota</span><b>${real(soma('nota'))}</b></div>`:''}
         ${soma('vendedor')?`<div><span>Por conta do vendedor</span><b>${real(soma('vendedor'))}</b></div>`:''}
@@ -376,7 +381,7 @@ function renderAcerto(){
         :`<button type="button" class="btn pri" data-acertar="${esc(n)}">${mao?`✓ Recebi ${real(mao)} de ${esc(n)}`:'✓ Marcar como acertado'}</button>`):''}
     </div>`;
   }
-  if(nomes.length>1){const t=ent.filter(e=>destinoAcerto(e)==='mao').reduce((s,e)=>s+num(e.frete),0);
+  if(nomes.length>1){const t=totalRec;
     html+=`<div class="card"><div class="row"><strong>Total para receber dos freteiros</strong><span class="sp"></span><b style="font-size:20px">${real(t)}</b></div></div>`}
   $('#acerto').innerHTML=html;
 }
@@ -473,7 +478,13 @@ function renderMotivos(){$('#mlista').innerHTML=motivos.map((m,i)=>`<span class=
 let geral=geralDe(null);
 // as caixas de texto só são preenchidas ao carregar ou voltar ao padrão (para não apagar o que está sendo digitado)
 function preencherGeral(){$('#gloja').value=geral.loja;$('#gcond').value=geral.condominio;renderGeral()}
-function renderGeral(){
+// um campo de Pix para cada nome de "Quem carrega" (guarda o que já foi digitado)
+let msgCfg=mensagemDe(null);
+function renderPixFret(){
+  const atual={...msgCfg.pixPor};document.querySelectorAll('#pixfret [data-pixf]').forEach(i=>{atual[i.dataset.pixf]=i.value});
+  $('#pixfret').innerHTML=geral.carregadores.map(n=>`<div class="row"><label style="min-width:70px;font-weight:600">🚚 ${esc(n)}</label><input type="text" data-pixf="${esc(n)}" value="${esc(atual[n]||'')}" maxlength="80" autocomplete="off" placeholder="Vazio = Pix da loja" style="flex:1;min-width:0;width:auto"></div>`).join('');
+}
+function renderGeral(){renderPixFret();
   const chips=(l,k)=>l.map((x,i)=>`<span class="chip" style="display:inline-flex;gap:8px;align-items:center">${esc(x)}<button type="button" data-gdel="${k}" data-i="${i}" aria-label="Tirar ${esc(x)}" style="border:0;background:none;padding:0;font-size:16px;line-height:1">×</button></span>`).join('');
   $('#gcarr').innerHTML=chips(geral.carregadores,'carregadores');$('#gprod').innerHTML=chips(geral.produtos,'produtos');
 }
@@ -493,7 +504,8 @@ $('#gsalvar').addEventListener('click',()=>{
   db.collection('config').doc('geral').set({...geral,atualizadoEm:Date.now()}).then(()=>{preencherGeral();toast('Salvo. Vale no mural quando ele for aberto de novo.')}).catch(erro)});
 
 /* ---------- mensagem do WhatsApp (config/mensagem) ---------- */
-function msgDaTela(){return {pix:$('#pixkey').value.trim(),texto:$('#mtexto').value,textoCobrar:$('#mcobrar').value,textoOutro:$('#moutro').value}}
+function msgDaTela(){const pixPor={};document.querySelectorAll('#pixfret [data-pixf]').forEach(i=>{if(i.value.trim())pixPor[i.dataset.pixf]=i.value.trim()});
+  return {pix:$('#pixkey').value.trim(),pixPor,texto:$('#mtexto').value,textoCobrar:$('#mcobrar').value,textoOutro:$('#moutro').value}}
 function previa(){
   const m=mensagemDe(msgDaTela()),loja=$('#gloja').value.trim()||geral.loja;
   const t=montarMsg(m.texto,{nome:'Maria',cliente:'Maria Souza',apresentacao:`Meu nome é Bruno, freteiro da ${loja}.`,loja,valor:real(80),pix:m.pix,cobrar:true,textoCobrar:m.textoCobrar});
@@ -501,12 +513,12 @@ function previa(){
   $('#mconta').innerHTML=`${n} letras${n>700?' · <b style="color:var(--bad)">Comprida: o cliente pode ter que tocar em "ler mais".</b>':''}`;
   crescerCaixas();
 }
-function renderMsg(d){const m=mensagemDe(d);$('#pixkey').value=m.pix;$('#mtexto').value=m.texto;$('#mcobrar').value=m.textoCobrar;$('#moutro').value=m.textoOutro;previa()}
+function renderMsg(d){const m=mensagemDe(d);msgCfg=m;document.querySelectorAll('#pixfret [data-pixf]').forEach(i=>{i.value=m.pixPor[i.dataset.pixf]||''});renderPixFret();$('#pixkey').value=m.pix;$('#mtexto').value=m.texto;$('#mcobrar').value=m.textoCobrar;$('#moutro').value=m.textoOutro;previa()}
 ['#pixkey','#mtexto','#mcobrar','#moutro','#gloja'].forEach(s=>$(s).addEventListener('input',previa));
-$('#mpadrao').addEventListener('click',()=>{renderMsg({pix:$('#pixkey').value});toast('Voltou ao texto padrão. Toque em Salvar para valer no mural.')});
+$('#mpadrao').addEventListener('click',()=>{renderMsg({pix:$('#pixkey').value,pixPor:msgDaTela().pixPor});toast('Voltou ao texto padrão. Toque em Salvar para valer no mural.')});
 $('#msalvar').addEventListener('click',()=>{const m=msgDaTela();
   if(!m.texto.trim()||!m.textoOutro.trim()){toast('A mensagem não pode ficar vazia. Use "Voltar ao texto padrão".');return}
-  db.collection('config').doc('mensagem').set({...m,atualizadoEm:Date.now()}).then(()=>toast('Mensagem salva. Vale no mural quando ele for aberto de novo.')).catch(erro)});
+  db.collection('config').doc('mensagem').set({...m,atualizadoEm:Date.now()}).then(()=>{msgCfg=mensagemDe(m);if(aba==='acerto')renderAcerto();toast('Mensagem salva. Vale no mural quando ele for aberto de novo.')}).catch(erro)});
 function salvarMotivos(l,msg){return db.collection('config').doc('motivos').set({lista:l,atualizadoEm:Date.now()}).then(()=>toast(msg)).catch(erro)}
 $('#madd').addEventListener('click',()=>{const v=$('#mnovo').value.trim().replace(/\s+/g,' ');if(!v){toast('Escreva o motivo.');$('#mnovo').focus();return}
   if(motivos.some(x=>x.toLowerCase()===v.toLowerCase())){toast('Esse motivo já está na lista.');return}

@@ -59,6 +59,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   {cobrar} (linha da parte de cobrança; some se o frete já está pago; linhas com {pix} somem sem chave). Prévia e contador
   de letras no painel (aviso acima de 700). {apresentacao} = "Meu nome é {quem manda}, freteiro da {loja}." ("freteiro" para
   o Bruno e função entregador; os outros só "da {loja}"). Nunca pôr valores internos (ajuste/vendedor) no texto padrão.
+  Pix de cada freteiro (`config/mensagem.pixPor` {Nome: chave}, um campo por nome de "Quem carrega"): na mensagem de quem
+  manda vai o Pix dele (`pixDoFreteiro`, pelo primeiro nome); vazio = Pix da loja.
   O Maps/Waze também pesquisa SÓ rua e número (`enderecoMapa` = `enderecoRua`), sem bairro; se cair longe, põem o bairro na hora.
   Entregas antigas (sem `rua`): se o número ficou depois de "casa" ou no complemento, `enderecoRua` acha e junta; número de quadra/lote não conta. Detalhe da entrega tem botão fixo "← Voltar para o mural" no alto.
 - Flecha de direção embaixo da foto: ← azul (Araçá até Terra de Areia), → vermelha (Guará até Nova Tramandaí),
@@ -86,6 +88,7 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   nas "Cobrado na entrega" o Bruno toca 💵 Dinheiro ↔ 📲 Pix (`acertoPix`) se o cliente pagou no Pix na hora. Pix antes,
   frete na nota e por conta do vendedor aparecem à parte. Botão "✓ Recebi R$ X de Fulano" grava `acertadoEm` nas entregas
   (Desfazer apaga). Grupo "Sem quem carregou" pede para marcar no mural. Problema/pendente não entram.
+  Se o freteiro tem Pix próprio, o "📲 Pix dele" cobrado na entrega também entra no "Para receber dele" (caiu na conta dele).
 - Tema claro/escuro/automático no topo.
 
 ## Como trabalhar
