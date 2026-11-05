@@ -90,6 +90,9 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   (Desfazer apaga). Grupo "Sem quem carregou" pede para marcar no mural. Problema/pendente não entram.
   Se o freteiro tem Pix próprio, o "📲 Pix dele" cobrado na entrega também entra no "Para receber dele" (caiu na conta dele).
 - Tema claro/escuro/automático no topo.
+- Ícone e nome na tela de início do celular: "Mural de Fretes", ícone "MF" branco + faixa amarela + 🚚 em fundo azul
+  (`mf-32/180/192/512.png`, `manifest.json` com display "browser" para não atrapalhar o login do Google). Sem isso o celular
+  pegava o ícone do OrçaOn (raiz do mesmo site). O cabeçalho do app continua "Frete Rápido". Nome definitivo/Play Store: o Bruno vai ver.
 
 ## Como trabalhar
 - Seguir a skill `.claude/skills/frete-rapido/SKILL.md`: teste pronto (`node .claude/skills/frete-rapido/testar.js --saida <pasta>`,
