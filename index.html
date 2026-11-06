@@ -69,6 +69,8 @@ main{padding-block:14px 120px;display:grid;gap:18px;max-width:720px;margin:0 aut
 .p-pend{background:var(--pend-bg);color:var(--pend)} .p-ok{background:var(--ok-bg);color:var(--ok)} .p-bad{background:var(--bad-bg);color:var(--bad)}
 section h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 8px;font-weight:600}
 section.late h3{color:var(--bad)}
+.consbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#6b3fd0;color:#fff;border-radius:12px;padding:10px 12px;font-size:15px}
+.consbar button{border:0;background:#fff;color:#6b3fd0;border-radius:99px;padding:7px 12px;font-weight:700;font-size:14px}
 section.minhas h3{background:var(--accent);color:var(--accent-fg);font-size:15px;border-radius:10px;padding:8px 12px}
 section.feitas h3{color:var(--ok)}
 section.feitas{border-top:1px solid var(--line);padding-top:14px}
@@ -336,7 +338,7 @@ input.err{border-color:var(--bad)}
 <header>
   <div class="wrap">
     <div class="top"><h1>Frete <span>Rápido</span></h1><span class="sync" id="sync">Conectando…</span></div>
-    <div class="usr"><span id="unome"></span><a href="painel.html" id="upainel" hidden>Painel</a><button type="button" data-tema></button><button type="button" id="usair">Sair</button></div>
+    <div class="usr"><span id="unome"></span><button type="button" id="uconsultar" hidden>🔎 Consultar</button><a href="painel.html" id="upainel" hidden>Painel</a><button type="button" data-tema></button><button type="button" id="usair">Sair</button></div>
     <div class="days" id="days" role="tablist" aria-label="Dias"></div>
   </div>
 </header>
@@ -377,6 +379,7 @@ let TABELA=FRETES_PADRAO.map(x=>({...x}));
 let me=null,P={},VENDEDORES=[],pararEntregas=null,pararNotas=null,notasDe=null;
 let notasJ=[],pastaAberta=false;
 let entregas=[],loaded=false,dia=ds(new Date());
+let antigas=[];// entregas de datas antigas abertas pelo 🔎 Consultar (o mural só fica ouvindo os últimos 45 dias)
 // entregues ficam minimizadas; as que a pessoa abriu ficam abertas até recarregar a página
 const expandidas=new Set();
 
@@ -547,7 +550,10 @@ function render(){
   const atras=dia===hoje()?entregas.filter(e=>e.data<dia&&e.status==='pendente').sort((a,b)=>a.data.localeCompare(b.data)):[];
   const c=k=>list.filter(e=>e.status===k).length;
   const totFrete=list.filter(e=>e.status!=='problema').reduce((s,e)=>s+(Number(e.frete)||0),0);
-  let html=`<div class="dayhead"><h2>${esc(nomeDia(dia))}</h2><div class="tally">
+  // dia fora da faixa de dias (vindo do 🔎 Consultar): avisa e dá um jeito fácil de voltar
+  const fora=dia<addDays(hoje(),-2)||dia>addDays(hoje(),92);
+  let html=fora?`<div class="consbar"><span>🔎 Consultando <b>${esc(pd(dia).toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'}))}</b></span><button type="button" id="voltarHoje">Voltar para hoje</button></div>`:'';
+  html+=`<div class="dayhead"><h2>${esc(nomeDia(dia))}</h2><div class="tally">
     ${list.length?`<span class="pill p-pend">${c('pendente')} pendente${c('pendente')===1?'':'s'}</span><span class="pill p-ok">${c('entregue')} entregue${c('entregue')===1?'':'s'}</span>${c('problema')?`<span class="pill p-bad">${c('problema')} problema</span>`:''}${me&&me.admin&&totFrete?`<span class="pill p-frete">Fretes ${real(totFrete)}</span>`:''}`:''}
   </div></div>`;
   const nj=notasDoDia(dia).filter(n=>!n.arquivada).length;
@@ -586,7 +592,7 @@ function ouvirNotas(){
   },()=>{});
 }
 function notasDoDia(d){return notasJ.filter(n=>n.data===d).sort((a,b)=>(b.em||0)-(a.em||0))}
-$('#main').addEventListener('click',e=>{if(e.target.closest('#pasta'))abrirPasta();const cp=e.target.closest('[data-copiar]');if(cp)copiar(cp.dataset.copiar,cp.dataset.msg);
+$('#main').addEventListener('click',e=>{if(e.target.closest('#pasta'))abrirPasta();if(e.target.closest('#voltarHoje')){dia=hoje();renderDays.did=false;render();return}const cp=e.target.closest('[data-copiar]');if(cp)copiar(cp.dataset.copiar,cp.dataset.msg);
   const mi=e.target.closest('[data-min]');if(mi){expandidas.delete(mi.dataset.min);render()}});
 // cada item é um cliente/entrega e pode ter várias fotos (entregas antigas tinham uma foto só)
 let verArquivados=false;
@@ -810,6 +816,32 @@ function abrirPostit(id){
       const lista=[...(e.postits||[]),{texto:v,em:Date.now(),porNome:me.nome}];fechar();e.postits=lista;render();
       if(await salvar(id,{postits:lista,atualizadoEm:Date.now()}))toast('Post-it colado')}
   })});
+}
+
+/* ---------- 🔎 consultar uma data (só o Bruno e os freteiros da lista "Quem carrega") ---------- */
+function podeConsultar(){return !!me&&(me.admin||GERAL.carregadores.some(c=>primeiroNome(c)===primeiroNome(me.nome)))}
+$('#uconsultar').addEventListener('click',()=>{
+  const h=hoje(),atalhos=[[addDays(h,-1),'Ontem'],[addDays(h,-2),'Anteontem'],[addDays(h,-7),'Há 1 semana'],[addDays(h,-30),'Há 1 mês']];
+  abrirSheet(`<h2>🔎 Consultar uma data</h2><p style="margin:0;color:var(--muted)">Mostra no mural as entregas do dia escolhido.</p>
+    <div class="chips">${atalhos.map(([v,t])=>`<button type="button" class="chip" data-cd="${v}">${t}</button>`).join('')}</div>
+    <input type="date" id="cdata" value="${esc(dia)}" aria-label="Data">
+    <div class="actions two"><button type="button" class="btn ghost" data-x>Cancelar</button><button type="button" class="btn pri" data-ok>Ver entregas</button></div>`,
+  s=>s.addEventListener('click',ev=>{
+    const c=ev.target.closest('[data-cd]');if(c){s.querySelector('#cdata').value=c.dataset.cd;consultarDia(c.dataset.cd);return}
+    if(ev.target.closest('[data-x]'))fechar();
+    if(ev.target.closest('[data-ok]')){const v=s.querySelector('#cdata').value;if(!v){toast('Escolha a data.');return}consultarDia(v)}
+  }));
+});
+async function consultarDia(d){
+  fechar();
+  // datas antigas não estão carregadas: busca só aquele dia, uma vez
+  if(d<addDays(hoje(),-45)&&!antigas.some(e=>e.data===d)){
+    try{const snap=await db.collection('entregas').where('data','==',d).get();contarSnap(snap);
+      const novas=snap.docs.map(x=>({id:x.id,status:'pendente',...x.data()}));antigas=antigas.concat(novas);entregas=entregas.concat(novas)}
+    catch(e){toast('Não consegui buscar essa data. Confira a internet.');return}
+  }
+  dia=d;renderDays.did=false;render();window.scrollTo(0,0);
+  const n=entregas.filter(e=>e.data===d).length;toast(n?`${n} entrega${n===1?'':'s'} em ${pd(d).toLocaleDateString('pt-BR')}`:'Nenhuma entrega nessa data.');
 }
 
 /* ---------- formulário ---------- */
@@ -1039,7 +1071,7 @@ $('#gentrar').addEventListener('click',()=>entrarComGoogle().catch(()=>toast('N�
 $('#lsair').addEventListener('click',()=>auth.signOut());
 $('#usair').addEventListener('click',()=>auth.signOut());
 let pararUso=null;
-function desligar(){pararUso&&pararUso();pararUso=null;$('#avuso').hidden=true;pararEntregas&&pararEntregas();pararNotas&&pararNotas();pararEntregas=pararNotas=null;notasDe=null;entregas=[];notasJ=[];loaded=false;me=null;fechar()}
+function desligar(){pararUso&&pararUso();pararUso=null;$('#avuso').hidden=true;pararEntregas&&pararEntregas();pararNotas&&pararNotas();pararEntregas=pararNotas=null;notasDe=null;entregas=[];antigas=[];notasJ=[];loaded=false;me=null;fechar()}
 auth.onAuthStateChanged(async u=>{
   desligar();
   if(!u){telaLogin('Entre com a sua conta Google para ver o mural.');return}
@@ -1053,11 +1085,12 @@ auth.onAuthStateChanged(async u=>{
   try{const tf=await db.collection('config').doc('fretes').get();const l=tf.exists&&tf.data().lista;TABELA=Array.isArray(l)&&l.length?l:FRETES_PADRAO.map(x=>({...x}))}catch{}
   try{const mg=await db.collection('config').doc('mensagem').get();MSG=mensagemDe(mg.exists?mg.data():null)}catch{}
   try{const ge=await db.collection('config').doc('geral').get();GERAL=geralDe(ge.exists?ge.data():null)}catch{}
+  $('#uconsultar').hidden=!podeConsultar();
   try{const mo=await db.collection('config').doc('motivos').get();const l=mo.exists&&mo.data().lista;MOTIVOS=Array.isArray(l)&&l.length?l:[...MOTIVOS_BASE]}catch{}
   render();
   // só as entregas recentes e futuras; o histórico fica no painel
   pararEntregas=db.collection('entregas').where('data','>=',addDays(hoje(),-45)).onSnapshot(snap=>{
-    contarSnap(snap);entregas=snap.docs.map(d=>({id:d.id,status:'pendente',...d.data()})).filter(e=>e.data);
+    contarSnap(snap);entregas=snap.docs.map(d=>({id:d.id,status:'pendente',...d.data()})).filter(e=>e.data).concat(antigas);
     loaded=true;$('#sync').textContent='Ao vivo';$('#sync').className='sync on';
     if(!document.querySelector('.scrim'))render();else renderDays();
   },()=>{$('#sync').textContent='Conexão perdida — recarregue';$('#sync').className='sync off';});

@@ -77,6 +77,10 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   Ao marcar "Entregue" sem ninguém em "Quem carregou", grava como carregador quem marcou (se o primeiro nome dele estiver
   na lista de carregadores do painel); se já tinha alguém marcado, não muda.
 - Problema: motivo em faixa vermelha grande no topo do cartão; motivos cadastráveis (`config/motivos`).
+- Botão "🔎 Consultar" no topo do mural: só para o Bruno (admin) e quem está na lista "Quem carrega" do painel (Tiago),
+  pelo primeiro nome (`podeConsultar`). Escolhe uma data (atalhos Ontem/Anteontem/Há 1 semana/Há 1 mês) e o mural abre nela;
+  datas com mais de 45 dias são buscadas uma vez (`antigas`). Faixa roxa "🔎 Consultando …" com "Voltar para hoje" quando a data
+  está fora da faixa de dias. É só esconder o botão: as regras deixam qualquer membro ler as entregas.
 - Entregues descem para "Entregues" minimizadas (uma linha: ✓ nome · bairro · quem carregou); um toque abre no tamanho normal, botão "▴ Minimizar" fecha de novo (só na memória da página). Faixa de dias vai até ~3 meses para a frente.
 - Pasta "Produtos que vão com outras notas" (`notasjuntas`, por dia): cada item tem várias fotos + detalhe;
   "Entregue, arquivar" leva para "📦 Arquivados".
