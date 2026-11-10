@@ -709,12 +709,21 @@ async function setStatus(id,status,obs){
 }
 
 /* ---------- sheets ---------- */
+// botão voltar do celular: com uma janela aberta, ele fecha a janela em vez de sair do mural
+// (cada janela aberta ganha um passo no histórico; fechar pelo botão da tela desfaz esse passo)
+let voltandoSozinho=false;
+const sheetAberta=()=>!!document.querySelector('#sheetRoot .scrim');
+window.addEventListener('popstate',()=>{if(voltandoSozinho){voltandoSozinho=false;return}if(sheetAberta())fecharTela()});
 function abrirSheet(html,onMount){
+  if(!(history.state&&history.state.frSheet))try{history.pushState({frSheet:1},'')}catch{}
   pastaAberta=false;const r=$('#sheetRoot');r.innerHTML=`<div class="scrim"><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div></div>`;
   const scrim=r.firstChild;scrim.addEventListener('click',e=>{if(e.target===scrim)fechar()});
   onMount&&onMount(scrim.firstChild);
 }
-function fechar(){pastaAberta=false;$('#sheetRoot').innerHTML='';render()}
+function fecharTela(){pastaAberta=false;$('#sheetRoot').innerHTML='';render()}
+function fechar(){fecharTela();
+  // espera um instante: às vezes outra janela abre logo em seguida e aproveita o mesmo passo do histórico
+  setTimeout(()=>{if(!sheetAberta()&&history.state&&history.state.frSheet){voltandoSozinho=true;history.back()}},0)}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')fechar()});
 
 function abrirAcoes(id){

@@ -63,6 +63,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   manda vai o Pix dele (`pixDoFreteiro`, pelo primeiro nome); vazio = Pix da loja.
   O Maps/Waze também pesquisa SÓ rua e número (`enderecoMapa` = `enderecoRua`), sem bairro; se cair longe, põem o bairro na hora.
   Entregas antigas (sem `rua`): se o número ficou depois de "casa" ou no complemento, `enderecoRua` acha e junta; número de quadra/lote não conta. Detalhe da entrega tem botão fixo "← Voltar para o mural" no alto.
+  Botão voltar do celular: com uma janela aberta (detalhe, formulário, menus) ele fecha a janela e fica no mural
+  (`abrirSheet` põe um passo no histórico; `fechar` desfaz; `popstate` fecha). Sem janela aberta, sai para a página anterior da aba.
 - Flecha de direção embaixo da foto: ← azul (Araçá até Terra de Areia), → vermelha (Guará até Nova Tramandaí),
   ↑ cinza (centro e resto; Zona Nova é cinza). Pendentes com mesma flecha ficam juntas em cada turno. Editável na tabela.
 - Caixa grande do valor no pé do cartão (pendente/problema; entregue fica como antes), cor pela forma de pagamento:
