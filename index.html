@@ -726,7 +726,13 @@ async function setStatus(id,status,obs,diaCerto){
 // (cada janela aberta ganha um passo no histórico; fechar pelo botão da tela desfaz esse passo)
 let voltandoSozinho=false;
 const sheetAberta=()=>!!document.querySelector('#sheetRoot .scrim');
-window.addEventListener('popstate',()=>{if(voltandoSozinho){voltandoSozinho=false;return}if(sheetAberta())fecharTela()});
+window.addEventListener('popstate',()=>{if(voltandoSozinho){voltandoSozinho=false;return}
+  if(sheetAberta()){fecharTela();return}
+  // voltar no mural sem janela aberta: o 1º toque só avisa; o 2º sai (o navegador não deixa prender a pessoa)
+  if(!(history.state&&history.state.frBase)){baseArmada=false;toast('Toque em voltar de novo para sair do mural')}});
+// o passo extra só vale depois de um toque na tela (o navegador ignora passos criados sem toque)
+let baseArmada=false;
+document.addEventListener('pointerdown',()=>{if(baseArmada||history.state)return;try{history.pushState({frBase:1},'');baseArmada=true}catch{}},true);
 function abrirSheet(html,onMount){
   if(!(history.state&&history.state.frSheet))try{history.pushState({frSheet:1},'')}catch{}
   pastaAberta=false;const r=$('#sheetRoot');r.innerHTML=`<div class="scrim"><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div></div>`;

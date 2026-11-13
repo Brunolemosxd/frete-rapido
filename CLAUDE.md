@@ -64,7 +64,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   O Maps/Waze também pesquisa SÓ rua e número (`enderecoMapa` = `enderecoRua`), sem bairro; se cair longe, põem o bairro na hora.
   Entregas antigas (sem `rua`): se o número ficou depois de "casa" ou no complemento, `enderecoRua` acha e junta; número de quadra/lote não conta. Detalhe da entrega tem botão fixo "← Voltar para o mural" no alto.
   Botão voltar do celular: com uma janela aberta (detalhe, formulário, menus) ele fecha a janela e fica no mural
-  (`abrirSheet` põe um passo no histórico; `fechar` desfaz; `popstate` fecha). Sem janela aberta, sai para a página anterior da aba.
+  (`abrirSheet` põe um passo no histórico; `fechar` desfaz; `popstate` fecha). Sem janela aberta: 1º voltar mostra "Toque em voltar
+  de novo para sair do mural" (passo `frBase` criado no 1º toque na tela, `baseArmada`), 2º voltar sai.
 - Flecha de direção embaixo da foto: ← azul (Araçá até Terra de Areia), → vermelha (Guará até Nova Tramandaí),
   ↑ cinza (centro e resto; Zona Nova é cinza). Pendentes com mesma flecha ficam juntas em cada turno. Editável na tabela.
 - Caixa grande do valor no pé do cartão (pendente/problema; entregue fica como antes), cor pela forma de pagamento:
@@ -99,7 +100,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   Se o freteiro tem Pix próprio, o "📲 Pix dele" cobrado na entrega também entra no "Para receber dele" (caiu na conta dele).
 - Tema claro/escuro/automático no topo.
 - Ícone e nome na tela de início do celular: "Mural de Fretes", ícone "MF" branco + faixa amarela + 🚚 em fundo azul
-  (`mf-32/180/192/512.png`, `manifest.json` com display "browser" para não atrapalhar o login do Google). Sem isso o celular
+  (`mf-32/180/192/512.png`, `manifest.json` com display "standalone": o ícone abre numa janela própria, sem as páginas de outros sites para trás;
+  se o login do Google falhar nesse modo, voltar para "browser"). Sem isso o celular
   pegava o ícone do OrçaOn (raiz do mesmo site). O cabeçalho do app continua "Frete Rápido". Nome definitivo/Play Store: o Bruno vai ver.
 
 ## Como trabalhar
