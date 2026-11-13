@@ -699,13 +699,26 @@ async function salvar(id,dados,novo){
     else if(e?.code==='resource-exhausted')toast('O mural está cheio por hoje. Fale com o Bruno.');
     else toast('Não consegui salvar. Tente de novo.');return false}
 }
-async function setStatus(id,status,obs){
+async function setStatus(id,status,obs,diaCerto){
   const e=entregas.find(x=>x.id===id);if(!e)return;
+  // entrega de um dia que já passou: pergunta em que dia foi entregue, para os dias (e o Acerto) ficarem certos
+  if(status==='entregue'&&e.status!=='entregue'&&e.data<hoje()&&!diaCerto){
+    const dd=pd(e.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+    abrirSheet(`<h2>Quando foi entregue?</h2><p style="margin:0;color:var(--muted)">${esc(e.cliente||'Entrega')} estava marcada para <b>${esc(nomeDia(e.data).toLowerCase())}</b> (${dd}).</p>
+      <div class="actions"><button type="button" class="btn ok" data-q="hoje">✓ Entreguei hoje</button>
+      <button type="button" class="btn" data-q="antes">📅 Entreguei no dia ${dd} (esqueci de marcar)</button>
+      <button type="button" class="btn ghost" data-x>Cancelar</button></div>`,
+    s=>s.addEventListener('click',ev=>{
+      if(ev.target.closest('[data-x]')){fechar();return}
+      const q=ev.target.closest('[data-q]')?.dataset.q;if(!q)return;fechar();setStatus(id,status,obs,q)}));
+    return}
   const d={status,atualizadoEm:Date.now()};if(obs!==undefined)d.obs=obs;
+  // entregue hoje: a entrega passa para o dia de hoje
+  if(diaCerto==='hoje')d.data=hoje();
   // quem marca "entregue" sem ninguém em "Quem carregou" fica como quem carregou (se for um dos carregadores do painel)
   if(status==='entregue'&&!e.carregadoPor&&me){const n=GERAL.carregadores.find(c=>primeiroNome(c)===primeiroNome(me.nome));if(n){d.carregadoPor=n;d.carregadoEm=Date.now()}}
   Object.assign(e,d);render();
-  if(await salvar(id,d)) toast(status==='entregue'?'Marcada como entregue':status==='problema'?'Marcada com problema':'Voltou para pendente');
+  if(await salvar(id,d)) toast(status==='entregue'?(diaCerto==='hoje'?'Entregue hoje: passou para o dia de hoje':diaCerto==='antes'?'Entregue no dia '+pd(e.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}):'Marcada como entregue'):status==='problema'?'Marcada com problema':'Voltou para pendente');
 }
 
 /* ---------- sheets ---------- */

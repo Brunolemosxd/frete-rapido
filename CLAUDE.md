@@ -78,6 +78,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   dela), SÓ no celular dela; para os outros a ordem não muda.
   Ao marcar "Entregue" sem ninguém em "Quem carregou", grava como carregador quem marcou (se o primeiro nome dele estiver
   na lista de carregadores do painel); se já tinha alguém marcado, não muda.
+  Marcar "Entregue" numa entrega de dia que já passou pergunta: "✓ Entreguei hoje" (muda `data` para hoje) ou
+  "📅 Entreguei no dia DD/MM (esqueci de marcar)" (mantém a data). Assim o Acerto e os Valores ficam no dia certo.
 - Problema: motivo em faixa vermelha grande no topo do cartão; motivos cadastráveis (`config/motivos`).
 - Botão "🔎 Consultar" no topo do mural: só para o Bruno (admin) e quem está na lista "Quem carrega" do painel (Tiago),
   pelo primeiro nome (`podeConsultar`). Escolhe uma data (atalhos Ontem/Anteontem/Há 1 semana/Há 1 mês) e o mural abre nela;
