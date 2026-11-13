@@ -103,7 +103,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   gravado em `privado/avisos` (coleção só do admin nas regras). Robô em `_agenda/Codigo.gs` (Google Apps Script na conta do
   Bruno, a cada 5 min, lê pelo REST do Firestore com o token dele): entrega nova/alterada (`atualizadoEm` > última vez) vira
   evento na Agenda do Bruno com os outros como convidados; turno → horário; ✅ entregue, ⬆ prioridade, apagada some (6h).
-  Passo a passo em `_agenda/LEIA-ME.md` (pasta com _ não vai para o site). PENDENTE: o Bruno ainda vai instalar o robô.
+  Passo a passo em `_agenda/LEIA-ME.md` (pasta com _ não vai para o site). INSTALADO pelo Bruno em 13/11/2026 (pelo celular, "Projeto sem título" no script.google.com).
+  Se mudar o Codigo.gs/appsscript.json, ele precisa colar de novo lá e rodar "instalar" (precisou do escopo userinfo.email).
 - Tema claro/escuro/automático no topo.
 - Ícone e nome na tela de início do celular: "Mural de Fretes", ícone "MF" branco + faixa amarela + 🚚 em fundo azul
   (`mf-32/180/192/512.png`, `manifest.json` com display "standalone": o ícone abre numa janela própria, sem as páginas de outros sites para trás;
