@@ -18,6 +18,11 @@ service cloud.firestore {
       allow write: if admin();
     }
 
+    // Coisas só do Bruno (ex.: e-mails que recebem os avisos no Google Agenda)
+    match /privado/{id} {
+      allow read, write: if admin();
+    }
+
     // Lista de nomes dos vendedores que aparece no formulário
     match /config/{id} {
       allow read: if membro();

@@ -99,6 +99,11 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   frete na nota e por conta do vendedor aparecem à parte. Botão "✓ Recebi R$ X de Fulano" grava `acertadoEm` nas entregas
   (Desfazer apaga). Grupo "Sem quem carregou" pede para marcar no mural. Problema/pendente não entram.
   Se o freteiro tem Pix próprio, o "📲 Pix dele" cobrado na entrega também entra no "Para receber dele" (caiu na conta dele).
+- Avisos no Google Agenda: painel → Ajustes → "Avisos no Google Agenda" (um Gmail por nome: Bruno + "Quem carrega"),
+  gravado em `privado/avisos` (coleção só do admin nas regras). Robô em `_agenda/Codigo.gs` (Google Apps Script na conta do
+  Bruno, a cada 5 min, lê pelo REST do Firestore com o token dele): entrega nova/alterada (`atualizadoEm` > última vez) vira
+  evento na Agenda do Bruno com os outros como convidados; turno → horário; ✅ entregue, ⬆ prioridade, apagada some (6h).
+  Passo a passo em `_agenda/LEIA-ME.md` (pasta com _ não vai para o site). PENDENTE: o Bruno ainda vai instalar o robô.
 - Tema claro/escuro/automático no topo.
 - Ícone e nome na tela de início do celular: "Mural de Fretes", ícone "MF" branco + faixa amarela + 🚚 em fundo azul
   (`mf-32/180/192/512.png`, `manifest.json` com display "standalone": o ícone abre numa janela própria, sem as páginas de outros sites para trás;
