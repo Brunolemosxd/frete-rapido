@@ -217,8 +217,10 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
     <div class="card">
       <strong>Avisos no Google Agenda</strong>
       <p class="muted" style="margin:0">Cada entrega nova vira um evento no Google Agenda de quem estiver aqui (com o aviso do próprio Agenda no celular).
-        Coloque o Gmail de cada um. Só você vê esta lista. Para funcionar, o "robô" da Agenda precisa estar ligado na sua conta Google (passo a passo no arquivo _agenda/LEIA-ME.md).</p>
+        Coloque o Gmail de cada um. Gerente e estoquista recebem só quando uma entrega é marcada com problema. Só você vê esta lista. Para funcionar, o "robô" da Agenda precisa estar ligado na sua conta Google (passo a passo no arquivo _agenda/LEIA-ME.md).</p>
       <div id="avlista" style="display:grid;gap:8px"></div>
+      <div class="field" style="margin-top:6px"><span class="lbl">⚠ Só avisos de PROBLEMA (não recebem as outras entregas)</span>
+        <div id="avprob" style="display:grid;gap:8px"></div></div>
       <div class="row"><span class="sp"></span><button type="button" class="btn pri" id="avsalvar">Salvar</button></div>
     </div>
     <div class="card">
@@ -517,17 +519,22 @@ $('#gsalvar').addEventListener('click',()=>{
   db.collection('config').doc('geral').set({...geral,atualizadoEm:Date.now()}).then(()=>{preencherGeral();toast('Salvo. Vale no mural quando ele for aberto de novo.')}).catch(erro)});
 
 /* ---------- avisos no Google Agenda (privado/avisos: só o Bruno lê e grava) ---------- */
-let avisos={};
+let avisos={},avisosProb={};
+const SO_PROBLEMA=['Gerente','Estoquista'];
 function renderAvisos(){
   const atual={...avisos};document.querySelectorAll('#avlista [data-av]').forEach(i=>{atual[i.dataset.av]=i.value});
+  const atualP={...avisosProb};document.querySelectorAll('#avprob [data-avp]').forEach(i=>{atualP[i.dataset.avp]=i.value});
+  $('#avprob').innerHTML=SO_PROBLEMA.map(n=>`<div class="row"><label style="min-width:90px;font-weight:600">⚠ ${esc(n)}</label><input type="email" data-avp="${esc(n)}" value="${esc(atualP[n]||'')}" maxlength="80" autocomplete="off" placeholder="Gmail (vazio = não recebe)" style="flex:1;min-width:0;width:auto"></div>`).join('');
   const nomes=[...new Set(['Bruno',...geral.carregadores])];
   $('#avlista').innerHTML=nomes.map(n=>`<div class="row"><label style="min-width:70px;font-weight:600">📅 ${esc(n)}</label><input type="email" data-av="${esc(n)}" value="${esc(atual[n]||'')}" maxlength="80" autocomplete="off" placeholder="${n==='Bruno'?'seu Gmail (vazio = não recebe)':'Gmail dele (vazio = não recebe)'}" style="flex:1;min-width:0;width:auto"></div>`).join('');
 }
 $('#avsalvar').addEventListener('click',()=>{
   const em={};let ruim='';
   document.querySelectorAll('#avlista [data-av]').forEach(i=>{const v=i.value.trim().toLowerCase();if(!v)return;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v))ruim=i.dataset.av;em[i.dataset.av]=v});
+  const pb={};
+  document.querySelectorAll('#avprob [data-avp]').forEach(i=>{const v=i.value.trim().toLowerCase();if(!v)return;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v))ruim=i.dataset.avp;pb[i.dataset.avp]=v});
   if(ruim){toast('Confira o e-mail de '+ruim+'.');return}
-  db.collection('privado').doc('avisos').set({emails:em,atualizadoEm:Date.now()}).then(()=>{avisos=em;toast('Lista de avisos salva')}).catch(erro)});
+  db.collection('privado').doc('avisos').set({emails:em,problemas:pb,atualizadoEm:Date.now()}).then(()=>{avisos=em;avisosProb=pb;toast('Lista de avisos salva')}).catch(erro)});
 
 /* ---------- mensagem do WhatsApp (config/mensagem) ---------- */
 function msgDaTela(){const pixPor={};document.querySelectorAll('#pixfret [data-pixf]').forEach(i=>{if(i.value.trim())pixPor[i.dataset.pixf]=i.value.trim()});
@@ -566,7 +573,7 @@ auth.onAuthStateChanged(u=>{
   if(!ehAdmin(u)){telaLogin(`Só o administrador entra no painel. Você entrou como <b>${esc(u.email)}</b>.`,true);return}
   $('#login').hidden=true;$('#app').hidden=false;mostrarAba(aba);
   pararT=db.collection('config').doc('fretes').onSnapshot(d=>{if(tabelaMexida)return;const l=d.exists&&d.data().lista;tabela=(Array.isArray(l)&&l.length?l:FRETES_PADRAO).map(x=>({...x}));renderTabela()},()=>{});
-  db.collection('privado').doc('avisos').get().then(d=>{avisos=d.exists?(d.data().emails||{}):{};renderAvisos()}).catch(()=>renderAvisos());
+  db.collection('privado').doc('avisos').get().then(d=>{avisos=d.exists?(d.data().emails||{}):{};avisosProb=d.exists?(d.data().problemas||{}):{};renderAvisos()}).catch(()=>renderAvisos());
   db.collection('config').doc('geral').get().then(d=>{geral=geralDe(d.exists?d.data():null);preencherGeral();previa()}).catch(()=>preencherGeral());
   db.collection('config').doc('mensagem').get().then(d=>renderMsg(d.exists?d.data():null)).catch(()=>renderMsg(null));
   pararM=db.collection('config').doc('motivos').onSnapshot(d=>{const l=d.exists&&d.data().lista;motivos=Array.isArray(l)?l:[...MOTIVOS_PADRAO];renderMotivos()},()=>{});

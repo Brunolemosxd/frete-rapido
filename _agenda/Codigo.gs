@@ -2,6 +2,8 @@
    Roda na conta Google do Bruno (dono do projeto Firebase), a cada 5 minutos.
    Cada entrega nova vira um evento na Agenda do Bruno, com os freteiros convidados (lista do painel → Ajustes →
    "Avisos no Google Agenda"). Se a entrega muda de dia/turno, o evento muda junto; entregue ganha ✅; apagada some.
+   Entrega marcada com PROBLEMA: cria na hora um evento "⚠ Problema" para quem está em "Só avisos de problema"
+   (gerente, estoquista), que não recebem as outras entregas. Resolvido o problema, o evento ganha "✔ Resolvido".
    Não mexe em nada no mural: só lê. Passo a passo em LEIA-ME.md. */
 
 const PROJETO = 'frete-rapido-5516e';
@@ -37,10 +39,11 @@ function verificar() {
     limit: 300
   });
   if (!docs.length) { p.setProperty('ultima', String(agora)); return; }
-  const emails = convidados();
+  const lista = convidados(), emails = lista.todos;
   const eventos = JSON.parse(p.getProperty('eventos') || '{}');
   const cal = CalendarApp.getDefaultCalendar();
   for (const e of docs) {
+    try { avisarProblema(cal, e, eventos, lista.problemas); } catch (err) { Logger.log('Erro no aviso de problema ' + e.id + ': ' + err); }
     try { sincronizar(cal, e, eventos, emails); } catch (err) { Logger.log('Erro na entrega ' + e.id + ': ' + err); }
   }
   p.setProperty('eventos', JSON.stringify(eventos));
@@ -70,7 +73,28 @@ function sincronizar(cal, e, eventos, emails) {
     emails.filter(m => ja.indexOf(m) < 0).forEach(m => ev.addGuest(m));
     if (e.status === 'entregue') ev.setColor(CalendarApp.EventColor.GREEN);
   }
-  eventos[e.id] = { ev: ev.getId(), d: e.data };
+  eventos[e.id] = Object.assign(eventos[e.id] || {}, { ev: ev.getId(), d: e.data });
+}
+
+// Problema na entrega: evento na hora para gerente/estoquista (um por motivo; resolvido = "✔ Resolvido").
+function avisarProblema(cal, e, eventos, emails) {
+  const reg = eventos[e.id] || {};
+  const motivo = e.obs || 'Problema na entrega';
+  if (e.status === 'problema') {
+    if (!emails.length || reg.pb === motivo) return;
+    // motivo mudou: o aviso antigo fica marcado como trocado
+    const velho = reg.pev ? cal.getEventById(reg.pev) : null;
+    if (velho && velho.getTitle().indexOf('⚠') === 0) velho.setTitle('↺ Trocado — ' + velho.getTitle().replace(/^⚠ /, ''));
+    const ini = new Date(Date.now() + 2 * 60000), fim = new Date(ini.getTime() + 15 * 60000);
+    const titulo = '⚠ Problema: ' + (e.cliente || 'Entrega') + ' — ' + motivo;
+    const ev = cal.createEvent(titulo, ini, fim, { description: 'Problema: ' + motivo + '\n\n' + descricao(e), location: endereco(e), guests: emails.join(','), sendInvites: true });
+    ev.removeAllReminders(); ev.addPopupReminder(0); ev.setColor(CalendarApp.EventColor.ORANGE);
+    eventos[e.id] = Object.assign(reg, { pb: motivo, pev: ev.getId(), d: reg.d || e.data });
+  } else if (reg.pev) {
+    const ev = cal.getEventById(reg.pev);
+    if (ev && ev.getTitle().indexOf('✔ Resolvido') !== 0) ev.setTitle('✔ Resolvido — ' + ev.getTitle().replace(/^⚠ /, ''));
+    delete reg.pev; delete reg.pb;
+  }
 }
 
 // Uma vez por dia: apaga da Agenda as entregas que foram apagadas do mural e esquece as muito antigas.
@@ -83,8 +107,10 @@ function limparApagadas() {
     if (eventos[id].d < limite) { delete eventos[id]; continue; }
     const r = UrlFetchApp.fetch(BASE + '/entregas/' + encodeURIComponent(id), { headers: cabecalho(), muteHttpExceptions: true });
     if (r.getResponseCode() === 404) {
-      const ev = cal.getEventById(eventos[id].ev);
+      const ev = eventos[id].ev ? cal.getEventById(eventos[id].ev) : null;
       if (ev) ev.deleteEvent();
+      const pev = eventos[id].pev ? cal.getEventById(eventos[id].pev) : null;
+      if (pev) pev.deleteEvent();
       delete eventos[id];
     }
   }
@@ -116,10 +142,11 @@ function descricao(e) {
 }
 function convidados() {
   const r = UrlFetchApp.fetch(BASE + '/privado/avisos', { headers: cabecalho(), muteHttpExceptions: true });
-  if (r.getResponseCode() !== 200) return [];
+  if (r.getResponseCode() !== 200) return { todos: [], problemas: [] };
   const d = valor({ mapValue: JSON.parse(r.getContentText()) });
   const eu = Session.getEffectiveUser().getEmail().toLowerCase();
-  return Object.values(d.emails || {}).map(x => String(x).toLowerCase()).filter(x => x && x !== eu);
+  const lista = o => Object.values(o || {}).map(x => String(x).toLowerCase()).filter(x => x && x !== eu);
+  return { todos: lista(d.emails), problemas: lista(d.problemas) };
 }
 // X-Goog-User-Project: a leitura conta no projeto do Firebase (sem isso o Google pode reclamar de API não ativada)
 function cabecalho() { return { Authorization: 'Bearer ' + ScriptApp.getOAuthToken(), 'X-Goog-User-Project': PROJETO }; }

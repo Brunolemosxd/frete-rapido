@@ -105,6 +105,9 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   evento na Agenda do Bruno com os outros como convidados; turno → horário; ✅ entregue, ⬆ prioridade, apagada some (6h).
   Passo a passo em `_agenda/LEIA-ME.md` (pasta com _ não vai para o site). INSTALADO pelo Bruno em 13/11/2026 (pelo celular, "Projeto sem título" no script.google.com).
   Se mudar o Codigo.gs/appsscript.json, ele precisa colar de novo lá e rodar "instalar" (precisou do escopo userinfo.email).
+  "⚠ Só avisos de PROBLEMA" (Gerente, Estoquista → `privado/avisos.problemas`): não recebem as entregas; quando uma entrega fica
+  com status problema, o robô cria na hora um evento laranja "⚠ Problema: Cliente — motivo" (convite = aviso). Motivo novo = novo
+  aviso (o velho vira "↺ Trocado"); resolvido (sai de problema) = "✔ Resolvido". Guarda `pb`/`pev` no mapa `eventos`.
 - Tema claro/escuro/automático no topo.
 - Ícone e nome na tela de início do celular: "Mural de Fretes", ícone "MF" branco + faixa amarela + 🚚 em fundo azul
   (`mf-32/180/192/512.png`, `manifest.json` com display "standalone": o ícone abre numa janela própria, sem as páginas de outros sites para trás;
