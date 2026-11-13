@@ -121,7 +121,8 @@ function convidados() {
   const eu = Session.getEffectiveUser().getEmail().toLowerCase();
   return Object.values(d.emails || {}).map(x => String(x).toLowerCase()).filter(x => x && x !== eu);
 }
-function cabecalho() { return { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() }; }
+// X-Goog-User-Project: a leitura conta no projeto do Firebase (sem isso o Google pode reclamar de API não ativada)
+function cabecalho() { return { Authorization: 'Bearer ' + ScriptApp.getOAuthToken(), 'X-Goog-User-Project': PROJETO }; }
 function consulta(q) {
   const r = UrlFetchApp.fetch(BASE + ':runQuery', { method: 'post', contentType: 'application/json', payload: JSON.stringify({ structuredQuery: q }), headers: cabecalho(), muteHttpExceptions: true });
   if (r.getResponseCode() !== 200) throw new Error('Firestore respondeu ' + r.getResponseCode() + ': ' + r.getContentText().slice(0, 300));
