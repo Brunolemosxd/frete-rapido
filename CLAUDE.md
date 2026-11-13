@@ -74,6 +74,7 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   de pagamento, sem valor (e sem ajuste). Valor/ajuste/pagamento saíram das etiquetas do meio nesses cartões.
 - Linha "por Ana · às 14:32" no cartão: hora em que foi lançada (`criadoEm`; se não foi hoje, "29/10 às 14:32").
 - Quem carregou: nomes do painel (padrão Tiago e Bruno), no menu ao segurar o cartão; aparece embaixo da foto.
+  Embaixo do "🚚 Tiago" vai, bem pequena, a hora em que marcaram (`carregadoEm`, `horaCurta`; outro dia = "12/11 14:34").
   "🚚 Minhas entregas — Nome": as pendentes que a pessoa marcou com o próprio nome (primeiro nome do cadastro; Thiago = Tiago,
   `ehMinha`) sobem para uma seção no topo, ACIMA DE TUDO (acima de "Ficaram para trás" e da Prioridade; inclui as atrasadas
   dela), SÓ no celular dela; para os outros a ordem não muda.
