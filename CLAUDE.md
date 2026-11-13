@@ -83,6 +83,9 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   Marcar "Entregue" numa entrega de dia que já passou pergunta: "✓ Entreguei hoje" (muda `data` para hoje) ou
   "📅 Entreguei no dia DD/MM (esqueci de marcar)" (mantém a data). Assim o Acerto e os Valores ficam no dia certo.
 - Problema: motivo em faixa vermelha grande no topo do cartão; motivos cadastráveis (`config/motivos`).
+- "🚛 Vai vir outra nota do caminhão (não entregar ainda)": caixinha no bloco da nota do formulário (`aguardaCaminhao`).
+  No cartão, etiqueta amarela/preta "🚛 AGUARDAR CAMINHÃO / NÃO ENTREGAR" embaixo da foto; no detalhe, faixa amarela no alto.
+  Marcar entregue pede confirmação; menu ao segurar (quem pode editar): "🚛 Chegou a nota do caminhão (liberar)".
 - Botão "🔎 Consultar" no topo do mural: só para o Bruno (admin) e quem está na lista "Quem carrega" do painel (Tiago),
   pelo primeiro nome (`podeConsultar`). Escolhe uma data (atalhos Ontem/Anteontem/Há 1 semana/Há 1 mês) e o mural abre nela;
   datas com mais de 45 dias são buscadas uma vez (`antigas`). Faixa roxa "🔎 Consultando …" com "Voltar para hoje" quando a data

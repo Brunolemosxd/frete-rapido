@@ -121,6 +121,12 @@ section.hr h3{color:#6b3fd0;font-size:14px}
 :root[data-theme="dark"] section.hr h3{color:#b79cf5}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) section.hr h3{color:#b79cf5}}
 /* frete na nota: faixa vermelha embaixo da foto */
+/* esperando outra nota do caminhão: amarelo e preto, bem chamativo */
+.cam{display:block;width:100%;text-align:center;background:#f4c430;color:#17212b;border:3px solid #17212b;border-radius:7px;padding:3px 2px;font-size:11px;font-weight:900;text-transform:uppercase;line-height:1.15}
+.cam b{display:block;margin-top:2px;background:#c53030;color:#fff;border-radius:4px;padding:2px 1px}
+.camfaixa{background:#f4c430;color:#17212b;border:3px solid #17212b;border-radius:10px;padding:10px 12px;font-family:var(--display);font-weight:700;font-size:20px;text-transform:uppercase;line-height:1.15}
+#fcam{text-align:left}
+#fcam[aria-pressed="true"]{background:#f4c430;border-color:#17212b;color:#17212b}
 .fnota{background:#c53030;color:#fff;border-radius:6px;padding:2px 3px;font-size:11px;font-weight:800;text-align:center;line-height:1.15;text-transform:uppercase;width:100%}
 .card.prio .fnota{background:#fff;color:#c53030}
 .chip[data-pag="nota"][aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
@@ -521,7 +527,7 @@ function cardHTML(e){
     <div class="under"><span class="l">✓ Entregue</span><span class="r">Problema ✕</span></div>
     <div class="face">
       ${e.status==='problema'?`<div class="probfaixa"><span class="ic" aria-hidden="true">⚠</span><span>${esc(e.obs||'Problema na entrega')}</span></div>`:''}
-      <div class="tcol"><div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>${pagamentoDe(e)==='nota'?'<span class="fnota">🧾 Frete na nota</span>':''}${setaHTML(e)}${carr(e)?`<span class="carr">🚚 ${esc(carr(e))}${e.carregadoEm?`<small>${esc(horaCurta(e.carregadoEm))}</small>`:''}</span>`:''}</div>
+      <div class="tcol"><div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>${e.aguardaCaminhao&&e.status!=='entregue'?'<span class="cam">🚛 Aguardar caminhão<b>Não entregar</b></span>':''}${pagamentoDe(e)==='nota'?'<span class="fnota">🧾 Frete na nota</span>':''}${setaHTML(e)}${carr(e)?`<span class="carr">🚚 ${esc(carr(e))}${e.carregadoEm?`<small>${esc(horaCurta(e.carregadoEm))}</small>`:''}</span>`:''}</div>
       <div class="info">
         ${pr?'<div><span class="pill pprio">⬆ Prioridade</span></div>':''}
         ${hr?horaHTML(e):''}
@@ -702,8 +708,14 @@ async function salvar(id,dados,novo){
     else if(e?.code==='resource-exhausted')toast('O mural está cheio por hoje. Fale com o Bruno.');
     else toast('Não consegui salvar. Tente de novo.');return false}
 }
-async function setStatus(id,status,obs,diaCerto){
+async function setStatus(id,status,obs,diaCerto,mesmoAssim){
   const e=entregas.find(x=>x.id===id);if(!e)return;
+  // esperando outra nota do caminhão: confirma antes de dar como entregue
+  if(status==='entregue'&&e.status!=='entregue'&&e.aguardaCaminhao&&!mesmoAssim){
+    abrirSheet(`<div class="camfaixa">🚛 Esta entrega está esperando outra nota do caminhão</div><p style="margin:0">Marcar <b>${esc(e.cliente||'a entrega')}</b> como entregue mesmo assim?</p>
+      <div class="actions two"><button type="button" class="btn ghost" data-x>Cancelar</button><button type="button" class="btn ok" data-ok>Entregue mesmo assim</button></div>`,
+    s=>s.addEventListener('click',ev=>{if(ev.target.closest('[data-x]'))fechar();if(ev.target.closest('[data-ok]')){fechar();setStatus(id,status,obs,diaCerto,true)}}));
+    return}
   // entrega de um dia que já passou: pergunta em que dia foi entregue, para os dias (e o Acerto) ficarem certos
   if(status==='entregue'&&e.status!=='entregue'&&e.data<hoje()&&!diaCerto){
     const dd=pd(e.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
@@ -713,7 +725,7 @@ async function setStatus(id,status,obs,diaCerto){
       <button type="button" class="btn ghost" data-x>Cancelar</button></div>`,
     s=>s.addEventListener('click',ev=>{
       if(ev.target.closest('[data-x]')){fechar();return}
-      const q=ev.target.closest('[data-q]')?.dataset.q;if(!q)return;fechar();setStatus(id,status,obs,q)}));
+      const q=ev.target.closest('[data-q]')?.dataset.q;if(!q)return;fechar();setStatus(id,status,obs,q,mesmoAssim)}));
     return}
   const d={status,atualizadoEm:Date.now()};if(obs!==undefined)d.obs=obs;
   // entregue hoje: a entrega passa para o dia de hoje
@@ -755,6 +767,7 @@ function abrirAcoes(id){
     ${P.marcar?'<div class="actions two"><button class="btn ok" data-a="entregue">✓ Entregue</button><button class="btn bad" data-a="problema">✕ Problema</button></div>':''}
     <div class="actions">${P.marcar&&e.status!=='pendente'?'<button class="btn" data-a="pendente">Voltar para pendente</button>':''}
     <button class="btn post" data-a="postit">📝 Colar post-it</button>
+    ${podeEditar(e)&&e.aguardaCaminhao?'<button class="btn ok" data-a="chegou">🚛 Chegou a nota do caminhão (liberar)</button>':''}
     ${podeEditar(e)?`<button class="btn ${e.prioridade?'':'bad'}" data-a="prio">${e.prioridade?'Tirar a prioridade':'⬆ Marcar como prioridade'}</button>`:''}
     ${P.marcar?'<button class="btn" data-a="amanha">Passar para o dia seguinte</button>':''}
     ${podeEditar(e)?'<button class="btn" data-a="editar">Editar</button>':''}<button class="btn" data-a="ver">Ver nota e foto</button>
@@ -768,6 +781,7 @@ function abrirAcoes(id){
     else if(a==='problema')abrirProblema(id);
     else if(a==='amanha'){fechar();const nd=addDays(e.data<hoje()?hoje():e.data,1);e.data=nd;render();if(await salvar(id,{data:nd,atualizadoEm:Date.now()}))toast('Passada para '+nomeDia(nd).toLowerCase())}
     else if(a==='postit')abrirPostit(id);
+    else if(a==='chegou'){fechar();e.aguardaCaminhao=false;render();if(await salvar(id,{aguardaCaminhao:false,atualizadoEm:Date.now()}))toast('Liberada: a nota do caminhão chegou')}
     else if(a==='prio'){fechar();const v=!e.prioridade;e.prioridade=v;render();if(await salvar(id,{prioridade:v,atualizadoEm:Date.now()}))toast(v?'Marcada como prioridade':'Prioridade tirada')}
     else if(a==='editar')abrirForm(e);
     else if(a==='ver')abrirDetalhe(id);
@@ -805,6 +819,7 @@ function abrirDetalhe(id){
   abrirSheet(`<button type="button" class="voltar" data-x>← Voltar para o mural</button>
     <h2>${esc(e.cliente||'Entrega')}</h2>
     ${e.status==='problema'?`<div class="probfaixa"><span class="ic" aria-hidden="true">⚠</span><span>${esc(e.obs||'Problema na entrega')}</span></div>`:''}
+    ${e.aguardaCaminhao&&e.status!=='entregue'?'<div class="camfaixa">🚛 Vai vir outra nota do caminhão — NÃO ENTREGAR ainda</div>':''}
     ${horaHTML(e)}
     <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span>${e.turno==='apos'?'':`<span class="tag">${esc(turnoTxt(e))}</span>`}${localTagHTML(e)}${condTag(e)}${notasTagHTML(e)}${pagTagHTML(e)}</div>
     ${src?`<div class="photo"><img id="dfoto" src="${esc(src)}" alt="Foto da nota"></div>`:''}
@@ -895,12 +910,14 @@ function abrirForm(ed){
   const extras=[],qtdExtrasAntes=+(ed?.fotosExtras)||0;let carregandoExtras=qtdExtrasAntes>0;
   const dChips=[[h,'Hoje'],[addDays(h,1),'Amanhã'],[addDays(h,2),pd(addDays(h,2)).toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')]];
   const R='<span class="req" aria-hidden="true">*</span>';
-  st.notasLoja=+st.notasLoja||0;st.notasDeposito=+st.notasDeposito||0;st.prioridade=!!st.prioridade;
+  st.notasLoja=+st.notasLoja||0;st.notasDeposito=+st.notasDeposito||0;st.prioridade=!!st.prioridade;st.aguardaCaminhao=!!st.aguardaCaminhao;
   // frete: o valor vem da tabela pelo bairro; o vendedor só ajusta de -50 a +50
   {const aj=ajusteDe(st);st.ajuste=aj.valor;st.ajustePor=aj.por;}
   st.pag=pagamentoDe(st);if(st.pag==='pago')st.pag='pix';st.fretePor=st.fretePor||'';
   st.loc=TABELA.find(t=>semAcento(t.nome)===semAcento(st.bairro))||null;
   st.condominio=!!st.condominio;
+  // valor do condomínio: fica aqui em cima porque o desenho do frete já usa logo ao abrir (editar entrega de condomínio quebrava)
+  const COND=GERAL.condominio;
   st.valorCombinado=st.loc&&st.loc.valor===null?(+st.freteBase||Math.max(0,(+st.frete||0)-st.ajuste)):0;
 
   const vends=[...new Set([...VENDEDORES,st.fretePor,st.ajustePor].filter(Boolean))];
@@ -913,6 +930,7 @@ function abrirForm(ed){
         <div class="cont loja"><span>Na loja</span><div class="step"><button type="button" data-n="notasLoja" data-d="-1" aria-label="Uma nota a menos na loja">−</button><b id="nloja">0</b><button type="button" data-n="notasLoja" data-d="1" aria-label="Uma nota a mais na loja">+</button></div></div>
         <div class="cont dep"><span>No depósito</span><div class="step"><button type="button" data-n="notasDeposito" data-d="-1" aria-label="Uma nota a menos no depósito">−</button><b id="ndep">0</b><button type="button" data-n="notasDeposito" data-d="1" aria-label="Uma nota a mais no depósito">+</button></div></div>
       </div></div>
+      <div class="chips"><button type="button" class="chip" id="fcam">🚛 Vai vir outra nota do caminhão</button></div>
       <div class="field"><span class="lbl">Produtos — toque para pôr na lista</span>
         <div class="prods" id="fprods">${GERAL.produtos.map(p=>`<button type="button" class="prod" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div>
         <div class="row"><input type="text" id="fitem" placeholder="Outro produto" enterkeyhint="done"><button type="button" class="btn" id="fadd">Adicionar</button></div>
@@ -958,6 +976,7 @@ function abrirForm(ed){
       s.querySelectorAll('#cturno .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.turno));
       q('#fhora').hidden=st.turno!=='apos';
       q('#fsn').setAttribute('aria-pressed',st.semNumero);q('#fsn').textContent=(st.semNumero?'☑':'☐')+' Sem número';q('#fnum').disabled=st.semNumero;if(st.semNumero)q('#fnum').value='';
+      q('#fcam').setAttribute('aria-pressed',st.aguardaCaminhao);q('#fcam').textContent=(st.aguardaCaminhao?'☑':'☐')+' 🚛 Vai vir outra nota do caminhão (não entregar ainda)';
       q('#fprio').setAttribute('aria-pressed',st.prioridade);q('#fprio').textContent=(st.prioridade?'☑':'☐')+' ⬆ Prioridade';
       q('#fcond').setAttribute('aria-pressed',st.condominio);q('#fcond').textContent=(st.condominio?'☑':'☐')+' 🏢 É condomínio';
       desenharFrete();
@@ -982,8 +1001,8 @@ function abrirForm(ed){
       st[b.dataset.n]=Math.max(0,Math.min(20,st[b.dataset.n]+ +b.dataset.d));q('#fnotas').classList.remove('err');sync();
       if(antes===1&&st.notasLoja+st.notasDeposito===2)toast('Ponha a foto da outra nota na pasta 📁 do mural.')});
     q('#fprio').addEventListener('click',()=>{st.prioridade=!st.prioridade;sync()});
+    q('#fcam').addEventListener('click',()=>{st.aguardaCaminhao=!st.aguardaCaminhao;sync()});
     // condomínio: tabela até o valor do condomínio (painel, padrão R$ 100) sobe para ele; acima fica a tabela
-    const COND=GERAL.condominio;
     function baseFrete(){if(!st.loc)return 0;if(st.loc.valor===null)return st.valorCombinado;return st.condominio&&st.loc.valor<=COND?COND:st.loc.valor}
     function totalFrete(){return st.loc?Math.max(0,baseFrete()+st.ajuste):0}
     // o valor da tabela não se digita; só o "a consultar" tem campo de valor
@@ -1078,7 +1097,7 @@ function abrirForm(ed){
         const fotosExtras=[];for(const x of extras)fotosExtras.push(x.blob?await fotoGrande(x.blob):x.src);
         const ls=new Set(st.itens.map(i=>i.local));
         const dados={cliente:st.cliente,clienteNome:st.clienteNome,clienteSobrenome:st.clienteSobrenome,fone:st.fone,bairro:st.bairro,endereco:st.endereco,rua:st.rua,numero:st.numero,semNumero:st.semNumero,complemento:st.complemento,observacao:st.observacao,freteBase:baseFrete(),freteTabela:st.loc.valor,condominio:st.condominio,freteConsultar:st.loc.valor===null,freteAjuste:st.ajuste,ajustePor:st.ajuste?st.ajustePor:'',frete:totalFrete(),
-          pagamento:st.pag,fretePago:st.pag==='pix'||st.pag==='junto'||st.pag==='nota',fretePor:st.pag==='vendedor'?st.fretePor:'',aMaisPor:'',aMaisValor:0,prioridade:st.prioridade,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
+          pagamento:st.pag,fretePago:st.pag==='pix'||st.pag==='junto'||st.pag==='nota',fretePor:st.pag==='vendedor'?st.fretePor:'',aMaisPor:'',aMaisValor:0,prioridade:st.prioridade,aguardaCaminhao:st.aguardaCaminhao,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
           itens:st.itens.map(i=>({nome:i.nome,local:i.local,qtd:i.qtd})),local:ls.size>1?'ambos':ls.has('deposito')?'deposito':'loja',
           thumb:st.thumb||null,fotoData:st.fotoData||null,contatos:contOk,fotosExtras:fotosExtras.length,atualizadoEm:Date.now()};
         let ok;

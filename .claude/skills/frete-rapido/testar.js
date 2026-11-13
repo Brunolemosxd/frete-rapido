@@ -67,6 +67,15 @@ async function main(){
           if(quem==='bruno')c.wa.forEach(w=>console.log('    wa: '+w.replace(/\n/g,' ⏎ ').slice(0,160)+'…'))}}}
     erros.forEach(e=>prob.push(`Erro no mural (${quem}/${tema}): ${e}`));await page.close();
   }
+  // abrir "Editar" de cada entrega de exemplo (pega erro que só aparece ao editar, ex.: entrega de condomínio)
+  {const {page,erros}=await abrir(browser);
+    for(const id of await page.$$eval('.card:not(.mini)',l=>l.map(c=>c.dataset.id))){
+      await page.click(`.card[data-id="${id}"] .who`);await page.waitForTimeout(150);
+      const mais=await page.$('.sheet [data-a="mais"]');if(!mais){await page.keyboard.press('Escape');continue}
+      await mais.click();await page.waitForTimeout(150);
+      const ed=await page.$('.sheet [data-a="editar"]');if(ed){await ed.click();await page.waitForTimeout(250)}
+      await page.keyboard.press('Escape');await page.waitForTimeout(150)}
+    erros.forEach(e=>prob.push(`Erro ao abrir "Editar": ${e}`));await page.close()}
   // celular estreito (360 px): nada pode passar da borda do cartão
   {const {page,erros}=await abrir(browser,{largura:360});
     const fora=await page.$$eval('.card:not(.mini)',cs=>cs.flatMap(c=>{const r=c.getBoundingClientRect();
