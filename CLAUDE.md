@@ -115,6 +115,9 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   velho vira "↺ Trocado"; resolvido = "✔ Resolvido". Registro por entrega em propriedades `e_<id>` (st, pb, pev, ev, visto);
   histórico já avisado em `hvistos`; folga de 10 min no "desde" (relógio dos celulares).
   Tirar alguém: botão × ao lado do nome (menos o Bruno) apaga o Gmail e tira de todas as regras, salvando na hora.
+  Pôr alguém sem digitar: botões "+ Nome" com os ativos de Pessoas (`usuarios`, id = Gmail) que ainda não estão na lista; preenche a
+  linha vazia de mesmo primeiro nome (ou Gerente se a função for gerente) ou cria uma linha nova. "Quem lançou a nota" já é
+  automático (Gmail do login de quem lançou, `criadoPorEmail`).
   Quem está DESATIVADO em Painel → Pessoas (`usuarios.ativo == false`) nunca recebe aviso, nem como "quem lançou a nota".
   POR QUE o Bruno não recebia aviso: o lembrete do evento é antes do turno (ex.: 7h30) e as entregas são lançadas depois; e o dono
   da agenda não recebe convite. Solução: os avisos na hora apitam em 2 min (lembrete 0 no evento do Bruno).

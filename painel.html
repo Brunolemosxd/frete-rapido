@@ -130,6 +130,8 @@ tr.ok td{opacity:.7}
 .hmud s{color:var(--muted)}
 select{font:inherit;font-size:15px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg)}
 .avtirar{padding:6px 12px;font-size:20px;line-height:1;color:var(--bad)}
+.avcad{gap:6px}
+.avcad .chip{padding:7px 10px;font-size:14px}
 details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:4px 0}
 .login{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
 .login .box{width:100%;max-width:380px;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:28px 20px;display:grid;gap:16px;text-align:center}
@@ -232,6 +234,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
       <strong>Avisos no Google Agenda</strong>
       <p class="muted" style="margin:0">Escolha quem recebe cada tipo de aviso. Só você vê esta parte. Funciona pelo "robô" da Agenda ligado na sua conta Google.</p>
       <div class="field"><span class="lbl">1. Pessoas (Gmail de cada uma)</span><div id="avlista" style="display:grid;gap:8px"></div>
+        <div class="field avcad"><span class="muted">Toque em alguém do cadastro (Painel → Pessoas) para pôr o Gmail dele(a) sem digitar:</span><div class="chips" id="avcad"></div></div>
         <div class="row"><input type="text" id="avnovo" maxlength="30" placeholder="Outra pessoa (ex.: Ana vendedora)" style="flex:1;min-width:0;width:auto"><button type="button" class="btn" id="avadd">+ Pessoa</button></div></div>
       <div class="field"><span class="lbl">2. O que cada um recebe</span>
         <p class="muted" style="margin:0">Toque nos nomes para ligar/desligar. Para tirar alguém de todos os avisos, toque no <b>×</b> ao lado do nome (ou desative a pessoa em Pessoas: quem está desativado não recebe nada). Tudo chega pelo Google Agenda: a entrega nova fica no dia e turno dela; os outros avisos apitam na hora (2 minutos depois).</p>
@@ -242,7 +245,8 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
       <div class="row"><span class="sp"></span><button type="button" class="btn pri" id="avsalvar">Salvar</button></div>
       <div class="field avteste"><span class="lbl">🔔 Testar o aviso</span>
         <p class="muted" style="margin:0">Escolha quem recebe o teste (precisa ter o Gmail salvo acima) e toque em Enviar. O robô confere a cada 5 minutos:
-          em até 5 minutos ele cria o aviso "🔔 Teste", que apita 2 minutos depois na agenda de cada um.</p>
+          em até 5 minutos ele cria o aviso "🔔 Teste", que apita 2 minutos depois na agenda de cada um.
+          Pessoa nova recebe o teste como convite no Gmail: peça para ela tocar em <b>"Sim"</b> no convite, assim os próximos avisos entram direto na agenda dela.</p>
         <div class="chips" id="avtquem"></div>
         <div class="row"><span id="avtstatus" class="muted" style="flex:1"></span><button type="button" class="btn" id="avtenviar">🔔 Enviar teste</button></div></div>
     </div>
@@ -590,7 +594,7 @@ function renderAvisos(ler=true){
   const quem=[...avPessoas().map(n=>[n,n]),[CRIADOR,'✍ Quem lançou a nota']];
   $('#avregras').innerHTML=avTipos().map(([k,t])=>{const r=avRegras[k]||{pessoas:[],agenda:true,email:false};
     return `<div class="avtipo"><b>${esc(t)}</b><div class="chips">${quem.map(([v,n])=>`<button type="button" class="chip" data-rt="${esc(k)}" data-rp="${esc(v)}" aria-pressed="${(r.pessoas||[]).includes(v)}">${esc(n)}</button>`).join('')}</div></div>`}).join('');
-  renderTeste();
+  renderTeste();renderCadastro();
   $('#avlemb').value=avLemb;
   $('#avturnos').innerHTML=[['manha','Manhã'],['tarde','Tarde'],['qualquer','Qualquer turno']].map(([k,n])=>`<div class="row" style="flex-wrap:wrap"><label style="flex:1 1 100%;font-weight:600">${n}</label><input type="time" data-tu="${k}" data-k="0" value="${esc(avTurnos[k][0])}" style="width:auto"><span>até</span><input type="time" data-tu="${k}" data-k="1" value="${esc(avTurnos[k][1])}" style="width:auto"></div>`).join('');
 }
@@ -600,6 +604,25 @@ $('#avregras').addEventListener('click',e=>{const b=e.target.closest('[data-rt]'
 $('#avadd').addEventListener('click',()=>{const v=$('#avnovo').value.trim().replace(/\s+/g,' ');if(!v){$('#avnovo').focus();return}
   if(avPessoas().some(n=>n.toLowerCase()===v.toLowerCase())){toast('Esse nome já está na lista.');return}
   avExtras.push(v);$('#avnovo').value='';renderAvisos();toast('Coloque o Gmail e toque em Salvar.')});
+// ---- pegar do cadastro (Pessoas): quem já entra no mural tem o Gmail lá; um toque põe na lista de avisos ----
+const pn1=t=>String(t||'').split(' ')[0].normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/^th/,'t');
+function renderCadastro(){
+  if(!$('#avcad'))return;
+  const usados=new Set(Object.values(avisos).map(v=>String(v||'').toLowerCase()).filter(Boolean));
+  const eu=auth.currentUser&&String(auth.currentUser.email||'').toLowerCase();
+  const l=[...(eu&&!avisos.Bruno&&!usados.has(eu)?[{id:eu,nome:'Bruno (você)'}]:[]),
+    ...pessoas.filter(p=>p.ativo!==false&&!usados.has(String(p.id).toLowerCase())).sort((a,b)=>(a.nome||'').localeCompare(b.nome||''))];
+  $('#avcad').innerHTML=l.length?l.map(p=>`<button type="button" class="chip" data-cad="${esc(p.id)}">+ ${esc(p.nome||p.id)}</button>`).join(''):'<span class="muted">Todos os cadastrados já estão na lista.</span>';
+}
+$('#avcad').addEventListener('click',e=>{const b=e.target.closest('[data-cad]');if(!b)return;
+  const eu=auth.currentUser&&String(auth.currentUser.email||'').toLowerCase();
+  const p=b.dataset.cad===eu&&!pessoas.some(x=>x.id===eu)?{id:eu,nome:'Bruno'}:pessoas.find(x=>x.id===b.dataset.cad);if(!p)return;lerTelaAvisos();
+  // se combina com uma linha que já existe (mesmo primeiro nome, ou função gerente) e ela está vazia, preenche ela
+  let linha=avPessoas().find(n=>!avisos[n]&&(pn1(n)===pn1(p.nome)||(n==='Gerente'&&p.funcao==='gerente')));
+  if(!linha){linha=p.nome||p.id;if(avPessoas().some(n=>n.toLowerCase()===linha.toLowerCase()))linha=linha+' ('+p.id.split('@')[0]+')';avExtras.push(linha)}
+  avisos[linha]=String(p.id).toLowerCase();
+  renderAvisos(false);toast(`${linha} entrou com o Gmail do cadastro. Escolha o que ele(a) recebe e toque em Salvar.`)});
+
 // ---- teste: o painel pede em privado/teste; o robô cria o aviso e responde no mesmo documento ----
 let avTeste={},avTesteSel=null,pararTeste=null;
 function renderTeste(){
@@ -677,7 +700,7 @@ auth.onAuthStateChanged(u=>{
   db.collection('config').doc('geral').get().then(d=>{geral=geralDe(d.exists?d.data():null);preencherGeral();previa()}).catch(()=>preencherGeral());
   db.collection('config').doc('mensagem').get().then(d=>renderMsg(d.exists?d.data():null)).catch(()=>renderMsg(null));
   pararM=db.collection('config').doc('motivos').onSnapshot(d=>{const l=d.exists&&d.data().lista;motivos=Array.isArray(l)?l:[...MOTIVOS_PADRAO];renderMotivos();if($('#avregras').innerHTML)renderAvisos()},()=>{});
-  pararP=db.collection('usuarios').onSnapshot(s=>{contarSnap(s);pessoas=s.docs.map(d=>({id:d.id,...d.data()}));renderPessoas()},e=>erro(e));
+  pararP=db.collection('usuarios').onSnapshot(s=>{contarSnap(s);pessoas=s.docs.map(d=>({id:d.id,...d.data()}));renderPessoas();renderCadastro()},e=>erro(e));
   limparFotosAntigas().catch(()=>{});
   pararUso=ouvirUso(u=>{const t=textoUso(u),el=$('#avuso');
     el.hidden=t.nivel==='ok';el.className='avuso '+t.nivel;el.textContent=t.nivel==='alto'?`⚠ Quase no limite grátis de hoje (${t.p}%). Se passar, o mural para até de madrugada.`:`Atenção: o mural já usou ${t.p}% do limite grátis de hoje.`;
