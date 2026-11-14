@@ -184,9 +184,12 @@ function configuracao() {
     regras = { nova: { pessoas: Object.keys(d.emails || {}), agenda: true } };
     regras['problema:__outro'] = { pessoas: Object.keys(d.problemas || {}), agenda: true };
   }
-  const usuarios = {};
-  for (const u of lista('usuarios')) if (u.nome) usuarios[String(u.nome).toLowerCase()] = u.id.toLowerCase();
-  return { emails, regras, usuarios, dono: Session.getEffectiveUser().getEmail().toLowerCase(),
+  const usuarios = {}, inativos = {};
+  for (const u of lista('usuarios')) {
+    if (u.nome) usuarios[String(u.nome).toLowerCase()] = u.id.toLowerCase();
+    if (u.ativo === false) inativos[u.id.toLowerCase()] = true; // desativado em Pessoas (ex.: saiu da loja): não recebe nada
+  }
+  return { emails, regras, usuarios, inativos, dono: Session.getEffectiveUser().getEmail().toLowerCase(),
     lembrete: Number(d.lembrete) >= 0 && d.lembrete !== undefined && d.lembrete !== null ? Number(d.lembrete) : 30,
     turnos: Object.assign({}, TURNOS_PADRAO, d.turnos || {}) };
 }
@@ -196,7 +199,7 @@ function destinatarios(cfg, regra, e) {
     let m = '';
     if (n === CRIADOR) m = (e.criadoPorEmail || cfg.usuarios[String(e.criadoPorNome || '').toLowerCase()] || '').toLowerCase();
     else m = cfg.emails[n] || '';
-    if (m && out.indexOf(m) < 0) out.push(m);
+    if (m && !cfg.inativos[m] && out.indexOf(m) < 0) out.push(m);
   }
   return out;
 }

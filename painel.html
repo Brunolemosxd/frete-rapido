@@ -129,6 +129,7 @@ tr.ok td{opacity:.7}
 .hmud{margin:0;padding-left:18px;font-size:14px;display:grid;gap:2px}
 .hmud s{color:var(--muted)}
 select{font:inherit;font-size:15px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg)}
+.avtirar{padding:6px 12px;font-size:20px;line-height:1;color:var(--bad)}
 details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:4px 0}
 .login{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
 .login .box{width:100%;max-width:380px;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:28px 20px;display:grid;gap:16px;text-align:center}
@@ -233,7 +234,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
       <div class="field"><span class="lbl">1. Pessoas (Gmail de cada uma)</span><div id="avlista" style="display:grid;gap:8px"></div>
         <div class="row"><input type="text" id="avnovo" maxlength="30" placeholder="Outra pessoa (ex.: Ana vendedora)" style="flex:1;min-width:0;width:auto"><button type="button" class="btn" id="avadd">+ Pessoa</button></div></div>
       <div class="field"><span class="lbl">2. O que cada um recebe</span>
-        <p class="muted" style="margin:0">Toque nos nomes para ligar/desligar. Tudo chega pelo Google Agenda: a entrega nova fica no dia e turno dela; os outros avisos apitam na hora (2 minutos depois).</p>
+        <p class="muted" style="margin:0">Toque nos nomes para ligar/desligar. Para tirar alguém de todos os avisos, toque no <b>×</b> ao lado do nome (ou desative a pessoa em Pessoas: quem está desativado não recebe nada). Tudo chega pelo Google Agenda: a entrega nova fica no dia e turno dela; os outros avisos apitam na hora (2 minutos depois).</p>
         <div id="avregras" style="display:grid;gap:10px"></div></div>
       <div class="field"><span class="lbl">3. Horários na Agenda</span>
         <div class="row"><label for="avlemb" style="flex:1">Lembrete antes do turno (minutos)</label><input type="text" id="avlemb" inputmode="numeric" maxlength="3" style="width:80px"></div>
@@ -585,7 +586,7 @@ function lerTelaAvisos(){
 // ler=false quando os dados acabaram de chegar do servidor (não pode pegar o que está na tela, que ainda está vazio)
 function renderAvisos(ler=true){
   if(ler&&$('#avlista').innerHTML)lerTelaAvisos();
-  $('#avlista').innerHTML=avPessoas().map(n=>`<div class="row"><label style="min-width:90px;font-weight:600">${esc(n)}</label><input type="email" data-av="${esc(n)}" value="${esc(avisos[n]||'')}" maxlength="80" autocomplete="off" placeholder="Gmail (vazio = não recebe nada)" style="flex:1;min-width:0;width:auto"></div>`).join('');
+  $('#avlista').innerHTML=avPessoas().map(n=>`<div class="row"><label style="min-width:90px;font-weight:600">${esc(n)}</label><input type="email" data-av="${esc(n)}" value="${esc(avisos[n]||'')}" maxlength="80" autocomplete="off" placeholder="Gmail (vazio = não recebe nada)" style="flex:1;min-width:0;width:auto">${n==='Bruno'?'':`<button type="button" class="btn ghost avtirar" data-avx="${esc(n)}" aria-label="Tirar ${esc(n)} dos avisos" title="Tirar dos avisos">×</button>`}</div>`).join('');
   const quem=[...avPessoas().map(n=>[n,n]),[CRIADOR,'✍ Quem lançou a nota']];
   $('#avregras').innerHTML=avTipos().map(([k,t])=>{const r=avRegras[k]||{pessoas:[],agenda:true,email:false};
     return `<div class="avtipo"><b>${esc(t)}</b><div class="chips">${quem.map(([v,n])=>`<button type="button" class="chip" data-rt="${esc(k)}" data-rp="${esc(v)}" aria-pressed="${(r.pessoas||[]).includes(v)}">${esc(n)}</button>`).join('')}</div></div>`}).join('');
@@ -618,13 +619,21 @@ $('#avtenviar').addEventListener('click',()=>{
   db.collection('privado').doc('teste').set({pedidoEm:Date.now(),para,feitoEm:0,erro:''}).then(()=>toast('Teste pedido. Aguarde até 5 minutos.')).catch(erro)});
 setInterval(()=>{if(aba==='ajustes'&&avTeste.pedidoEm&&!(avTeste.feitoEm>=avTeste.pedidoEm))renderTeste()},30000);
 
-$('#avsalvar').addEventListener('click',()=>{
+$('#avsalvar').addEventListener('click',()=>salvarAvisos('Avisos salvos. O robô usa na próxima conferida (até 5 min).'));
+// × : tira a pessoa de todos os avisos e salva na hora (ex.: vendedor que saiu da loja)
+$('#avlista').addEventListener('click',e=>{const b=e.target.closest('[data-avx]');if(!b)return;const n=b.dataset.avx;
+  if(!confirm(`Tirar ${n} de todos os avisos? O Gmail dele(a) é apagado desta lista.`))return;
+  lerTelaAvisos();delete avisos[n];avExtras=avExtras.filter(x=>x!==n);
+  for(const r of Object.values(avRegras))r.pessoas=(r.pessoas||[]).filter(x=>x!==n);
+  if(avTesteSel)avTesteSel.delete(n);
+  renderAvisos(false);salvarAvisos(n+' não recebe mais avisos.')});
+function salvarAvisos(msg){
   lerTelaAvisos();const em={};let ruim='';
   for(const n of avPessoas()){const v=(avisos[n]||'').trim().toLowerCase();if(!v)continue;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v))ruim=n;em[n]=v}
   if(ruim){toast('Confira o e-mail de '+ruim+'.');return}
   for(const [k,[a,b]] of Object.entries(avTurnos))if(!a||!b||a>=b){toast('Confira o horário do turno.');return}
   db.collection('privado').doc('avisos').set({emails:em,regras:avRegras,lembrete:avLemb,turnos:avTurnos,atualizadoEm:Date.now()})
-    .then(()=>{renderTeste();toast('Avisos salvos. O robô usa na próxima conferida (até 5 min).')}).catch(erro)});
+    .then(()=>{renderTeste();toast(msg)}).catch(erro)}
 
 /* ---------- mensagem do WhatsApp (config/mensagem) ---------- */
 function msgDaTela(){const pixPor={};document.querySelectorAll('#pixfret [data-pixf]').forEach(i=>{if(i.value.trim())pixPor[i.dataset.pixf]=i.value.trim()});
