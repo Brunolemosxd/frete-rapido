@@ -233,13 +233,17 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
       <div class="field"><span class="lbl">1. Pessoas (Gmail de cada uma)</span><div id="avlista" style="display:grid;gap:8px"></div>
         <div class="row"><input type="text" id="avnovo" maxlength="30" placeholder="Outra pessoa (ex.: Ana vendedora)" style="flex:1;min-width:0;width:auto"><button type="button" class="btn" id="avadd">+ Pessoa</button></div></div>
       <div class="field"><span class="lbl">2. O que cada um recebe</span>
-        <p class="muted" style="margin:0">Toque nos nomes para ligar/desligar. <b>📅 Agenda</b>: evento no Google Agenda (a entrega nova fica no dia e turno dela; os outros avisos apitam na hora).
-          <b>📧 E-mail na hora</b>: chega um e-mail na hora, o Gmail apita no celular (limite do Google: uns 100 e-mails por dia).</p>
+        <p class="muted" style="margin:0">Toque nos nomes para ligar/desligar. Tudo chega pelo Google Agenda: a entrega nova fica no dia e turno dela; os outros avisos apitam na hora (2 minutos depois).</p>
         <div id="avregras" style="display:grid;gap:10px"></div></div>
       <div class="field"><span class="lbl">3. Horários na Agenda</span>
         <div class="row"><label for="avlemb" style="flex:1">Lembrete antes do turno (minutos)</label><input type="text" id="avlemb" inputmode="numeric" maxlength="3" style="width:80px"></div>
         <div id="avturnos" style="display:grid;gap:6px"></div></div>
       <div class="row"><span class="sp"></span><button type="button" class="btn pri" id="avsalvar">Salvar</button></div>
+      <div class="field avteste"><span class="lbl">🔔 Testar o aviso</span>
+        <p class="muted" style="margin:0">Escolha quem recebe o teste (precisa ter o Gmail salvo acima) e toque em Enviar. O robô confere a cada 5 minutos:
+          em até 5 minutos ele cria o aviso "🔔 Teste", que apita 2 minutos depois na agenda de cada um.</p>
+        <div class="chips" id="avtquem"></div>
+        <div class="row"><span id="avtstatus" class="muted" style="flex:1"></span><button type="button" class="btn" id="avtenviar">🔔 Enviar teste</button></div></div>
     </div>
     <div class="card">
       <strong>Uso do plano grátis hoje</strong>
@@ -559,7 +563,7 @@ $('#gsalvar').addEventListener('click',()=>{
   db.collection('config').doc('geral').set({...geral,atualizadoEm:Date.now()}).then(()=>{preencherGeral();toast('Salvo. Vale no mural quando ele for aberto de novo.')}).catch(erro)});
 
 /* ---------- avisos no Google Agenda (privado/avisos: só o Bruno lê e grava; o robô lê daqui) ---------- */
-// regras: {tipo: {pessoas:[nomes ou '__criador'], agenda:bool, email:bool}}; tipos: nova, entregue, alteracao, problema:<motivo>, problema:__outro
+// regras: {tipo: {pessoas:[nomes ou '__criador'], agenda:true}} (só Google Agenda; e-mail foi tirado a pedido do Bruno); tipos: nova, entregue, alteracao, problema:<motivo>, problema:__outro
 let avisos={},avRegras={},avLemb=30,avTurnos={manha:['08:00','12:00'],tarde:['13:00','18:00'],qualquer:['08:00','18:00']},avExtras=[];
 const AV_FIXOS=['Gerente','Estoquista'],CRIADOR='__criador';
 const avPessoas=()=>[...new Set(['Bruno',...geral.carregadores,...AV_FIXOS,...avExtras])];
@@ -584,25 +588,43 @@ function renderAvisos(ler=true){
   $('#avlista').innerHTML=avPessoas().map(n=>`<div class="row"><label style="min-width:90px;font-weight:600">${esc(n)}</label><input type="email" data-av="${esc(n)}" value="${esc(avisos[n]||'')}" maxlength="80" autocomplete="off" placeholder="Gmail (vazio = não recebe nada)" style="flex:1;min-width:0;width:auto"></div>`).join('');
   const quem=[...avPessoas().map(n=>[n,n]),[CRIADOR,'✍ Quem lançou a nota']];
   $('#avregras').innerHTML=avTipos().map(([k,t])=>{const r=avRegras[k]||{pessoas:[],agenda:true,email:false};
-    return `<div class="avtipo"><b>${esc(t)}</b><div class="chips">${quem.map(([v,n])=>`<button type="button" class="chip" data-rt="${esc(k)}" data-rp="${esc(v)}" aria-pressed="${(r.pessoas||[]).includes(v)}">${esc(n)}</button>`).join('')}</div>
-      <div class="chips"><button type="button" class="chip" data-rt="${esc(k)}" data-rc="agenda" aria-pressed="${r.agenda!==false}">📅 Agenda</button><button type="button" class="chip" data-rt="${esc(k)}" data-rc="email" aria-pressed="${!!r.email}">📧 E-mail na hora</button></div></div>`}).join('');
+    return `<div class="avtipo"><b>${esc(t)}</b><div class="chips">${quem.map(([v,n])=>`<button type="button" class="chip" data-rt="${esc(k)}" data-rp="${esc(v)}" aria-pressed="${(r.pessoas||[]).includes(v)}">${esc(n)}</button>`).join('')}</div></div>`}).join('');
+  renderTeste();
   $('#avlemb').value=avLemb;
-  $('#avturnos').innerHTML=[['manha','Manhã'],['tarde','Tarde'],['qualquer','Qualquer turno']].map(([k,n])=>`<div class="row"><label style="min-width:120px">${n}</label><input type="time" data-tu="${k}" data-k="0" value="${esc(avTurnos[k][0])}" style="width:auto"><span>até</span><input type="time" data-tu="${k}" data-k="1" value="${esc(avTurnos[k][1])}" style="width:auto"></div>`).join('');
+  $('#avturnos').innerHTML=[['manha','Manhã'],['tarde','Tarde'],['qualquer','Qualquer turno']].map(([k,n])=>`<div class="row" style="flex-wrap:wrap"><label style="flex:1 1 100%;font-weight:600">${n}</label><input type="time" data-tu="${k}" data-k="0" value="${esc(avTurnos[k][0])}" style="width:auto"><span>até</span><input type="time" data-tu="${k}" data-k="1" value="${esc(avTurnos[k][1])}" style="width:auto"></div>`).join('');
 }
 $('#avregras').addEventListener('click',e=>{const b=e.target.closest('[data-rt]');if(!b)return;const k=b.dataset.rt,r=avRegras[k]=avRegras[k]||{pessoas:[],agenda:true,email:false};
-  if(b.dataset.rp){const v=b.dataset.rp;r.pessoas=(r.pessoas||[]).includes(v)?r.pessoas.filter(x=>x!==v):[...(r.pessoas||[]),v]}
-  else r[b.dataset.rc]=!(b.dataset.rc==='agenda'?r.agenda!==false:!!r.email);
-  b.setAttribute('aria-pressed',b.dataset.rp?r.pessoas.includes(b.dataset.rp):(b.dataset.rc==='agenda'?r.agenda:r.email))});
+  const v=b.dataset.rp;r.pessoas=(r.pessoas||[]).includes(v)?r.pessoas.filter(x=>x!==v):[...(r.pessoas||[]),v];r.agenda=true;r.email=false;
+  b.setAttribute('aria-pressed',r.pessoas.includes(v))});
 $('#avadd').addEventListener('click',()=>{const v=$('#avnovo').value.trim().replace(/\s+/g,' ');if(!v){$('#avnovo').focus();return}
   if(avPessoas().some(n=>n.toLowerCase()===v.toLowerCase())){toast('Esse nome já está na lista.');return}
   avExtras.push(v);$('#avnovo').value='';renderAvisos();toast('Coloque o Gmail e toque em Salvar.')});
+// ---- teste: o painel pede em privado/teste; o robô cria o aviso e responde no mesmo documento ----
+let avTeste={},avTesteSel=null,pararTeste=null;
+function renderTeste(){
+  const com=avPessoas().filter(n=>avisos[n]);
+  if(!avTesteSel&&com.length)avTesteSel=new Set(com);
+  $('#avtquem').innerHTML=com.length?com.map(n=>`<button type="button" class="chip" data-tq="${esc(n)}" aria-pressed="${avTesteSel.has(n)}">${esc(n)}</button>`).join(''):'<span class="muted">Ninguém com Gmail salvo ainda.</span>';
+  const t=avTeste,h=x=>new Date(x).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  let st='';
+  if(t.pedidoEm&&t.feitoEm>=t.pedidoEm)st=t.erro?`⚠ O robô tentou às ${h(t.feitoEm)}, mas deu erro: ${esc(t.erro)}`:`✓ O robô criou o teste às ${h(t.feitoEm)} para: ${esc((t.para||[]).join(', '))}. Deve apitar 2 minutos depois.`;
+  else if(t.pedidoEm)st=Date.now()-t.pedidoEm>7*60000?`⚠ Pedido às ${h(t.pedidoEm)} e o robô ainda não respondeu. Confira se ele está ligado (script.google.com → Execuções).`:`⏳ Pedido às ${h(t.pedidoEm)}. Aguardando o robô (até 5 minutos)…`;
+  $('#avtstatus').innerHTML=st;
+}
+$('#avtquem').addEventListener('click',e=>{const b=e.target.closest('[data-tq]');if(!b)return;avTesteSel=avTesteSel||new Set();const n=b.dataset.tq;avTesteSel.has(n)?avTesteSel.delete(n):avTesteSel.add(n);b.setAttribute('aria-pressed',avTesteSel.has(n))});
+$('#avtenviar').addEventListener('click',()=>{
+  const para=[...(avTesteSel||[])].map(n=>avisos[n]).filter(Boolean);
+  if(!para.length){toast('Escolha pelo menos uma pessoa com Gmail salvo.');return}
+  db.collection('privado').doc('teste').set({pedidoEm:Date.now(),para,feitoEm:0,erro:''}).then(()=>toast('Teste pedido. Aguarde até 5 minutos.')).catch(erro)});
+setInterval(()=>{if(aba==='ajustes'&&avTeste.pedidoEm&&!(avTeste.feitoEm>=avTeste.pedidoEm))renderTeste()},30000);
+
 $('#avsalvar').addEventListener('click',()=>{
   lerTelaAvisos();const em={};let ruim='';
   for(const n of avPessoas()){const v=(avisos[n]||'').trim().toLowerCase();if(!v)continue;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v))ruim=n;em[n]=v}
   if(ruim){toast('Confira o e-mail de '+ruim+'.');return}
   for(const [k,[a,b]] of Object.entries(avTurnos))if(!a||!b||a>=b){toast('Confira o horário do turno.');return}
   db.collection('privado').doc('avisos').set({emails:em,regras:avRegras,lembrete:avLemb,turnos:avTurnos,atualizadoEm:Date.now()})
-    .then(()=>toast('Avisos salvos. O robô usa na próxima conferida (até 5 min).')).catch(erro)});
+    .then(()=>{renderTeste();toast('Avisos salvos. O robô usa na próxima conferida (até 5 min).')}).catch(erro)});
 
 /* ---------- mensagem do WhatsApp (config/mensagem) ---------- */
 function msgDaTela(){const pixPor={};document.querySelectorAll('#pixfret [data-pixf]').forEach(i=>{if(i.value.trim())pixPor[i.dataset.pixf]=i.value.trim()});
@@ -636,11 +658,12 @@ $('#gentrar').addEventListener('click',()=>entrarComGoogle().catch(()=>toast('N�
 $('#lsair').addEventListener('click',()=>auth.signOut());
 $('#usair').addEventListener('click',()=>auth.signOut());
 auth.onAuthStateChanged(u=>{
-  pararP&&pararP();pararP=null;pararT&&pararT();pararT=null;pararUso&&pararUso();pararUso=null;pararM&&pararM();pararM=null;pararValores&&pararValores();pararValores=null;mesOuvido=null;pararAcerto&&pararAcerto();pararAcerto=null;diaAcerto=null;pararHist&&pararHist();pararHist=null;histDia=null;fechar();
+  pararP&&pararP();pararP=null;pararT&&pararT();pararT=null;pararUso&&pararUso();pararUso=null;pararM&&pararM();pararM=null;pararValores&&pararValores();pararValores=null;mesOuvido=null;pararAcerto&&pararAcerto();pararAcerto=null;diaAcerto=null;pararHist&&pararHist();pararHist=null;histDia=null;pararTeste&&pararTeste();pararTeste=null;fechar();
   if(!u){telaLogin('Entre com a conta Google do administrador.');return}
   if(!ehAdmin(u)){telaLogin(`Só o administrador entra no painel. Você entrou como <b>${esc(u.email)}</b>.`,true);return}
   $('#login').hidden=true;$('#app').hidden=false;mostrarAba(aba);
   pararT=db.collection('config').doc('fretes').onSnapshot(d=>{if(tabelaMexida)return;const l=d.exists&&d.data().lista;tabela=(Array.isArray(l)&&l.length?l:FRETES_PADRAO).map(x=>({...x}));renderTabela()},()=>{});
+  pararTeste=db.collection('privado').doc('teste').onSnapshot(d=>{avTeste=d.exists?d.data():{};renderTeste()},()=>{});
   db.collection('privado').doc('avisos').get().then(d=>{avMigrar(d.exists?d.data():{});renderAvisos(false)}).catch(()=>renderAvisos());
   db.collection('config').doc('geral').get().then(d=>{geral=geralDe(d.exists?d.data():null);preencherGeral();previa()}).catch(()=>preencherGeral());
   db.collection('config').doc('mensagem').get().then(d=>renderMsg(d.exists?d.data():null)).catch(()=>renderMsg(null));

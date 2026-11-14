@@ -1,7 +1,9 @@
 /* Robô do Google Agenda do Mural de Fretes.
    Roda na conta Google do Bruno (dono do projeto Firebase), a cada 5 minutos. Só LÊ o mural.
-   TUDO É CONFIGURADO NO PAINEL → Ajustes → "Avisos no Google Agenda" (quem recebe cada tipo de aviso, Agenda e/ou
-   e-mail na hora, lembrete e horários dos turnos). Mudou lá, o robô já usa na próxima conferida: não precisa colar de novo.
+   TUDO É CONFIGURADO NO PAINEL → Ajustes → "Avisos no Google Agenda" (quem recebe cada tipo de aviso, lembrete e
+   horários dos turnos). Mudou lá, o robô já usa na próxima conferida: não precisa colar de novo.
+   Avisos só pelo Google Agenda (sem e-mail, a pedido do Bruno). Botão "🔔 Enviar teste" do painel: o robô cria um aviso
+   de teste e responde no painel.
    Tipos de aviso:
    - 🚚 Entrega nova: evento no dia e turno da entrega (muda junto se mudar no mural; ✅ quando entregue; some se apagada)
    - ✅ Entrega concluída, ✏ Alguém alterou uma entrega, ⚠ Problema (por motivo): aviso na hora
@@ -39,6 +41,7 @@ function verificar() {
   const desde = Number(p.getProperty('ultima') || Date.now() - 864e5) - 10 * 60000;
   const agora = Date.now();
   const vistos = JSON.parse(p.getProperty('hvistos') || '[]');
+  try { testeDoPainel(); } catch (err) { Logger.log('Erro no teste: ' + err); }
   const docs = consulta('entregas', 'atualizadoEm', desde);
   const hist = consulta('historico', 'em', desde);
   if (docs.length || hist.length) {
@@ -88,8 +91,6 @@ function tratarEntrega(cal, cfg, e, reg) {
     if (e.status === 'entregue') ev.setColor(CalendarApp.EventColor.GREEN);
   }
   if (ev) reg.ev = ev.getId();
-  if (primeiraVez && rn.email && e.data >= ontem)
-    email(quemNova, '🚚 Nova entrega: ' + (e.cliente || '') + (e.bairro ? ' — ' + e.bairro : ''), descricao(e));
 
   // ✅ entrega concluída (só quando muda para entregue)
   if (e.status === 'entregue' && reg.st && reg.st !== 'entregue')
@@ -124,23 +125,34 @@ function tratarAlteracao(cal, cfg, h) {
   avisar(cal, cfg, 'alteracao', e, '✏ ' + (h.por || 'Alguém') + ' ' + String(h.acao).toLowerCase() + ': ' + (h.cliente || ''), texto, CalendarApp.EventColor.GRAY);
 }
 
-// Aviso na hora: evento que apita em 2 minutos (📅) e/ou e-mail (📧), para quem estiver marcado no painel.
+// Aviso na hora: evento na Agenda que apita em 2 minutos, para quem estiver marcado no painel.
 function avisar(cal, cfg, tipo, e, titulo, texto, cor) {
   const r = cfg.regras[tipo] || {};
   const quem = destinatarios(cfg, r, e).filter(m => m !== e._autor); // quem fez a alteração não precisa ser avisado
-  if (!quem.length) return '';
-  let id = '';
-  if (r.agenda !== false) {
-    const ini = new Date(Date.now() + 2 * 60000), fim = new Date(ini.getTime() + 15 * 60000);
-    const convidados = semDono(cfg, quem);
-    const ev = cal.createEvent(titulo, ini, fim, { description: texto, location: endereco(e), guests: convidados.join(','), sendInvites: convidados.length > 0 });
-    ev.removeAllReminders();
-    if (quem.indexOf(cfg.dono) >= 0) ev.addPopupReminder(0);
-    ev.setColor(cor);
-    id = ev.getId();
-  }
-  if (r.email) email(quem, titulo, texto);
-  return id;
+  return quem.length ? eventoNaHora(cal, cfg.dono, quem, titulo, texto, endereco(e), cor) : '';
+}
+function eventoNaHora(cal, dono, quem, titulo, texto, lugar, cor) {
+  const ini = new Date(Date.now() + 2 * 60000), fim = new Date(ini.getTime() + 15 * 60000);
+  const convidados = quem.filter(m => m !== dono);
+  const ev = cal.createEvent(titulo, ini, fim, { description: texto, location: lugar || '', guests: convidados.join(','), sendInvites: convidados.length > 0 });
+  ev.removeAllReminders();
+  if (quem.indexOf(dono) >= 0) ev.addPopupReminder(0);
+  ev.setColor(cor);
+  return ev.getId();
+}
+
+// 🔔 Botão "Enviar teste" do painel: grava o pedido em privado/teste; o robô cria o aviso e responde lá mesmo.
+function testeDoPainel() {
+  const t = documento('privado/teste');
+  if (!t || !t.pedidoEm || (t.feitoEm || 0) >= t.pedidoEm) return;
+  const dono = Session.getEffectiveUser().getEmail().toLowerCase();
+  const para = (t.para || []).map(x => String(x).toLowerCase()).filter(Boolean);
+  let erro = '';
+  try {
+    eventoNaHora(CalendarApp.getDefaultCalendar(), dono, para, '🔔 Teste do Mural de Fretes',
+      'Se este aviso apitou no seu celular, os avisos do mural estão funcionando. 👍\n\nAbrir o mural: ' + MURAL, '', CalendarApp.EventColor.YELLOW);
+  } catch (err) { erro = String(err).slice(0, 200); }
+  gravar('privado/teste', { feitoEm: Date.now(), para: para, erro: erro });
 }
 
 // Uma vez por dia: apaga da Agenda as entregas que foram apagadas do mural e esquece as muito antigas.
@@ -189,13 +201,6 @@ function destinatarios(cfg, regra, e) {
   return out;
 }
 function semDono(cfg, l) { return l.filter(m => m !== cfg.dono); }
-function email(para, assunto, texto) {
-  if (!para.length) return;
-  try {
-    if (MailApp.getRemainingDailyQuota() < para.length) { Logger.log('Limite de e-mails do dia acabou'); return; }
-    MailApp.sendEmail({ to: para.join(','), subject: assunto, body: texto + '\n\n— Mural de Fretes' });
-  } catch (err) { Logger.log('Erro no e-mail: ' + err); }
-}
 
 // ---------- ajudantes ----------
 function horario(cfg, e) {
@@ -243,6 +248,21 @@ function consulta(colecao, campo, desde) {
   const r = UrlFetchApp.fetch(BASE + ':runQuery', { method: 'post', contentType: 'application/json', payload: JSON.stringify({ structuredQuery: q }), headers: cabecalho(), muteHttpExceptions: true });
   if (r.getResponseCode() !== 200) throw new Error('Firestore respondeu ' + r.getResponseCode() + ': ' + r.getContentText().slice(0, 300));
   return JSON.parse(r.getContentText()).filter(x => x.document).map(x => doc(x.document));
+}
+// grava campos num documento (como dono do projeto). Só usado para responder o teste do painel.
+function gravar(caminho, campos) {
+  const mask = Object.keys(campos).map(k => 'updateMask.fieldPaths=' + encodeURIComponent(k)).join('&');
+  const r = UrlFetchApp.fetch(BASE + '/' + caminho + '?' + mask, { method: 'patch', contentType: 'application/json',
+    payload: JSON.stringify({ fields: paraFirestore(campos) }), headers: cabecalho(), muteHttpExceptions: true });
+  if (r.getResponseCode() !== 200) Logger.log('Não consegui gravar ' + caminho + ': ' + r.getContentText().slice(0, 200));
+}
+function paraFirestore(o) {
+  const f = {};
+  for (const k of Object.keys(o)) {
+    const v = o[k];
+    f[k] = typeof v === 'number' ? { integerValue: String(Math.round(v)) } : Array.isArray(v) ? { arrayValue: { values: v.map(x => ({ stringValue: String(x) })) } } : { stringValue: String(v == null ? '' : v) };
+  }
+  return f;
 }
 function documento(caminho) {
   const r = UrlFetchApp.fetch(BASE + '/' + caminho, { headers: cabecalho(), muteHttpExceptions: true });
