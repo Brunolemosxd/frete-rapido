@@ -1,7 +1,7 @@
 # Robô do Google Agenda (Mural de Fretes)
 
-Cada entrega nova vira um evento no Google Agenda: no do Bruno e no de quem estiver na lista
-do painel → Ajustes → "Avisos no Google Agenda" (convidados). O próprio Agenda avisa no celular.
+Quem recebe cada aviso (entrega nova, concluída, alterada, problema por motivo), por Agenda e/ou e-mail na hora,
+o lembrete e os horários dos turnos: tudo no painel → Ajustes → "Avisos no Google Agenda". O robô lê de lá.
 - Dia e horário pelo turno: Manhã 8h–12h, Tarde 13h–18h, Qualquer turno 8h–18h, "Depois das 15:30" 15h30–16h30.
 - Mudou dia/turno no mural → o evento muda. Entregue → ✅ e verde. Prioridade → ⬆ e vermelho. Apagada → some (1x por dia, 6h).
 - Roda na conta Google do Bruno, a cada 5 minutos, de graça. Só LÊ o mural; não muda nada nele.

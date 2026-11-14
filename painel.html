@@ -49,8 +49,8 @@ h1 span{color:var(--accent)}
 .usr{display:flex;gap:6px 12px;font-size:13px;color:var(--muted);flex-wrap:wrap;justify-content:flex-end}
 .usr a,.usr button{white-space:nowrap}
 .usr a,.usr button{color:var(--accent);font-weight:600;background:none;border:0;padding:0;font-size:13px;text-decoration:none}
-.tabs{display:flex;gap:6px;padding-block:8px 10px;max-width:900px;margin:0 auto}
-.tab{border:1.5px solid var(--line);background:var(--bg);border-radius:99px;padding:8px 16px;font-weight:600;font-size:15px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;padding-block:8px 10px;max-width:900px;margin:0 auto}
+.tab{border:1.5px solid var(--line);background:var(--bg);border-radius:99px;padding:7px 13px;font-weight:600;font-size:15px}
 .tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
 main{padding-block:16px 60px;max-width:900px;margin:0 auto;display:grid;gap:16px}
 h2{font-family:var(--display);font-size:22px;margin:0;text-transform:uppercase}
@@ -123,6 +123,12 @@ textarea{width:100%;font:inherit;font-size:15px;padding:10px 12px;border-radius:
 .aresumo .atot{border-top:1px dashed var(--line);padding-top:4px;color:var(--muted)}
 tr.ok td{opacity:.7}
 .acard .chip{white-space:nowrap;padding:6px 10px;font-size:14px}
+.avtipo{border:1.5px solid var(--line);border-radius:12px;padding:10px;display:grid;gap:8px}
+.avtipo .chip{padding:7px 10px;font-size:14px}
+.hitem{gap:6px}
+.hmud{margin:0;padding-left:18px;font-size:14px;display:grid;gap:2px}
+.hmud s{color:var(--muted)}
+select{font:inherit;font-size:15px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg)}
 details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:4px 0}
 .login{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
 .login .box{width:100%;max-width:380px;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:28px 20px;display:grid;gap:16px;text-align:center}
@@ -145,7 +151,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
 <header>
   <div class="wrap">
     <div class="top"><h1>Painel <span>Frete Rápido</span></h1><div class="usr"><a href="./">Mural</a><button type="button" data-tema></button><button type="button" id="usair">Sair</button></div></div>
-    <div class="tabs" role="tablist"><button class="tab" role="tab" data-t="pessoas">Pessoas</button><button class="tab" role="tab" data-t="acerto">Acerto</button><button class="tab" role="tab" data-t="valores">Valores</button><button class="tab" role="tab" data-t="ajustes">Ajustes</button></div>
+    <div class="tabs" role="tablist"><button class="tab" role="tab" data-t="pessoas">Pessoas</button><button class="tab" role="tab" data-t="acerto">Acerto</button><button class="tab" role="tab" data-t="valores">Valores</button><button class="tab" role="tab" data-t="historico">Histórico</button><button class="tab" role="tab" data-t="ajustes">Ajustes</button></div>
   </div>
 </header>
 <div class="avuso" id="avuso" hidden></div>
@@ -160,6 +166,13 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
     <div class="row"><h2>Acerto do dia</h2><span class="sp"></span><input type="date" id="adia" aria-label="Dia" style="width:auto"></div>
     <p class="muted" style="margin:0">Entregas marcadas como entregues no dia, separadas por quem carregou. O valor "Para receber dele" é o que ficou com o freteiro: cobrado na entrega em dinheiro, dinheiro junto com a nota e, se ele tem Pix próprio (Ajustes), o Pix que o cliente pagou na hora. Se o cliente pagou no Pix na hora, toque em <b>💵 Dinheiro</b> para trocar para <b>📲 Pix</b>.</p>
     <div id="acerto" style="display:grid;gap:14px"></div>
+  </section>
+
+  <section id="t-historico" style="display:grid;gap:14px" hidden>
+    <div class="row"><h2>Histórico</h2><span class="sp"></span><input type="date" id="hdia" aria-label="Dia" style="width:auto"></div>
+    <p class="muted" style="margin:0">Quem lançou, alterou, marcou ou apagou entregas no dia escolhido, e o que mudou. Só você vê.</p>
+    <div class="row"><select id="hpessoa" style="flex:1;min-width:0"><option value="">Todas as pessoas</option></select></div>
+    <div id="hlista" style="display:grid;gap:10px"></div>
   </section>
 
   <section id="t-valores" style="display:grid;gap:14px" hidden>
@@ -216,11 +229,16 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
     </div>
     <div class="card">
       <strong>Avisos no Google Agenda</strong>
-      <p class="muted" style="margin:0">Cada entrega nova vira um evento no Google Agenda de quem estiver aqui (com o aviso do próprio Agenda no celular).
-        Coloque o Gmail de cada um. Gerente e estoquista recebem só quando uma entrega é marcada com problema. Só você vê esta lista. Para funcionar, o "robô" da Agenda precisa estar ligado na sua conta Google (passo a passo no arquivo _agenda/LEIA-ME.md).</p>
-      <div id="avlista" style="display:grid;gap:8px"></div>
-      <div class="field" style="margin-top:6px"><span class="lbl">⚠ Só avisos de PROBLEMA (não recebem as outras entregas)</span>
-        <div id="avprob" style="display:grid;gap:8px"></div></div>
+      <p class="muted" style="margin:0">Escolha quem recebe cada tipo de aviso. Só você vê esta parte. Funciona pelo "robô" da Agenda ligado na sua conta Google.</p>
+      <div class="field"><span class="lbl">1. Pessoas (Gmail de cada uma)</span><div id="avlista" style="display:grid;gap:8px"></div>
+        <div class="row"><input type="text" id="avnovo" maxlength="30" placeholder="Outra pessoa (ex.: Ana vendedora)" style="flex:1;min-width:0;width:auto"><button type="button" class="btn" id="avadd">+ Pessoa</button></div></div>
+      <div class="field"><span class="lbl">2. O que cada um recebe</span>
+        <p class="muted" style="margin:0">Toque nos nomes para ligar/desligar. <b>📅 Agenda</b>: evento no Google Agenda (a entrega nova fica no dia e turno dela; os outros avisos apitam na hora).
+          <b>📧 E-mail na hora</b>: chega um e-mail na hora, o Gmail apita no celular (limite do Google: uns 100 e-mails por dia).</p>
+        <div id="avregras" style="display:grid;gap:10px"></div></div>
+      <div class="field"><span class="lbl">3. Horários na Agenda</span>
+        <div class="row"><label for="avlemb" style="flex:1">Lembrete antes do turno (minutos)</label><input type="text" id="avlemb" inputmode="numeric" maxlength="3" style="width:80px"></div>
+        <div id="avturnos" style="display:grid;gap:6px"></div></div>
       <div class="row"><span class="sp"></span><button type="button" class="btn pri" id="avsalvar">Salvar</button></div>
     </div>
     <div class="card">
@@ -260,7 +278,7 @@ let aba='pessoas';
 // caixas de texto crescem até mostrar a mensagem inteira (só dá para medir com a aba aberta)
 function crescerCaixas(){document.querySelectorAll('#t-ajustes textarea').forEach(t=>{if(!t.offsetParent)return;t.style.height='auto';t.style.height=t.scrollHeight+4+'px'})}
 function mostrarAba(t){aba=t;setTimeout(crescerCaixas,0);document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===t));
-  for(const k of ['pessoas','acerto','valores','ajustes'])$('#t-'+k).hidden=k!==t;
+  for(const k of ['pessoas','acerto','valores','historico','ajustes'])$('#t-'+k).hidden=k!==t;if(t==='historico')carregarHistorico();
   if(t==='valores')carregarValores();if(t==='acerto')carregarAcerto()}
 document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(b)mostrarAba(b.dataset.t)});
 
@@ -410,6 +428,28 @@ $('#acerto').addEventListener('click',async ev=>{
   try{for(const e of l){e.acertadoEm=agora;await db.collection('entregas').doc(e.id).update({acertadoEm:agora})}renderAcerto();toast(agora?'Acerto com '+n+' registrado':'Acerto desfeito')}catch(e){erro(e)}
 });
 
+/* ---------- histórico de alterações (coleção historico; o mural grava, só o Bruno lê) ---------- */
+let histDia=null,histDados=[],pararHist=null;
+function carregarHistorico(){
+  const d=$('#hdia').value||hojeTxt();$('#hdia').value=d;
+  if(pararHist&&histDia===d){renderHistorico();return}
+  pararHist&&pararHist();histDia=d;$('#hlista').innerHTML='<div class="muted">Carregando…</div>';
+  const [y,m,dd]=d.split('-').map(Number),ini=new Date(y,m-1,dd).getTime(),fim=ini+864e5;
+  pararHist=db.collection('historico').where('em','>=',ini).where('em','<',fim).onSnapshot(snap=>{contarSnap(snap);histDados=snap.docs.map(x=>({id:x.id,...x.data()})).sort((a,b)=>b.em-a.em);if(aba==='historico')renderHistorico()},
+    e=>{pararHist=null;histDia=null;$('#hlista').innerHTML=`<div class="card"><span class="muted">${e?.code==='permission-denied'?'Falta publicar as regras novas do Firebase (com a parte do histórico).':'Não consegui carregar. Confira a internet.'}</span></div>`});
+}
+$('#hdia').addEventListener('change',carregarHistorico);
+$('#hpessoa').addEventListener('change',()=>renderHistorico());
+function renderHistorico(){
+  const pessoas=[...new Set(histDados.map(h=>h.por||'?'))].sort(),sel=$('#hpessoa').value;
+  $('#hpessoa').innerHTML='<option value="">Todas as pessoas</option>'+pessoas.map(p=>`<option${p===sel?' selected':''}>${esc(p)}</option>`).join('');
+  const l=histDados.filter(h=>!sel||h.por===sel);
+  $('#hlista').innerHTML=l.length?l.map(h=>`<div class="card hitem"><div class="row"><b>${esc(new Date(h.em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}))}</b><span>${esc(h.por||'?')}</span><span class="sp"></span><span class="pill ${/Apagou/.test(h.acao)?'p-bad':/Lançou/.test(h.acao)?'p-ok':''}">${esc(h.acao)}</span></div>
+    <div><b>${esc(h.cliente||'Entrega')}</b>${h.dia?` <span class="muted">· entrega de ${esc(h.dia.split('-').reverse().slice(0,2).join('/'))}</span>`:''}</div>
+    ${(h.mudancas||[]).length?`<ul class="hmud">${h.mudancas.map(m=>`<li><b>${esc(m.campo)}:</b> <s>${esc(m.antes)}</s> → ${esc(m.depois)}</li>`).join('')}</ul>`:''}</div>`).join('')
+    :'<div class="card"><span class="muted">Nada registrado neste dia.</span></div>';
+}
+
 let pararValores=null,mesOuvido=null;
 function carregarValores(){
   const m=$('#mes').value||mesAtual(),[y,mm]=m.split('-').map(Number),fim=new Date(y,mm,0).getDate();
@@ -518,23 +558,51 @@ $('#gsalvar').addEventListener('click',()=>{
   geral={...geral,loja,condominio:cond};
   db.collection('config').doc('geral').set({...geral,atualizadoEm:Date.now()}).then(()=>{preencherGeral();toast('Salvo. Vale no mural quando ele for aberto de novo.')}).catch(erro)});
 
-/* ---------- avisos no Google Agenda (privado/avisos: só o Bruno lê e grava) ---------- */
-let avisos={},avisosProb={};
-const SO_PROBLEMA=['Gerente','Estoquista'];
-function renderAvisos(){
-  const atual={...avisos};document.querySelectorAll('#avlista [data-av]').forEach(i=>{atual[i.dataset.av]=i.value});
-  const atualP={...avisosProb};document.querySelectorAll('#avprob [data-avp]').forEach(i=>{atualP[i.dataset.avp]=i.value});
-  $('#avprob').innerHTML=SO_PROBLEMA.map(n=>`<div class="row"><label style="min-width:90px;font-weight:600">⚠ ${esc(n)}</label><input type="email" data-avp="${esc(n)}" value="${esc(atualP[n]||'')}" maxlength="80" autocomplete="off" placeholder="Gmail (vazio = não recebe)" style="flex:1;min-width:0;width:auto"></div>`).join('');
-  const nomes=[...new Set(['Bruno',...geral.carregadores])];
-  $('#avlista').innerHTML=nomes.map(n=>`<div class="row"><label style="min-width:70px;font-weight:600">📅 ${esc(n)}</label><input type="email" data-av="${esc(n)}" value="${esc(atual[n]||'')}" maxlength="80" autocomplete="off" placeholder="${n==='Bruno'?'seu Gmail (vazio = não recebe)':'Gmail dele (vazio = não recebe)'}" style="flex:1;min-width:0;width:auto"></div>`).join('');
+/* ---------- avisos no Google Agenda (privado/avisos: só o Bruno lê e grava; o robô lê daqui) ---------- */
+// regras: {tipo: {pessoas:[nomes ou '__criador'], agenda:bool, email:bool}}; tipos: nova, entregue, alteracao, problema:<motivo>, problema:__outro
+let avisos={},avRegras={},avLemb=30,avTurnos={manha:['08:00','12:00'],tarde:['13:00','18:00'],qualquer:['08:00','18:00']},avExtras=[];
+const AV_FIXOS=['Gerente','Estoquista'],CRIADOR='__criador';
+const avPessoas=()=>[...new Set(['Bruno',...geral.carregadores,...AV_FIXOS,...avExtras])];
+function avTipos(){return [['nova','🚚 Entrega nova'],['entregue','✅ Entrega concluída'],['alteracao','✏ Alguém alterou uma entrega'],
+  ...motivos.map(m=>['problema:'+m,'⚠ Problema: '+m]),['problema:__outro','⚠ Problema: outro motivo']]}
+// lista antiga (antes da personalização): entregas para "emails", problemas para gerente/estoquista
+function avMigrar(d){
+  avisos={...(d.emails||{}),...(d.problemas||{})};avExtras=Object.keys(avisos).filter(n=>!['Bruno',...geral.carregadores,...AV_FIXOS].includes(n));
+  avLemb=Number(d.lembrete)>=0&&d.lembrete!==undefined?Number(d.lembrete):30;if(d.turnos)avTurnos={...avTurnos,...d.turnos};
+  if(d.regras){avRegras=d.regras;return}
+  avRegras={nova:{pessoas:Object.keys(d.emails||{}),agenda:true,email:false}};
+  const pb=Object.keys(d.problemas||{});for(const [k] of avTipos())if(k.startsWith('problema:'))avRegras[k]={pessoas:pb,agenda:true,email:false};
 }
+function lerTelaAvisos(){
+  document.querySelectorAll('#avlista [data-av]').forEach(i=>{avisos[i.dataset.av]=i.value.trim().toLowerCase()});
+  const l=+$('#avlemb').value;if($('#avlemb').value!==''&&l>=0)avLemb=l;
+  document.querySelectorAll('#avturnos [data-tu]').forEach(i=>{avTurnos[i.dataset.tu][+i.dataset.k]=i.value});
+}
+// ler=false quando os dados acabaram de chegar do servidor (não pode pegar o que está na tela, que ainda está vazio)
+function renderAvisos(ler=true){
+  if(ler&&$('#avlista').innerHTML)lerTelaAvisos();
+  $('#avlista').innerHTML=avPessoas().map(n=>`<div class="row"><label style="min-width:90px;font-weight:600">${esc(n)}</label><input type="email" data-av="${esc(n)}" value="${esc(avisos[n]||'')}" maxlength="80" autocomplete="off" placeholder="Gmail (vazio = não recebe nada)" style="flex:1;min-width:0;width:auto"></div>`).join('');
+  const quem=[...avPessoas().map(n=>[n,n]),[CRIADOR,'✍ Quem lançou a nota']];
+  $('#avregras').innerHTML=avTipos().map(([k,t])=>{const r=avRegras[k]||{pessoas:[],agenda:true,email:false};
+    return `<div class="avtipo"><b>${esc(t)}</b><div class="chips">${quem.map(([v,n])=>`<button type="button" class="chip" data-rt="${esc(k)}" data-rp="${esc(v)}" aria-pressed="${(r.pessoas||[]).includes(v)}">${esc(n)}</button>`).join('')}</div>
+      <div class="chips"><button type="button" class="chip" data-rt="${esc(k)}" data-rc="agenda" aria-pressed="${r.agenda!==false}">📅 Agenda</button><button type="button" class="chip" data-rt="${esc(k)}" data-rc="email" aria-pressed="${!!r.email}">📧 E-mail na hora</button></div></div>`}).join('');
+  $('#avlemb').value=avLemb;
+  $('#avturnos').innerHTML=[['manha','Manhã'],['tarde','Tarde'],['qualquer','Qualquer turno']].map(([k,n])=>`<div class="row"><label style="min-width:120px">${n}</label><input type="time" data-tu="${k}" data-k="0" value="${esc(avTurnos[k][0])}" style="width:auto"><span>até</span><input type="time" data-tu="${k}" data-k="1" value="${esc(avTurnos[k][1])}" style="width:auto"></div>`).join('');
+}
+$('#avregras').addEventListener('click',e=>{const b=e.target.closest('[data-rt]');if(!b)return;const k=b.dataset.rt,r=avRegras[k]=avRegras[k]||{pessoas:[],agenda:true,email:false};
+  if(b.dataset.rp){const v=b.dataset.rp;r.pessoas=(r.pessoas||[]).includes(v)?r.pessoas.filter(x=>x!==v):[...(r.pessoas||[]),v]}
+  else r[b.dataset.rc]=!(b.dataset.rc==='agenda'?r.agenda!==false:!!r.email);
+  b.setAttribute('aria-pressed',b.dataset.rp?r.pessoas.includes(b.dataset.rp):(b.dataset.rc==='agenda'?r.agenda:r.email))});
+$('#avadd').addEventListener('click',()=>{const v=$('#avnovo').value.trim().replace(/\s+/g,' ');if(!v){$('#avnovo').focus();return}
+  if(avPessoas().some(n=>n.toLowerCase()===v.toLowerCase())){toast('Esse nome já está na lista.');return}
+  avExtras.push(v);$('#avnovo').value='';renderAvisos();toast('Coloque o Gmail e toque em Salvar.')});
 $('#avsalvar').addEventListener('click',()=>{
-  const em={};let ruim='';
-  document.querySelectorAll('#avlista [data-av]').forEach(i=>{const v=i.value.trim().toLowerCase();if(!v)return;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v))ruim=i.dataset.av;em[i.dataset.av]=v});
-  const pb={};
-  document.querySelectorAll('#avprob [data-avp]').forEach(i=>{const v=i.value.trim().toLowerCase();if(!v)return;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v))ruim=i.dataset.avp;pb[i.dataset.avp]=v});
+  lerTelaAvisos();const em={};let ruim='';
+  for(const n of avPessoas()){const v=(avisos[n]||'').trim().toLowerCase();if(!v)continue;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v))ruim=n;em[n]=v}
   if(ruim){toast('Confira o e-mail de '+ruim+'.');return}
-  db.collection('privado').doc('avisos').set({emails:em,problemas:pb,atualizadoEm:Date.now()}).then(()=>{avisos=em;avisosProb=pb;toast('Lista de avisos salva')}).catch(erro)});
+  for(const [k,[a,b]] of Object.entries(avTurnos))if(!a||!b||a>=b){toast('Confira o horário do turno.');return}
+  db.collection('privado').doc('avisos').set({emails:em,regras:avRegras,lembrete:avLemb,turnos:avTurnos,atualizadoEm:Date.now()})
+    .then(()=>toast('Avisos salvos. O robô usa na próxima conferida (até 5 min).')).catch(erro)});
 
 /* ---------- mensagem do WhatsApp (config/mensagem) ---------- */
 function msgDaTela(){const pixPor={};document.querySelectorAll('#pixfret [data-pixf]').forEach(i=>{if(i.value.trim())pixPor[i.dataset.pixf]=i.value.trim()});
@@ -568,15 +636,15 @@ $('#gentrar').addEventListener('click',()=>entrarComGoogle().catch(()=>toast('N�
 $('#lsair').addEventListener('click',()=>auth.signOut());
 $('#usair').addEventListener('click',()=>auth.signOut());
 auth.onAuthStateChanged(u=>{
-  pararP&&pararP();pararP=null;pararT&&pararT();pararT=null;pararUso&&pararUso();pararUso=null;pararM&&pararM();pararM=null;pararValores&&pararValores();pararValores=null;mesOuvido=null;pararAcerto&&pararAcerto();pararAcerto=null;diaAcerto=null;fechar();
+  pararP&&pararP();pararP=null;pararT&&pararT();pararT=null;pararUso&&pararUso();pararUso=null;pararM&&pararM();pararM=null;pararValores&&pararValores();pararValores=null;mesOuvido=null;pararAcerto&&pararAcerto();pararAcerto=null;diaAcerto=null;pararHist&&pararHist();pararHist=null;histDia=null;fechar();
   if(!u){telaLogin('Entre com a conta Google do administrador.');return}
   if(!ehAdmin(u)){telaLogin(`Só o administrador entra no painel. Você entrou como <b>${esc(u.email)}</b>.`,true);return}
   $('#login').hidden=true;$('#app').hidden=false;mostrarAba(aba);
   pararT=db.collection('config').doc('fretes').onSnapshot(d=>{if(tabelaMexida)return;const l=d.exists&&d.data().lista;tabela=(Array.isArray(l)&&l.length?l:FRETES_PADRAO).map(x=>({...x}));renderTabela()},()=>{});
-  db.collection('privado').doc('avisos').get().then(d=>{avisos=d.exists?(d.data().emails||{}):{};avisosProb=d.exists?(d.data().problemas||{}):{};renderAvisos()}).catch(()=>renderAvisos());
+  db.collection('privado').doc('avisos').get().then(d=>{avMigrar(d.exists?d.data():{});renderAvisos(false)}).catch(()=>renderAvisos());
   db.collection('config').doc('geral').get().then(d=>{geral=geralDe(d.exists?d.data():null);preencherGeral();previa()}).catch(()=>preencherGeral());
   db.collection('config').doc('mensagem').get().then(d=>renderMsg(d.exists?d.data():null)).catch(()=>renderMsg(null));
-  pararM=db.collection('config').doc('motivos').onSnapshot(d=>{const l=d.exists&&d.data().lista;motivos=Array.isArray(l)?l:[...MOTIVOS_PADRAO];renderMotivos()},()=>{});
+  pararM=db.collection('config').doc('motivos').onSnapshot(d=>{const l=d.exists&&d.data().lista;motivos=Array.isArray(l)?l:[...MOTIVOS_PADRAO];renderMotivos();if($('#avregras').innerHTML)renderAvisos()},()=>{});
   pararP=db.collection('usuarios').onSnapshot(s=>{contarSnap(s);pessoas=s.docs.map(d=>({id:d.id,...d.data()}));renderPessoas()},e=>erro(e));
   limparFotosAntigas().catch(()=>{});
   pararUso=ouvirUso(u=>{const t=textoUso(u),el=$('#avuso');

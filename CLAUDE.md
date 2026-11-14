@@ -102,15 +102,23 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   frete na nota e por conta do vendedor aparecem à parte. Botão "✓ Recebi R$ X de Fulano" grava `acertadoEm` nas entregas
   (Desfazer apaga). Grupo "Sem quem carregou" pede para marcar no mural. Problema/pendente não entram.
   Se o freteiro tem Pix próprio, o "📲 Pix dele" cobrado na entrega também entra no "Para receber dele" (caiu na conta dele).
-- Avisos no Google Agenda: painel → Ajustes → "Avisos no Google Agenda" (um Gmail por nome: Bruno + "Quem carrega"),
-  gravado em `privado/avisos` (coleção só do admin nas regras). Robô em `_agenda/Codigo.gs` (Google Apps Script na conta do
-  Bruno, a cada 5 min, lê pelo REST do Firestore com o token dele): entrega nova/alterada (`atualizadoEm` > última vez) vira
-  evento na Agenda do Bruno com os outros como convidados; turno → horário; ✅ entregue, ⬆ prioridade, apagada some (6h).
-  Passo a passo em `_agenda/LEIA-ME.md` (pasta com _ não vai para o site). INSTALADO pelo Bruno em 13/11/2026 (pelo celular, "Projeto sem título" no script.google.com).
-  Se mudar o Codigo.gs/appsscript.json, ele precisa colar de novo lá e rodar "instalar" (precisou do escopo userinfo.email).
-  "⚠ Só avisos de PROBLEMA" (Gerente, Estoquista → `privado/avisos.problemas`): não recebem as entregas; quando uma entrega fica
-  com status problema, o robô cria na hora um evento laranja "⚠ Problema: Cliente — motivo" (convite = aviso). Motivo novo = novo
-  aviso (o velho vira "↺ Trocado"); resolvido (sai de problema) = "✔ Resolvido". Guarda `pb`/`pev` no mapa `eventos`.
+- Avisos no Google Agenda (painel → Ajustes, tudo em `privado/avisos`, coleção só do admin): (1) pessoas = nome → Gmail
+  (Bruno, "Quem carrega", Gerente, Estoquista + extras); (2) `regras` por tipo {pessoas:[nomes ou '__criador' = quem lançou a
+  nota], agenda, email}: `nova`, `entregue`, `alteracao`, `problema:<motivo>` (um por motivo de config/motivos) e
+  `problema:__outro`; (3) `lembrete` (min antes do turno) e `turnos` {manha:['08:00','12:00'],...}.
+  Robô `_agenda/Codigo.gs` (Apps Script na conta do Bruno, a cada 5 min, REST do Firestore com o token dele, LÊ TUDO do painel):
+  nova = evento no dia/turno (convidados; lembrete só se o Bruno estiver marcado); entregue/alteração/problema = evento que apita
+  em 2 min e/ou e-mail na hora (MailApp, ~100/dia). Quem fez a alteração não é avisado. Problema: motivo novo = novo aviso, o
+  velho vira "↺ Trocado"; resolvido = "✔ Resolvido". Registro por entrega em propriedades `e_<id>` (st, pb, pev, ev, visto);
+  histórico já avisado em `hvistos`; folga de 10 min no "desde" (relógio dos celulares).
+  POR QUE o Bruno não recebia aviso: o lembrete do evento é antes do turno (ex.: 7h30) e as entregas são lançadas depois; e o dono
+  da agenda não recebe convite. Solução: "📧 E-mail na hora" e os avisos que apitam em 2 min.
+  Instalado em 13/11/2026 ("Projeto sem título" no script.google.com); a versão personalizável (14/11) precisa ser colada lá
+  (Codigo.gs + appsscript.json com script.send_mail) e rodar "instalar". Depois disso, mudanças de quem recebe = só no painel.
+- Histórico de alterações (painel → Histórico, só o Bruno): o mural grava em `historico` (função `registrar`, chamada no `salvar`
+  e no apagar) {entregaId, cliente, dia, acao, mudancas:[{campo,antes,depois}], por, porEmail, uid, em}. Compara com a cópia do
+  servidor (`servidor`, de cada snapshot), ignora vazio = "não". Regras: cria só em nome próprio, ninguém muda/apaga, só admin lê.
+  Entregas novas também gravam `criadoPorEmail` (para o aviso "quem lançou a nota").
 - Tema claro/escuro/automático no topo.
 - Ícone e nome na tela de início do celular: "Mural de Fretes", ícone "MF" branco + faixa amarela + 🚚 em fundo azul
   (`mf-32/180/192/512.png`, `manifest.json` com display "standalone": o ícone abre numa janela própria, sem as páginas de outros sites para trás;

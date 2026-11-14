@@ -83,7 +83,9 @@ async function main(){
     if(fora.length)prob.push('Passou da borda do cartão em tela de 360 px: '+[...new Set(fora)].slice(0,8).join(', '));
     erros.forEach(e=>prob.push(`Erro no mural (360 px): ${e}`));await page.close()}
   {const {page,erros}=await abrir(browser,{arquivo:'painel.html'});
+    await page.setViewportSize({width:360,height:850});
     for(const b of await page.$$('.tabs [data-t]')){const t=await b.getAttribute('data-t');await b.click();await page.waitForTimeout(400);
+      const [sw,w]=await page.evaluate(()=>[document.documentElement.scrollWidth,innerWidth]);if(sw>w+1)prob.push(`Painel → ${t} passa da largura da tela (360 px)`);
       await page.screenshot({path:path.join(saida,`painel-${t}.png`),fullPage:true})}
     erros.forEach(e=>prob.push(`Erro no painel: ${e}`));await page.close()}
   await browser.close();

@@ -702,8 +702,50 @@ $('#main').addEventListener('contextmenu',e=>{if(e.target.closest('.card'))e.pre
 
 /* ---------- gravações ---------- */
 function semPermissao(){toast('Você não tem permissão para isso. Fale com o Bruno.')}
+/* ---------- histórico de alterações (painel → Histórico; só o Bruno lê) ---------- */
+// cópia de como cada entrega está no servidor, para saber o que mudou de verdade
+const servidor=new Map();
+const guardarServidor=lista=>lista.forEach(e=>servidor.set(e.id,JSON.parse(JSON.stringify(e))));
+const NOMES_CAMPO={status:'Situação',obs:'Motivo do problema',data:'Dia',turno:'Turno',hora:'Horário',cliente:'Cliente',fone:'Telefone',contatos:'Outros contatos',
+  bairro:'Bairro',endereco:'Endereço',complemento:'AP / quadra e lote',condominio:'Condomínio',frete:'Valor do frete',pagamento:'Como paga o frete',fretePor:'Vendedor que paga',
+  freteAjuste:'Ajuste no frete',ajustePor:'Quem ajustou',prioridade:'Prioridade',aguardaCaminhao:'Aguardar caminhão',carregadoPor:'Quem carregou',
+  notasLoja:'Notas na loja',notasDeposito:'Notas no depósito',itens:'Produtos',observacao:'Observação',postits:'Post-its',thumb:'Foto da nota',fotosExtras:'Fotos a mais'};
+function valorTxt(k,v){
+  if(v===undefined||v===null||v==='')return '—';
+  if(k==='status')return (ST[v]||[v])[0];
+  if(k==='data')return pd(v).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+  if(k==='turno')return v==='apos'?'Depois das…':(TURNOS[v]||'Qualquer turno');
+  if(k==='frete'||k==='freteAjuste')return real(v);
+  if(k==='pagamento')return PAGAMENTOS[v]||v;
+  if(typeof v==='boolean')return v?'Sim':'Não';
+  if(k==='itens')return (v||[]).map(i=>typeof i==='string'?i:qtdNome(i)+(i.local?' ('+LOC[i.local]+')':'')).join(', ')||'—';
+  if(k==='contatos')return (v||[]).map(c=>(c.nome?c.nome+' ':'')+c.fone).join(', ')||'—';
+  if(k==='postits')return (v||[]).length?(v||[]).map(p=>p.texto).join(' | '):'—';
+  if(k==='thumb')return 'foto';
+  return String(v)}
+async function registrar(id,acao,antes,depois){
+  try{
+    const mud=[];
+    if(antes&&depois)for(const k of Object.keys(NOMES_CAMPO)){if(!(k in depois))continue;
+      // vazio, "não" e lista vazia contam como a mesma coisa (senão aparece "— → Não" sem ninguém ter mudado nada)
+      const nada=v=>v===undefined||v===null||v===''||v===false||(Array.isArray(v)&&!v.length);
+      if(nada(antes[k])&&nada(depois[k]))continue;
+      if(k==='thumb'?antes[k]===depois[k]:valorTxt(k,antes[k])===valorTxt(k,depois[k]))continue;
+      mud.push({campo:NOMES_CAMPO[k],antes:k==='thumb'?'foto antiga':valorTxt(k,antes[k]),depois:k==='thumb'?'foto nova':valorTxt(k,depois[k])})}
+    if(antes&&depois&&!mud.length)return;
+    const e=depois||antes||{};
+    await db.collection('historico').doc('h'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)).set({
+      entregaId:id,cliente:e.cliente||'',dia:e.data||'',acao,mudancas:mud.slice(0,30),por:me.nome,porEmail:me.email,uid:me.uid,em:Date.now()});
+    contarGravacao(1);
+  }catch{} // sem as regras novas publicadas, só não registra (o mural segue normal)
+}
 async function salvar(id,dados,novo){
-  try{const ref=db.collection('entregas').doc(id);novo?await ref.set(dados):await ref.update(dados);contarGravacao(1);return true}
+  try{const ref=db.collection('entregas').doc(id);novo?await ref.set(dados):await ref.update(dados);contarGravacao(1);
+    const antes=servidor.get(id);
+    if(novo)registrar(id,'Lançou a entrega',null,dados);
+    else registrar(id,dados.status&&antes&&dados.status!==antes.status?(dados.status==='entregue'?'Marcou como entregue':dados.status==='problema'?'Marcou problema':'Voltou para pendente'):'Alterou a entrega',antes||{},{...antes,...dados});
+    servidor.set(id,{...(antes||{}),...JSON.parse(JSON.stringify(dados))});
+    return true}
   catch(e){if(e?.code==='permission-denied')semPermissao();
     else if(e?.code==='resource-exhausted')toast('O mural está cheio por hoje. Fale com o Bruno.');
     else toast('Não consegui salvar. Tente de novo.');return false}
@@ -811,7 +853,7 @@ function confirmarApagar(id){
     <div class="actions two"><button class="btn ghost" data-x>Cancelar</button><button class="btn bad" data-ok>Apagar</button></div>`,
   s=>s.addEventListener('click',async ev=>{
     if(ev.target.closest('[data-x]'))fechar();
-    if(ev.target.closest('[data-ok]')){fechar();try{await db.collection('entregas').doc(id).delete();const e2=entregas.find(x=>x.id===id);for(const k of [id,...Array.from({length:+e2?.fotosExtras||0},(_,i)=>id+'__'+(i+1))])db.collection('fotos').doc(k).delete().catch(()=>{});toast('Entrega apagada')}catch(e){e?.code==='permission-denied'?semPermissao():toast('Não consegui apagar.')}}
+    if(ev.target.closest('[data-ok]')){fechar();try{await db.collection('entregas').doc(id).delete();const e2=entregas.find(x=>x.id===id);registrar(id,'Apagou a entrega',null,e2||{});for(const k of [id,...Array.from({length:+e2?.fotosExtras||0},(_,i)=>id+'__'+(i+1))])db.collection('fotos').doc(k).delete().catch(()=>{});toast('Entrega apagada')}catch(e){e?.code==='permission-denied'?semPermissao():toast('Não consegui apagar.')}}
   }));
 }
 function abrirDetalhe(id){
@@ -883,7 +925,7 @@ async function consultarDia(d){
   // datas antigas não estão carregadas: busca só aquele dia, uma vez
   if(d<addDays(hoje(),-45)&&!antigas.some(e=>e.data===d)){
     try{const snap=await db.collection('entregas').where('data','==',d).get();contarSnap(snap);
-      const novas=snap.docs.map(x=>({id:x.id,status:'pendente',...x.data()}));antigas=antigas.concat(novas);entregas=entregas.concat(novas)}
+      const novas=snap.docs.map(x=>({id:x.id,status:'pendente',...x.data()}));guardarServidor(novas);antigas=antigas.concat(novas);entregas=entregas.concat(novas)}
     catch(e){toast('Não consegui buscar essa data. Confira a internet.');return}
   }
   dia=d;renderDays.did=false;render();window.scrollTo(0,0);
@@ -1102,7 +1144,7 @@ function abrirForm(ed){
           thumb:st.thumb||null,fotoData:st.fotoData||null,contatos:contOk,fotosExtras:fotosExtras.length,atualizadoEm:Date.now()};
         let ok;
         if(ed){ok=await salvar(id,dados)}
-        else{dados.status='pendente';dados.obs='';dados.criadoEm=Date.now();dados.criadoPorUid=me.uid;dados.criadoPorNome=me.nome;ok=await salvar(id,dados,true)}
+        else{dados.status='pendente';dados.obs='';dados.criadoEm=Date.now();dados.criadoPorUid=me.uid;dados.criadoPorNome=me.nome;dados.criadoPorEmail=me.email;ok=await salvar(id,dados,true)}
         // as que sobraram de antes ficam vazias (vendedor não pode apagar foto) e somem na limpeza
         if(ok)for(let i=0;i<Math.max(fotosExtras.length,qtdExtrasAntes);i++){
           try{await db.collection('fotos').doc(id+'__'+(i+1)).set({foto:fotosExtras[i]||'',em:Date.now()})}catch{toast('A entrega foi salva, mas uma das fotos não. Tente de novo.');break}}
@@ -1140,7 +1182,7 @@ auth.onAuthStateChanged(async u=>{
   render();
   // só as entregas recentes e futuras; o histórico fica no painel
   pararEntregas=db.collection('entregas').where('data','>=',addDays(hoje(),-45)).onSnapshot(snap=>{
-    contarSnap(snap);entregas=snap.docs.map(d=>({id:d.id,status:'pendente',...d.data()})).filter(e=>e.data).concat(antigas);
+    contarSnap(snap);entregas=snap.docs.map(d=>({id:d.id,status:'pendente',...d.data()})).filter(e=>e.data);guardarServidor(entregas);entregas=entregas.concat(antigas);
     loaded=true;$('#sync').textContent='Ao vivo';$('#sync').className='sync on';
     if(!document.querySelector('.scrim'))render();else renderDays();
   },()=>{$('#sync').textContent='Conexão perdida — recarregue';$('#sync').className='sync off';});
