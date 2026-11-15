@@ -125,18 +125,19 @@ function tratarAlteracao(cal, cfg, h) {
   avisar(cal, cfg, 'alteracao', e, '✏ ' + (h.por || 'Alguém') + ' ' + String(h.acao).toLowerCase() + ': ' + (h.cliente || ''), texto, CalendarApp.EventColor.GRAY);
 }
 
-// Aviso na hora: evento na Agenda que apita em 2 minutos, para quem estiver marcado no painel.
+// Aviso na hora: evento na Agenda para quem estiver marcado no painel. Começa em 10 minutos e apita 2 vezes
+// (uns 2 min e 10 min depois): se o celular demorar para baixar o evento da agenda, o 2º alarme ainda toca.
 function avisar(cal, cfg, tipo, e, titulo, texto, cor) {
   const r = cfg.regras[tipo] || {};
   const quem = destinatarios(cfg, r, e).filter(m => m !== e._autor); // quem fez a alteração não precisa ser avisado
   return quem.length ? eventoNaHora(cal, cfg.dono, quem, titulo, texto, endereco(e), cor) : '';
 }
 function eventoNaHora(cal, dono, quem, titulo, texto, lugar, cor) {
-  const ini = new Date(Date.now() + 2 * 60000), fim = new Date(ini.getTime() + 15 * 60000);
+  const ini = new Date(Date.now() + 10 * 60000), fim = new Date(ini.getTime() + 15 * 60000);
   const convidados = quem.filter(m => m !== dono);
   const ev = cal.createEvent(titulo, ini, fim, { description: texto, location: lugar || '', guests: convidados.join(','), sendInvites: convidados.length > 0 });
   ev.removeAllReminders();
-  if (quem.indexOf(dono) >= 0) ev.addPopupReminder(0);
+  if (quem.indexOf(dono) >= 0) { ev.addPopupReminder(8); ev.addPopupReminder(0); }
   ev.setColor(cor);
   return ev.getId();
 }

@@ -237,7 +237,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
         <div class="field avcad"><span class="muted">Toque em alguém do cadastro (Painel → Pessoas) para pôr o Gmail dele(a) sem digitar:</span><div class="chips" id="avcad"></div></div>
         <div class="row"><input type="text" id="avnovo" maxlength="30" placeholder="Outra pessoa (ex.: Ana vendedora)" style="flex:1;min-width:0;width:auto"><button type="button" class="btn" id="avadd">+ Pessoa</button></div></div>
       <div class="field"><span class="lbl">2. O que cada um recebe</span>
-        <p class="muted" style="margin:0">Toque nos nomes para ligar/desligar. Para tirar alguém de todos os avisos, toque no <b>×</b> ao lado do nome (ou desative a pessoa em Pessoas: quem está desativado não recebe nada). Tudo chega pelo Google Agenda: a entrega nova fica no dia e turno dela; os outros avisos apitam na hora (2 minutos depois).</p>
+        <p class="muted" style="margin:0">Toque nos nomes para ligar/desligar. Para tirar alguém de todos os avisos, toque no <b>×</b> ao lado do nome (ou desative a pessoa em Pessoas: quem está desativado não recebe nada). Tudo chega pelo Google Agenda: a entrega nova fica no dia e turno dela; os outros avisos apitam na hora (2 alarmes: uns 2 e 10 minutos depois).</p>
         <div id="avregras" style="display:grid;gap:10px"></div></div>
       <div class="field"><span class="lbl">3. Horários na Agenda</span>
         <div class="row"><label for="avlemb" style="flex:1">Lembrete antes do turno (minutos)</label><input type="text" id="avlemb" inputmode="numeric" maxlength="3" style="width:80px"></div>
@@ -245,7 +245,7 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
       <div class="row"><span class="sp"></span><button type="button" class="btn pri" id="avsalvar">Salvar</button></div>
       <div class="field avteste"><span class="lbl">🔔 Testar o aviso</span>
         <p class="muted" style="margin:0">Escolha quem recebe o teste (precisa ter o Gmail salvo acima) e toque em Enviar. O robô confere a cada 5 minutos:
-          em até 5 minutos ele cria o aviso "🔔 Teste", que apita 2 minutos depois na agenda de cada um.
+          em até 5 minutos ele cria o aviso "🔔 Teste", que apita uns 2 minutos e de novo 10 minutos depois na agenda de cada um.
           Pessoa nova recebe o teste como convite no Gmail: peça para ela tocar em <b>"Sim"</b> no convite, assim os próximos avisos entram direto na agenda dela.</p>
         <div class="chips" id="avtquem"></div>
         <div class="row"><span id="avtstatus" class="muted" style="flex:1"></span><button type="button" class="btn" id="avtenviar">🔔 Enviar teste</button></div></div>
@@ -631,7 +631,7 @@ function renderTeste(){
   $('#avtquem').innerHTML=com.length?com.map(n=>`<button type="button" class="chip" data-tq="${esc(n)}" aria-pressed="${avTesteSel.has(n)}">${esc(n)}</button>`).join(''):'<span class="muted">Ninguém com Gmail salvo ainda.</span>';
   const t=avTeste,h=x=>new Date(x).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   let st='';
-  if(t.pedidoEm&&t.feitoEm>=t.pedidoEm)st=t.erro?`⚠ O robô tentou às ${h(t.feitoEm)}, mas deu erro: ${esc(t.erro)}`:`✓ O robô criou o teste às ${h(t.feitoEm)} para: ${esc((t.para||[]).join(', '))}. Deve apitar 2 minutos depois.`;
+  if(t.pedidoEm&&t.feitoEm>=t.pedidoEm)st=t.erro?`⚠ O robô tentou às ${h(t.feitoEm)}, mas deu erro: ${esc(t.erro)}`:`✓ O robô criou o teste às ${h(t.feitoEm)} para: ${esc((t.para||[]).join(', '))}. Deve apitar em uns 2 minutos e de novo em 10 minutos.`;
   else if(t.pedidoEm)st=Date.now()-t.pedidoEm>7*60000?`⚠ Pedido às ${h(t.pedidoEm)} e o robô ainda não respondeu. Confira se ele está ligado (script.google.com → Execuções).`:`⏳ Pedido às ${h(t.pedidoEm)}. Aguardando o robô (até 5 minutos)…`;
   $('#avtstatus').innerHTML=st;
 }

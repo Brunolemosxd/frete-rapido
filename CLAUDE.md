@@ -108,7 +108,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   `problema:__outro`; (3) `lembrete` (min antes do turno) e `turnos` {manha:['08:00','12:00'],...}.
   Robô `_agenda/Codigo.gs` (Apps Script na conta do Bruno, a cada 5 min, REST do Firestore com o token dele, LÊ TUDO do painel):
   nova = evento no dia/turno (convidados; lembrete só se o Bruno estiver marcado); entregue/alteração/problema = evento que apita
-  em 2 min. SÓ GOOGLE AGENDA: e-mail foi tirado a pedido do Bruno (sem escopo send_mail). Quem fez a alteração não é avisado.
+  na hora (evento começa em +10 min, 2 alarmes para o Bruno: 8 e 0 min antes; o celular às vezes demora para baixar o evento
+  e o alarme de 2 min já tinha passado, por isso não apitava). SÓ GOOGLE AGENDA: e-mail foi tirado a pedido do Bruno (sem escopo send_mail). Quem fez a alteração não é avisado.
   Botão "🔔 Enviar teste" (painel → Ajustes): grava `privado/teste` {pedidoEm, para}; o robô (`testeDoPainel`) cria o evento
   "🔔 Teste do Mural de Fretes" e responde no mesmo doc {feitoEm, para, erro} (PATCH pelo REST); o painel mostra a resposta
   ou avisa se o robô não respondeu em 7 min. Problema: motivo novo = novo aviso, o
@@ -120,7 +121,7 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   automático (Gmail do login de quem lançou, `criadoPorEmail`).
   Quem está DESATIVADO em Painel → Pessoas (`usuarios.ativo == false`) nunca recebe aviso, nem como "quem lançou a nota".
   POR QUE o Bruno não recebia aviso: o lembrete do evento é antes do turno (ex.: 7h30) e as entregas são lançadas depois; e o dono
-  da agenda não recebe convite. Solução: os avisos na hora apitam em 2 min (lembrete 0 no evento do Bruno).
+  da agenda não recebe convite. Solução: os avisos na hora apitam 2 vezes (lembretes 8 e 0 no evento do Bruno, que começa em +10 min).
   Instalado em 13/11/2026 ("Projeto sem título" no script.google.com); a versão personalizável (14/11) precisa ser colada lá
   (Codigo.gs + appsscript.json) e rodar "instalar". Depois disso, mudanças de quem recebe = só no painel.
 - Histórico de alterações (painel → Histórico, só o Bruno): o mural grava em `historico` (função `registrar`, chamada no `salvar`
