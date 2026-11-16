@@ -102,7 +102,7 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   frete na nota e por conta do vendedor aparecem à parte. Botão "✓ Recebi R$ X de Fulano" grava `acertadoEm` nas entregas
   (Desfazer apaga). Grupo "Sem quem carregou" pede para marcar no mural. Problema/pendente não entram.
   Se o freteiro tem Pix próprio, o "📲 Pix dele" cobrado na entrega também entra no "Para receber dele" (caiu na conta dele).
-- Avisos no Google Agenda (painel → Ajustes, tudo em `privado/avisos`, coleção só do admin): (1) pessoas = nome → Gmail
+- Avisos no Telegram e Google Agenda (painel → Ajustes, tudo em `privado/avisos`, coleção só do admin): (1) pessoas = nome → Gmail
   (Bruno, "Quem carrega", Gerente, Estoquista + extras); (2) `regras` por tipo {pessoas:[nomes ou '__criador' = quem lançou a
   nota], agenda, email}: `nova`, `entregue`, `alteracao`, `problema:<motivo>` (um por motivo de config/motivos) e
   `problema:__outro`; (3) `lembrete` (min antes do turno) e `turnos` {manha:['08:00','12:00'],...}.
@@ -122,6 +122,14 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   Quem está DESATIVADO em Painel → Pessoas (`usuarios.ativo == false`) nunca recebe aviso, nem como "quem lançou a nota".
   POR QUE o Bruno não recebia aviso: o lembrete do evento é antes do turno (ex.: 7h30) e as entregas são lançadas depois; e o dono
   da agenda não recebe convite. Solução: os avisos na hora apitam 2 vezes (lembretes 8 e 0 no evento do Bruno, que começa em +10 min).
+  TELEGRAM (16/11, porque o Google Agenda não apitava no Xiaomi do Bruno mesmo com tudo certo): `privado/avisos` ganhou
+  `canais` {agenda, telegram} (chips "Avisar por"), `tgToken` (código do robô criado no @BotFather, colado no painel) e
+  `tgCod` {Nome: código aleatório do link}. Link de cada pessoa: `https://t.me/<bot>?start=<código>` (botões "📲 Mandar no
+  WhatsApp" / "📋 Copiar link"; Bruno = "Abrir no meu Telegram"). O robô (`telegramConferir`, a cada 5 min) faz getMe (grava
+  `privado/telegram.bot`/`erro`) e getUpdates (offset em `tg_off`): "/start código" liga a pessoa em `privado/telegram.ids`
+  {Nome: chat id} e responde "✅ Pronto". `telegramPara` manda a mensagem na hora para os marcados na regra com Telegram ligado
+  (nova entrega também, com dia e turno; quem fez a mudança e desativados não recebem). Teste manda `nomes` e o robô responde `tg`.
+  × de uma pessoa tira também o código e o Telegram dela. Dados do cliente passam pelo Telegram (escolha do Bruno).
   Instalado em 13/11/2026 ("Projeto sem título" no script.google.com); a versão personalizável (14/11) precisa ser colada lá
   (Codigo.gs + appsscript.json) e rodar "instalar". Depois disso, mudanças de quem recebe = só no painel.
 - Histórico de alterações (painel → Histórico, só o Bruno): o mural grava em `historico` (função `registrar`, chamada no `salvar`

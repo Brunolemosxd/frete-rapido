@@ -2,8 +2,10 @@
    Roda na conta Google do Bruno (dono do projeto Firebase), a cada 5 minutos. Só LÊ o mural.
    TUDO É CONFIGURADO NO PAINEL → Ajustes → "Avisos no Google Agenda" (quem recebe cada tipo de aviso, lembrete e
    horários dos turnos). Mudou lá, o robô já usa na próxima conferida: não precisa colar de novo.
-   Avisos só pelo Google Agenda (sem e-mail, a pedido do Bruno). Botão "🔔 Enviar teste" do painel: o robô cria um aviso
-   de teste e responde no painel.
+   Avisos pelo Google Agenda e/ou pelo Telegram (sem e-mail, a pedido do Bruno). Botão "🔔 Enviar teste" do painel: o robô
+   manda um aviso de teste e responde no painel.
+   Telegram: o Bruno cria um robô no @BotFather e cola o código (token) no painel. Cada pessoa abre o link dela
+   (t.me/robo?start=CODIGO) e toca em Iniciar; o robô liga o Telegram dessa pessoa (privado/telegram.ids).
    Tipos de aviso:
    - 🚚 Entrega nova: evento no dia e turno da entrega (muda junto se mudar no mural; ✅ quando entregue; some se apagada)
    - ✅ Entrega concluída, ✏ Alguém alterou uma entrega, ⚠ Problema (por motivo): aviso na hora
@@ -41,11 +43,13 @@ function verificar() {
   const desde = Number(p.getProperty('ultima') || Date.now() - 864e5) - 10 * 60000;
   const agora = Date.now();
   const vistos = JSON.parse(p.getProperty('hvistos') || '[]');
-  try { testeDoPainel(); } catch (err) { Logger.log('Erro no teste: ' + err); }
+  const av = documento('privado/avisos') || {};
+  try { telegramConferir(av); } catch (err) { Logger.log('Erro no Telegram: ' + err); }
+  try { testeDoPainel(av); } catch (err) { Logger.log('Erro no teste: ' + err); }
   const docs = consulta('entregas', 'atualizadoEm', desde);
   const hist = consulta('historico', 'em', desde);
   if (docs.length || hist.length) {
-    const cfg = configuracao();
+    const cfg = configuracao(av);
     const cal = CalendarApp.getDefaultCalendar();
     for (const e of docs) {
       const reg = JSON.parse(p.getProperty('e_' + e.id) || '{}');
@@ -73,7 +77,12 @@ function tratarEntrega(cal, cfg, e, reg) {
   const rn = cfg.regras.nova || {};
   const quemNova = destinatarios(cfg, rn, e);
   let ev = reg.ev ? cal.getEventById(reg.ev) : null;
-  if (!ev && primeiraVez && e.data >= ontem && rn.agenda !== false && quemNova.length) {
+  if (primeiraVez && e.data >= ontem && cfg.canais.telegram) {
+    const [, , turnoTxt] = horario(cfg, e);
+    telegramPara(cfg, rn, e, '🚚 Nova entrega: ' + (e.cliente || '') + (e.bairro ? ' — ' + e.bairro : '') +
+      (e.prioridade ? ' ⬆ PRIORIDADE' : '') + '\n📅 ' + e.data.split('-').reverse().slice(0, 2).join('/') + ' · ' + turnoTxt + '\n\n' + descricao(e));
+  }
+  if (!ev && primeiraVez && e.data >= ontem && cfg.canais.agenda && quemNova.length) {
     const [ini, fim, turnoTxt] = horario(cfg, e);
     ev = cal.createEvent(tituloEntrega(e, turnoTxt), ini, fim, { description: descricao(e), location: endereco(e),
       guests: semDono(cfg, quemNova).join(','), sendInvites: semDono(cfg, quemNova).length > 0 });
@@ -129,6 +138,8 @@ function tratarAlteracao(cal, cfg, h) {
 // (uns 2 min e 10 min depois): se o celular demorar para baixar o evento da agenda, o 2º alarme ainda toca.
 function avisar(cal, cfg, tipo, e, titulo, texto, cor) {
   const r = cfg.regras[tipo] || {};
+  if (cfg.canais.telegram) telegramPara(cfg, r, e, titulo + '\n\n' + texto);
+  if (!cfg.canais.agenda) return '';
   const quem = destinatarios(cfg, r, e).filter(m => m !== e._autor); // quem fez a alteração não precisa ser avisado
   return quem.length ? eventoNaHora(cal, cfg.dono, quem, titulo, texto, endereco(e), cor) : '';
 }
@@ -143,17 +154,94 @@ function eventoNaHora(cal, dono, quem, titulo, texto, lugar, cor) {
 }
 
 // 🔔 Botão "Enviar teste" do painel: grava o pedido em privado/teste; o robô cria o aviso e responde lá mesmo.
-function testeDoPainel() {
+function testeDoPainel(av) {
   const t = documento('privado/teste');
   if (!t || !t.pedidoEm || (t.feitoEm || 0) >= t.pedidoEm) return;
+  const canais = canaisDe(av);
   const dono = Session.getEffectiveUser().getEmail().toLowerCase();
-  const para = (t.para || []).map(x => String(x).toLowerCase()).filter(Boolean);
-  let erro = '';
-  try {
-    eventoNaHora(CalendarApp.getDefaultCalendar(), dono, para, '🔔 Teste do Mural de Fretes',
-      'Se este aviso apitou no seu celular, os avisos do mural estão funcionando. 👍\n\nAbrir o mural: ' + MURAL, '', CalendarApp.EventColor.YELLOW);
-  } catch (err) { erro = String(err).slice(0, 200); }
-  gravar('privado/teste', { feitoEm: Date.now(), para: para, erro: erro });
+  const para = canais.agenda ? (t.para || []).map(x => String(x).toLowerCase()).filter(Boolean) : [];
+  const texto = 'Se este aviso apitou no seu celular, os avisos do mural estão funcionando. 👍\n\nAbrir o mural: ' + MURAL;
+  const tg = [], erros = [];
+  if (para.length) {
+    try { eventoNaHora(CalendarApp.getDefaultCalendar(), dono, para, '🔔 Teste do Mural de Fretes', texto, '', CalendarApp.EventColor.YELLOW); }
+    catch (err) { erros.push('Agenda: ' + String(err).slice(0, 150)); }
+  }
+  if (canais.telegram && av.tgToken) {
+    const ids = (av._tg && av._tg.ids) || {};
+    for (const n of t.nomes || []) {
+      if (!ids[n]) continue;
+      const r = telegramEnviar(av.tgToken, ids[n], '🔔 Teste do Mural de Fretes\n\n' + texto);
+      if (r === true) tg.push(n); else erros.push('Telegram de ' + n + ': ' + r);
+    }
+  }
+  gravar('privado/teste', { feitoEm: Date.now(), para: para, tg: tg, erro: erros.join(' · ').slice(0, 300) });
+}
+
+// ---------- ✈ Telegram ----------
+function canaisDe(av) {
+  const c = av.canais || {};
+  return { agenda: c.agenda !== false, telegram: c.telegram !== false && !!av.tgToken };
+}
+function telegramApi(token, metodo, dados) {
+  const r = UrlFetchApp.fetch('https://api.telegram.org/bot' + token + '/' + metodo, { method: 'post', contentType: 'application/json',
+    payload: JSON.stringify(dados || {}), muteHttpExceptions: true });
+  let j = {};
+  try { j = JSON.parse(r.getContentText()); } catch (err) { j = { ok: false, description: 'resposta estranha (' + r.getResponseCode() + ')' }; }
+  return j;
+}
+function telegramEnviar(token, chat, texto) {
+  const j = telegramApi(token, 'sendMessage', { chat_id: chat, text: String(texto).slice(0, 4000), disable_web_page_preview: true });
+  return j.ok ? true : String(j.description || 'erro');
+}
+// A cada conferida: confere o código do robô e liga quem tocou em "Iniciar" pelo link do painel.
+function telegramConferir(av) {
+  const tg = documento('privado/telegram') || {};
+  av._tg = tg;
+  const token = String(av.tgToken || '').trim();
+  if (!token) return;
+  const p = PropertiesService.getScriptProperties();
+  if (p.getProperty('tg_tok') !== token || !tg.bot) {
+    const me = telegramApi(token, 'getMe');
+    if (!me.ok) { gravar('privado/telegram', { bot: '', erro: 'O código do robô não funcionou: ' + (me.description || '') }); tg.bot = ''; return; }
+    tg.bot = me.result.username;
+    gravar('privado/telegram', { bot: tg.bot, erro: '' });
+    p.setProperty('tg_tok', token); p.deleteProperty('tg_off');
+  }
+  const up = telegramApi(token, 'getUpdates', { offset: Number(p.getProperty('tg_off') || 0), timeout: 0, allowed_updates: ['message'] });
+  if (!up.ok || !up.result.length) return;
+  const ids = Object.assign({}, tg.ids || {}), cod = av.tgCod || {};
+  let mudou = false;
+  for (const u of up.result) {
+    p.setProperty('tg_off', String(u.update_id + 1));
+    const m = u.message;
+    if (!m || !m.chat || !/^\/start/.test(m.text || '')) continue;
+    const c = (m.text.split(' ')[1] || '').trim();
+    const nome = Object.keys(cod).find(n => cod[n] && cod[n] === c);
+    if (nome) {
+      ids[nome] = String(m.chat.id); mudou = true;
+      telegramEnviar(token, m.chat.id, '✅ Pronto, ' + nome + '! Os avisos do Mural de Fretes vão chegar aqui.\n\nDeixe as notificações do Telegram ligadas.');
+    } else telegramEnviar(token, m.chat.id, 'Para receber os avisos do Mural de Fretes, abra o link que o Bruno mandou para você.');
+  }
+  if (mudou) { gravar('privado/telegram', { ids: ids }); tg.ids = ids; }
+}
+// manda a mensagem para quem está marcado na regra e tem o Telegram ligado (quem fez a mudança não recebe)
+function telegramPara(cfg, regra, e, texto) {
+  const ids = cfg.tg.ids || {};
+  const nomes = [];
+  for (const n of (regra && regra.pessoas) || []) {
+    if (n === CRIADOR) {
+      const m = (e.criadoPorEmail || cfg.usuarios[String(e.criadoPorNome || '').toLowerCase()] || '').toLowerCase();
+      if (m) Object.keys(cfg.emails).filter(x => cfg.emails[x] === m).forEach(x => nomes.push(x));
+    } else nomes.push(n);
+  }
+  const feitos = {};
+  for (const n of nomes) {
+    const m = cfg.emails[n] || '';
+    if (!ids[n] || feitos[ids[n]] || (m && (cfg.inativos[m] || m === e._autor))) continue;
+    feitos[ids[n]] = true;
+    const r = telegramEnviar(cfg.tgToken, ids[n], texto);
+    if (r !== true) Logger.log('Telegram de ' + n + ': ' + r);
+  }
 }
 
 // Uma vez por dia: apaga da Agenda as entregas que foram apagadas do mural e esquece as muito antigas.
@@ -176,8 +264,8 @@ function limparApagadas() {
 }
 
 // ---------- configuração do painel ----------
-function configuracao() {
-  const d = documento('privado/avisos') || {};
+function configuracao(av) {
+  const d = av || documento('privado/avisos') || {};
   const emails = {};
   for (const [n, m] of Object.entries(Object.assign({}, d.problemas || {}, d.emails || {}))) if (m) emails[n] = String(m).toLowerCase();
   let regras = d.regras;
@@ -190,7 +278,7 @@ function configuracao() {
     if (u.nome) usuarios[String(u.nome).toLowerCase()] = u.id.toLowerCase();
     if (u.ativo === false) inativos[u.id.toLowerCase()] = true; // desativado em Pessoas (ex.: saiu da loja): não recebe nada
   }
-  return { emails, regras, usuarios, inativos, dono: Session.getEffectiveUser().getEmail().toLowerCase(),
+  return { emails, regras, usuarios, inativos, canais: canaisDe(d), tgToken: d.tgToken || '', tg: d._tg || {}, dono: Session.getEffectiveUser().getEmail().toLowerCase(),
     lembrete: Number(d.lembrete) >= 0 && d.lembrete !== undefined && d.lembrete !== null ? Number(d.lembrete) : 30,
     turnos: Object.assign({}, TURNOS_PADRAO, d.turnos || {}) };
 }
@@ -253,7 +341,7 @@ function consulta(colecao, campo, desde) {
   if (r.getResponseCode() !== 200) throw new Error('Firestore respondeu ' + r.getResponseCode() + ': ' + r.getContentText().slice(0, 300));
   return JSON.parse(r.getContentText()).filter(x => x.document).map(x => doc(x.document));
 }
-// grava campos num documento (como dono do projeto). Só usado para responder o teste do painel.
+// grava campos num documento (como dono do projeto): resposta do teste e dados do Telegram (privado/...).
 function gravar(caminho, campos) {
   const mask = Object.keys(campos).map(k => 'updateMask.fieldPaths=' + encodeURIComponent(k)).join('&');
   const r = UrlFetchApp.fetch(BASE + '/' + caminho + '?' + mask, { method: 'patch', contentType: 'application/json',
@@ -264,7 +352,8 @@ function paraFirestore(o) {
   const f = {};
   for (const k of Object.keys(o)) {
     const v = o[k];
-    f[k] = typeof v === 'number' ? { integerValue: String(Math.round(v)) } : Array.isArray(v) ? { arrayValue: { values: v.map(x => ({ stringValue: String(x) })) } } : { stringValue: String(v == null ? '' : v) };
+    f[k] = typeof v === 'number' ? { integerValue: String(Math.round(v)) } : Array.isArray(v) ? { arrayValue: { values: v.map(x => ({ stringValue: String(x) })) } }
+      : v && typeof v === 'object' ? { mapValue: { fields: paraFirestore(v) } } : { stringValue: String(v == null ? '' : v) };
   }
   return f;
 }

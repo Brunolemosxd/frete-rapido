@@ -132,6 +132,9 @@ select{font:inherit;font-size:15px;padding:10px 12px;border-radius:12px;border:1
 .avtirar{padding:6px 12px;font-size:20px;line-height:1;color:var(--bad)}
 .avcad{gap:6px}
 .avcad .chip{padding:7px 10px;font-size:14px}
+.tgok{color:var(--ok,#2e9d5b);font-weight:700}
+.avtg details{font-size:14px}
+.avtg a.btn{text-decoration:none}
 details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:4px 0}
 .login{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
 .login .box{width:100%;max-width:380px;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:28px 20px;display:grid;gap:16px;text-align:center}
@@ -231,21 +234,34 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
       <div class="row"><button type="button" class="btn ghost" id="mpadrao">Voltar ao texto padrão</button><span class="sp"></span><button type="button" class="btn pri" id="msalvar">Salvar</button></div>
     </div>
     <div class="card">
-      <strong>Avisos no Google Agenda</strong>
-      <p class="muted" style="margin:0">Escolha quem recebe cada tipo de aviso. Só você vê esta parte. Funciona pelo "robô" da Agenda ligado na sua conta Google.</p>
+      <strong>Avisos (Telegram e Google Agenda)</strong>
+      <p class="muted" style="margin:0">Escolha quem recebe cada tipo de aviso. Só você vê esta parte. Funciona pelo "robô" ligado na sua conta Google.</p>
+      <div class="field"><span class="lbl">Avisar por</span><div class="chips" id="avcanais"></div></div>
+      <div class="field avtg"><span class="lbl">✈ Telegram</span>
+        <details id="avtgajuda"><summary>Como criar o robô do Telegram (só uma vez)</summary>
+          <ol style="margin:6px 0 0;padding-left:20px">
+            <li>Instale o <b>Telegram</b> e abra o <a href="https://t.me/BotFather" target="_blank" rel="noopener"><b>@BotFather</b></a> (o robô oficial do Telegram, com selo azul).</li>
+            <li>Toque em <b>Iniciar</b> e mande: <b>/newbot</b></li>
+            <li>Ele pede um nome: mande <b>Mural de Fretes</b>.</li>
+            <li>Ele pede um usuário terminando em <b>bot</b>: mande, por exemplo, <b>muralfretes_colombo_bot</b> (se já existir, tente outro).</li>
+            <li>Ele responde com um código comprido, tipo <b>123456789:AAH…</b>. Copie e cole aqui embaixo, depois toque em <b>Salvar</b>.</li>
+          </ol></details>
+        <input type="text" id="avtgtoken" maxlength="80" autocomplete="off" placeholder="Código do robô (o BotFather manda)">
+        <div id="avtgst" class="muted"></div>
+        <div id="avtglista" style="display:grid;gap:8px"></div></div>
       <div class="field"><span class="lbl">1. Pessoas (Gmail de cada uma)</span><div id="avlista" style="display:grid;gap:8px"></div>
         <div class="field avcad"><span class="muted">Toque em alguém do cadastro (Painel → Pessoas) para pôr o Gmail dele(a) sem digitar:</span><div class="chips" id="avcad"></div></div>
         <div class="row"><input type="text" id="avnovo" maxlength="30" placeholder="Outra pessoa (ex.: Ana vendedora)" style="flex:1;min-width:0;width:auto"><button type="button" class="btn" id="avadd">+ Pessoa</button></div></div>
       <div class="field"><span class="lbl">2. O que cada um recebe</span>
-        <p class="muted" style="margin:0">Toque nos nomes para ligar/desligar. Para tirar alguém de todos os avisos, toque no <b>×</b> ao lado do nome (ou desative a pessoa em Pessoas: quem está desativado não recebe nada). Tudo chega pelo Google Agenda: a entrega nova fica no dia e turno dela; os outros avisos apitam na hora (2 alarmes: uns 2 e 10 minutos depois).</p>
+        <p class="muted" style="margin:0">Toque nos nomes para ligar/desligar. Para tirar alguém de todos os avisos, toque no <b>×</b> ao lado do nome (ou desative a pessoa em Pessoas: quem está desativado não recebe nada). No Telegram chega uma mensagem na hora. No Google Agenda a entrega nova fica no dia e turno dela, e os outros avisos apitam na hora (2 alarmes: uns 2 e 10 minutos depois).</p>
         <div id="avregras" style="display:grid;gap:10px"></div></div>
       <div class="field"><span class="lbl">3. Horários na Agenda</span>
         <div class="row"><label for="avlemb" style="flex:1">Lembrete antes do turno (minutos)</label><input type="text" id="avlemb" inputmode="numeric" maxlength="3" style="width:80px"></div>
         <div id="avturnos" style="display:grid;gap:6px"></div></div>
       <div class="row"><span class="sp"></span><button type="button" class="btn pri" id="avsalvar">Salvar</button></div>
       <div class="field avteste"><span class="lbl">🔔 Testar o aviso</span>
-        <p class="muted" style="margin:0">Escolha quem recebe o teste (precisa ter o Gmail salvo acima) e toque em Enviar. O robô confere a cada 5 minutos:
-          em até 5 minutos ele cria o aviso "🔔 Teste", que apita uns 2 minutos e de novo 10 minutos depois na agenda de cada um.
+        <p class="muted" style="margin:0">Escolha quem recebe o teste (precisa ter o Telegram ligado ou o Gmail salvo acima) e toque em Enviar. O robô confere a cada 5 minutos:
+          em até 5 minutos chega a mensagem no Telegram; na agenda, o aviso "🔔 Teste" apita uns 2 minutos e de novo 10 minutos depois.
           Pessoa nova recebe o teste como convite no Gmail: peça para ela tocar em <b>"Sim"</b> no convite, assim os próximos avisos entram direto na agenda dela.</p>
         <div class="chips" id="avtquem"></div>
         <div class="row"><span id="avtstatus" class="muted" style="flex:1"></span><button type="button" class="btn" id="avtenviar">🔔 Enviar teste</button></div></div>
@@ -568,8 +584,9 @@ $('#gsalvar').addEventListener('click',()=>{
   db.collection('config').doc('geral').set({...geral,atualizadoEm:Date.now()}).then(()=>{preencherGeral();toast('Salvo. Vale no mural quando ele for aberto de novo.')}).catch(erro)});
 
 /* ---------- avisos no Google Agenda (privado/avisos: só o Bruno lê e grava; o robô lê daqui) ---------- */
-// regras: {tipo: {pessoas:[nomes ou '__criador'], agenda:true}} (só Google Agenda; e-mail foi tirado a pedido do Bruno); tipos: nova, entregue, alteracao, problema:<motivo>, problema:__outro
-let avisos={},avRegras={},avLemb=30,avTurnos={manha:['08:00','12:00'],tarde:['13:00','18:00'],qualquer:['08:00','18:00']},avExtras=[];
+// regras: {tipo: {pessoas:[nomes ou '__criador'], agenda:true}} (e-mail foi tirado a pedido do Bruno)
+// canais {agenda, telegram}; tgToken = código do robô do Telegram; tgCod {Nome: código do link}; o robô grava privado/telegram {bot, ids:{Nome: chat}, erro}; tipos: nova, entregue, alteracao, problema:<motivo>, problema:__outro
+let avisos={},avRegras={},avCanais={agenda:true,telegram:true},avTgToken='',avTgCod={},avTg={},avCarregado=false,avLemb=30,avTurnos={manha:['08:00','12:00'],tarde:['13:00','18:00'],qualquer:['08:00','18:00']},avExtras=[];
 const AV_FIXOS=['Gerente','Estoquista'],CRIADOR='__criador';
 const avPessoas=()=>[...new Set(['Bruno',...geral.carregadores,...AV_FIXOS,...avExtras])];
 function avTipos(){return [['nova','🚚 Entrega nova'],['entregue','✅ Entrega concluída'],['alteracao','✏ Alguém alterou uma entrega'],
@@ -578,6 +595,8 @@ function avTipos(){return [['nova','🚚 Entrega nova'],['entregue','✅ Entrega
 function avMigrar(d){
   avisos={...(d.emails||{}),...(d.problemas||{})};avExtras=Object.keys(avisos).filter(n=>!['Bruno',...geral.carregadores,...AV_FIXOS].includes(n));
   avLemb=Number(d.lembrete)>=0&&d.lembrete!==undefined?Number(d.lembrete):30;if(d.turnos)avTurnos={...avTurnos,...d.turnos};
+  avCanais={agenda:true,telegram:true,...(d.canais||{})};avTgToken=d.tgToken||'';avTgCod={...(d.tgCod||{})};
+  avExtras=[...new Set([...avExtras,...Object.keys(avTgCod).filter(n=>!avPessoas().includes(n))])];
   if(d.regras){avRegras=d.regras;return}
   avRegras={nova:{pessoas:Object.keys(d.emails||{}),agenda:true,email:false}};
   const pb=Object.keys(d.problemas||{});for(const [k] of avTipos())if(k.startsWith('problema:'))avRegras[k]={pessoas:pb,agenda:true,email:false};
@@ -585,6 +604,7 @@ function avMigrar(d){
 function lerTelaAvisos(){
   document.querySelectorAll('#avlista [data-av]').forEach(i=>{avisos[i.dataset.av]=i.value.trim().toLowerCase()});
   const l=+$('#avlemb').value;if($('#avlemb').value!==''&&l>=0)avLemb=l;
+  avTgToken=$('#avtgtoken').value.trim();
   document.querySelectorAll('#avturnos [data-tu]').forEach(i=>{avTurnos[i.dataset.tu][+i.dataset.k]=i.value});
 }
 // ler=false quando os dados acabaram de chegar do servidor (não pode pegar o que está na tela, que ainda está vazio)
@@ -594,7 +614,9 @@ function renderAvisos(ler=true){
   const quem=[...avPessoas().map(n=>[n,n]),[CRIADOR,'✍ Quem lançou a nota']];
   $('#avregras').innerHTML=avTipos().map(([k,t])=>{const r=avRegras[k]||{pessoas:[],agenda:true,email:false};
     return `<div class="avtipo"><b>${esc(t)}</b><div class="chips">${quem.map(([v,n])=>`<button type="button" class="chip" data-rt="${esc(k)}" data-rp="${esc(v)}" aria-pressed="${(r.pessoas||[]).includes(v)}">${esc(n)}</button>`).join('')}</div></div>`}).join('');
-  renderTeste();renderCadastro();
+  renderTeste();renderCadastro();renderTelegram();
+  $('#avcanais').innerHTML=[['telegram','✈ Telegram'],['agenda','📅 Google Agenda']].map(([k,n])=>`<button type="button" class="chip" data-canal="${k}" aria-pressed="${avCanais[k]!==false}">${n}</button>`).join('');
+  $('#avtgtoken').value=avTgToken;
   $('#avlemb').value=avLemb;
   $('#avturnos').innerHTML=[['manha','Manhã'],['tarde','Tarde'],['qualquer','Qualquer turno']].map(([k,n])=>`<div class="row" style="flex-wrap:wrap"><label style="flex:1 1 100%;font-weight:600">${n}</label><input type="time" data-tu="${k}" data-k="0" value="${esc(avTurnos[k][0])}" style="width:auto"><span>até</span><input type="time" data-tu="${k}" data-k="1" value="${esc(avTurnos[k][1])}" style="width:auto"></div>`).join('');
 }
@@ -623,30 +645,61 @@ $('#avcad').addEventListener('click',e=>{const b=e.target.closest('[data-cad]');
   avisos[linha]=String(p.id).toLowerCase();
   renderAvisos(false);toast(`${linha} entrou com o Gmail do cadastro. Escolha o que ele(a) recebe e toque em Salvar.`)});
 
+// ---- ✈ Telegram: o robô do Google confere a cada 5 min quem tocou em "Iniciar" pelo link (código de cada pessoa em tgCod) ----
+const tgNovoCod=()=>Array.from(crypto.getRandomValues(new Uint8Array(9)),b=>'abcdefghijkmnpqrstuvwxyz23456789'[b%32]).join('');
+function tgLink(n){return avTg.bot&&avTgCod[n]?`https://t.me/${avTg.bot}?start=${avTgCod[n]}`:''}
+// cada pessoa precisa de um código salvo antes de mandar o link (senão o robô não sabe quem é)
+function garantirCodigos(){
+  if(!avCarregado)return;const novos={};
+  for(const n of avPessoas())if(!avTgCod[n]){avTgCod[n]=tgNovoCod();novos[n]=avTgCod[n]}
+  if(Object.keys(novos).length)db.collection('privado').doc('avisos').set({tgCod:{...avTgCod}},{merge:true}).catch(erro);
+}
+function renderTelegram(){
+  garantirCodigos();
+  const ids=avTg.ids||{},tok=avTgToken;
+  $('#avtgst').innerHTML=!tok?'Ainda sem robô. Siga o "Como criar" acima.'
+    :avTg.erro?`<b style="color:var(--bad)">⚠ ${esc(avTg.erro)}</b> Confira o código e toque em Salvar.`
+    :avTg.bot?`✓ Robô do Telegram: <b>@${esc(avTg.bot)}</b>. Mande o link para cada pessoa; ela abre e toca em <b>Iniciar</b> (liga em até 5 minutos).`
+    :'⏳ Código salvo. Aguardando o robô conferir (até 5 minutos)…';
+  $('#avtgajuda').open=!tok;
+  $('#avtglista').innerHTML=avPessoas().map(n=>{const l=tgLink(n);
+    const acao=ids[n]?'<span class="tgok">✓ Telegram ligado</span>'
+      :!l?'<span class="muted">Link aparece quando o robô estiver pronto</span>'
+      :n==='Bruno'?`<a class="btn" href="${esc(l)}" target="_blank" rel="noopener">Abrir no meu Telegram</a>`
+      :`<a class="btn" href="https://wa.me/?text=${encodeURIComponent(`Oi, ${n}! Para receber os avisos do Mural de Fretes no Telegram, abra este link e toque em "Iniciar":\n${l}`)}" target="_blank" rel="noopener">📲 Mandar no WhatsApp</a><button type="button" class="btn ghost" data-tgcopia="${esc(n)}">📋 Copiar link</button>`;
+    return `<div class="row" style="flex-wrap:wrap"><label style="min-width:90px;font-weight:600">${esc(n)}</label>${acao}</div>`}).join('');
+}
+$('#avtglista').addEventListener('click',e=>{const b=e.target.closest('[data-tgcopia]');if(!b)return;
+  navigator.clipboard.writeText(tgLink(b.dataset.tgcopia)).then(()=>toast('Link copiado. Mande para '+b.dataset.tgcopia+'.'),()=>toast('Não consegui copiar.'))});
+$('#avcanais').addEventListener('click',e=>{const b=e.target.closest('[data-canal]');if(!b)return;const k=b.dataset.canal;
+  avCanais[k]=avCanais[k]===false;b.setAttribute('aria-pressed',avCanais[k]);toast('Toque em Salvar para valer.')});
+let pararTg=null;
+
 // ---- teste: o painel pede em privado/teste; o robô cria o aviso e responde no mesmo documento ----
 let avTeste={},avTesteSel=null,pararTeste=null;
 function renderTeste(){
-  const com=avPessoas().filter(n=>avisos[n]);
+  const com=avPessoas().filter(n=>avisos[n]||(avTg.ids||{})[n]);
   if(!avTesteSel&&com.length)avTesteSel=new Set(com);
-  $('#avtquem').innerHTML=com.length?com.map(n=>`<button type="button" class="chip" data-tq="${esc(n)}" aria-pressed="${avTesteSel.has(n)}">${esc(n)}</button>`).join(''):'<span class="muted">Ninguém com Gmail salvo ainda.</span>';
+  $('#avtquem').innerHTML=com.length?com.map(n=>`<button type="button" class="chip" data-tq="${esc(n)}" aria-pressed="${avTesteSel.has(n)}">${esc(n)}</button>`).join(''):'<span class="muted">Ninguém com Telegram ligado ou Gmail salvo ainda.</span>';
   const t=avTeste,h=x=>new Date(x).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   let st='';
-  if(t.pedidoEm&&t.feitoEm>=t.pedidoEm)st=t.erro?`⚠ O robô tentou às ${h(t.feitoEm)}, mas deu erro: ${esc(t.erro)}`:`✓ O robô criou o teste às ${h(t.feitoEm)} para: ${esc((t.para||[]).join(', '))}. Deve apitar em uns 2 minutos e de novo em 10 minutos.`;
+  if(t.pedidoEm&&t.feitoEm>=t.pedidoEm)st=t.erro&&!(t.tg||[]).length&&!(t.para||[]).length?`⚠ O robô tentou às ${h(t.feitoEm)}, mas deu erro: ${esc(t.erro)}`:`✓ O robô mandou o teste às ${h(t.feitoEm)}.${(t.tg||[]).length?` ✈ Telegram: ${esc(t.tg.join(', '))}.`:''}${(t.para||[]).length?` 📅 Agenda: ${esc(t.para.join(', '))} (apita em uns 2 e 10 minutos).`:''}${t.erro?` <b style="color:var(--bad)">⚠ ${esc(t.erro)}</b>`:''}`;
   else if(t.pedidoEm)st=Date.now()-t.pedidoEm>7*60000?`⚠ Pedido às ${h(t.pedidoEm)} e o robô ainda não respondeu. Confira se ele está ligado (script.google.com → Execuções).`:`⏳ Pedido às ${h(t.pedidoEm)}. Aguardando o robô (até 5 minutos)…`;
   $('#avtstatus').innerHTML=st;
 }
 $('#avtquem').addEventListener('click',e=>{const b=e.target.closest('[data-tq]');if(!b)return;avTesteSel=avTesteSel||new Set();const n=b.dataset.tq;avTesteSel.has(n)?avTesteSel.delete(n):avTesteSel.add(n);b.setAttribute('aria-pressed',avTesteSel.has(n))});
 $('#avtenviar').addEventListener('click',()=>{
-  const para=[...(avTesteSel||[])].map(n=>avisos[n]).filter(Boolean);
-  if(!para.length){toast('Escolha pelo menos uma pessoa com Gmail salvo.');return}
-  db.collection('privado').doc('teste').set({pedidoEm:Date.now(),para,feitoEm:0,erro:''}).then(()=>toast('Teste pedido. Aguarde até 5 minutos.')).catch(erro)});
+  const sel=[...(avTesteSel||[])],para=sel.map(n=>avisos[n]).filter(Boolean),nomes=sel.filter(n=>(avTg.ids||{})[n]);
+  if(!para.length&&!nomes.length){toast('Escolha pelo menos uma pessoa com Telegram ligado ou Gmail salvo.');return}
+  db.collection('privado').doc('teste').set({pedidoEm:Date.now(),para,nomes,feitoEm:0,erro:''}).then(()=>toast('Teste pedido. Aguarde até 5 minutos.')).catch(erro)});
 setInterval(()=>{if(aba==='ajustes'&&avTeste.pedidoEm&&!(avTeste.feitoEm>=avTeste.pedidoEm))renderTeste()},30000);
 
 $('#avsalvar').addEventListener('click',()=>salvarAvisos('Avisos salvos. O robô usa na próxima conferida (até 5 min).'));
 // × : tira a pessoa de todos os avisos e salva na hora (ex.: vendedor que saiu da loja)
 $('#avlista').addEventListener('click',e=>{const b=e.target.closest('[data-avx]');if(!b)return;const n=b.dataset.avx;
-  if(!confirm(`Tirar ${n} de todos os avisos? O Gmail dele(a) é apagado desta lista.`))return;
-  lerTelaAvisos();delete avisos[n];avExtras=avExtras.filter(x=>x!==n);
+  if(!confirm(`Tirar ${n} de todos os avisos? O Gmail e o Telegram dele(a) saem desta lista.`))return;
+  lerTelaAvisos();delete avisos[n];delete avTgCod[n];avExtras=avExtras.filter(x=>x!==n);
+  if((avTg.ids||{})[n]){const ids={...avTg.ids};delete ids[n];db.collection('privado').doc('telegram').update({ids}).catch(()=>{})}
   for(const r of Object.values(avRegras))r.pessoas=(r.pessoas||[]).filter(x=>x!==n);
   if(avTesteSel)avTesteSel.delete(n);
   renderAvisos(false);salvarAvisos(n+' não recebe mais avisos.')});
@@ -655,8 +708,10 @@ function salvarAvisos(msg){
   for(const n of avPessoas()){const v=(avisos[n]||'').trim().toLowerCase();if(!v)continue;if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v))ruim=n;em[n]=v}
   if(ruim){toast('Confira o e-mail de '+ruim+'.');return}
   for(const [k,[a,b]] of Object.entries(avTurnos))if(!a||!b||a>=b){toast('Confira o horário do turno.');return}
-  db.collection('privado').doc('avisos').set({emails:em,regras:avRegras,lembrete:avLemb,turnos:avTurnos,atualizadoEm:Date.now()})
-    .then(()=>{renderTeste();toast(msg)}).catch(erro)}
+  if(avTgToken&&!/^\d{5,}:[\w-]{20,}$/.test(avTgToken)){toast('O código do robô do Telegram parece errado. Copie de novo do BotFather.');$('#avtgtoken').focus();return}
+  const cod={};for(const n of avPessoas())if(avTgCod[n])cod[n]=avTgCod[n];
+  db.collection('privado').doc('avisos').set({emails:em,regras:avRegras,lembrete:avLemb,turnos:avTurnos,canais:avCanais,tgToken:avTgToken,tgCod:cod,atualizadoEm:Date.now()})
+    .then(()=>{renderTeste();renderTelegram();toast(msg)}).catch(erro)}
 
 /* ---------- mensagem do WhatsApp (config/mensagem) ---------- */
 function msgDaTela(){const pixPor={};document.querySelectorAll('#pixfret [data-pixf]').forEach(i=>{if(i.value.trim())pixPor[i.dataset.pixf]=i.value.trim()});
@@ -690,13 +745,14 @@ $('#gentrar').addEventListener('click',()=>entrarComGoogle().catch(()=>toast('N�
 $('#lsair').addEventListener('click',()=>auth.signOut());
 $('#usair').addEventListener('click',()=>auth.signOut());
 auth.onAuthStateChanged(u=>{
-  pararP&&pararP();pararP=null;pararT&&pararT();pararT=null;pararUso&&pararUso();pararUso=null;pararM&&pararM();pararM=null;pararValores&&pararValores();pararValores=null;mesOuvido=null;pararAcerto&&pararAcerto();pararAcerto=null;diaAcerto=null;pararHist&&pararHist();pararHist=null;histDia=null;pararTeste&&pararTeste();pararTeste=null;fechar();
+  pararP&&pararP();pararP=null;pararT&&pararT();pararT=null;pararUso&&pararUso();pararUso=null;pararM&&pararM();pararM=null;pararValores&&pararValores();pararValores=null;mesOuvido=null;pararAcerto&&pararAcerto();pararAcerto=null;diaAcerto=null;pararHist&&pararHist();pararHist=null;histDia=null;pararTeste&&pararTeste();pararTeste=null;pararTg&&pararTg();pararTg=null;avCarregado=false;fechar();
   if(!u){telaLogin('Entre com a conta Google do administrador.');return}
   if(!ehAdmin(u)){telaLogin(`Só o administrador entra no painel. Você entrou como <b>${esc(u.email)}</b>.`,true);return}
   $('#login').hidden=true;$('#app').hidden=false;mostrarAba(aba);
   pararT=db.collection('config').doc('fretes').onSnapshot(d=>{if(tabelaMexida)return;const l=d.exists&&d.data().lista;tabela=(Array.isArray(l)&&l.length?l:FRETES_PADRAO).map(x=>({...x}));renderTabela()},()=>{});
   pararTeste=db.collection('privado').doc('teste').onSnapshot(d=>{avTeste=d.exists?d.data():{};renderTeste()},()=>{});
-  db.collection('privado').doc('avisos').get().then(d=>{avMigrar(d.exists?d.data():{});renderAvisos(false)}).catch(()=>renderAvisos());
+  pararTg=db.collection('privado').doc('telegram').onSnapshot(d=>{avTg=d.exists?d.data():{};if(avCarregado){renderTelegram();renderTeste()}},()=>{});
+  db.collection('privado').doc('avisos').get().then(d=>{avMigrar(d.exists?d.data():{});avCarregado=true;renderAvisos(false)}).catch(()=>renderAvisos());
   db.collection('config').doc('geral').get().then(d=>{geral=geralDe(d.exists?d.data():null);preencherGeral();previa()}).catch(()=>preencherGeral());
   db.collection('config').doc('mensagem').get().then(d=>renderMsg(d.exists?d.data():null)).catch(()=>renderMsg(null));
   pararM=db.collection('config').doc('motivos').onSnapshot(d=>{const l=d.exists&&d.data().lista;motivos=Array.isArray(l)?l:[...MOTIVOS_PADRAO];renderMotivos();if($('#avregras').innerHTML)renderAvisos()},()=>{});
