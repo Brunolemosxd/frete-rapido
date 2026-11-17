@@ -973,7 +973,7 @@ function abrirForm(ed){
   const nomesHTML=vends.length?vends.map(v=>`<button type="button" class="chip" data-v="${esc(v)}">${esc(v)}</button>`).join(''):'<span class="hint">Nenhum vendedor cadastrado ainda. O Bruno cadastra no painel.</span>';
   abrirSheet(`<h2>${ed?'Editar entrega':'Nova entrega'}</h2>
     <div class="fgrp fg-nota"><div class="fglbl">📄 Nota e produtos</div>
-      <div class="field"><span class="lbl">Foto da nota${ed?'':' '+R}</span><div class="photobtn" id="fotobox"><div class="thumb" id="fthumb"></div><button type="button" class="btn" id="fbtn">📷 Tirar foto</button></div>
+      <div class="field"><span class="lbl">Foto da nota (opcional)</span><div class="photobtn" id="fotobox"><div class="thumb" id="fthumb"></div><button type="button" class="btn" id="fbtn">📷 Tirar foto</button></div>
         <div class="fextras" id="fextras"></div><button type="button" class="btn addbtn" id="fmaisfoto">+ Outra foto da nota</button></div>
       <div class="field"><span class="lbl">Notas ${R} — quantas e onde estão</span><div class="notas2" id="fnotas">
         <div class="cont loja"><span>Na loja</span><div class="step"><button type="button" data-n="notasLoja" data-d="-1" aria-label="Uma nota a menos na loja">−</button><b id="nloja">0</b><button type="button" data-n="notasLoja" data-d="1" aria-label="Uma nota a mais na loja">+</button></div></div>
@@ -1117,8 +1117,7 @@ function abrirForm(ed){
       if(enviando)return;
       st.clienteNome=q('#fcli').value.trim().replace(/\s+/g,' ');st.clienteSobrenome=q('#fsob').value.trim().replace(/\s+/g,' ');st.cliente=(st.clienteNome+' '+st.clienteSobrenome).trim();st.bairro=st.loc?st.loc.nome:q('#fbai').value.trim();st.complemento=q('#fcomp').value.trim().replace(/\s+/g,' ');st.rua=q('#fend').value.replace(/\d/g,'').replace(/\s+/g,' ').replace(/[\s,\-–]+$/,'').trim();st.numero=st.semNumero?'':soDig(q('#fnum').value);st.endereco=st.rua?st.rua+(st.semNumero?', S/N':st.numero?', '+st.numero:''):'';st.observacao=q('#fobs').value.trim();st.fone=q('#fone').value.trim();st.hora=q('#fhora').value;
       const pendItem=q('#fitem').value.trim();if(pendItem){st.itens.push({nome:pendItem,local:null,qtd:1});q('#fitem').value='';sync()}
-      // entrega nova precisa da foto da nota (entregas antigas sem foto ainda podem ser editadas)
-      if(!ed&&!fotoBlob){q('#fotobox').classList.add('err');q('#fotobox').scrollIntoView({block:'center'});toast('Tire a foto da nota antes de lançar.');return}
+      // foto da nota é opcional (pedido do Bruno, 18/11)
       const erros=[['#fcli',!st.clienteNome,'Coloque o nome do cliente como está na nota.'],['#fsob',!st.clienteSobrenome,'Coloque o sobrenome do cliente como está na nota.'],['#fone',!foneOk(st.fone),'Coloque o telefone com DDD. Ex.: (11) 98765-4321'],
         ['#fbai',!st.bairro,'Coloque o bairro.'],['#fend',!st.rua,'Coloque o nome da rua.'],['#fnum',!st.numero&&!st.semNumero,'Coloque o número da casa. Se não tiver, toque em "Sem número".']].filter(x=>x[1]);
       erros.forEach(([sel])=>q(sel).classList.add('err'));

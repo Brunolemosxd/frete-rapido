@@ -28,7 +28,7 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
 ## Como funciona (resumo do que foi combinado)
 - Pessoas (`usuarios/{gmail}`): funções gerente, vendedor, entregador ou personalizado; permissões lancar, editarTodas,
   apagar, marcar, verValores, pasta. Nomes ativos com "naLista" vão para `config/equipe`.
-- Nova entrega: foto da nota obrigatória (só para entrega nova) + fotos extras; contagem de notas na loja/depósito
+- Nova entrega: foto da nota OPCIONAL (desde 18/11; cartão sem foto mostra "sem foto") + fotos extras; contagem de notas na loja/depósito
   (mínimo 1); prioridade (cartão vermelho no topo); dia padrão Hoje; turno padrão "Qualquer turno";
   nome e sobrenome como na nota (obrigatórios); telefone com DDD; contatos extras; bloqueia mesmo telefone no mesmo dia.
 - Formulário de nova entrega em blocos (caixas com faixa colorida em cima): "📄 Nota e produtos" (foto, notas, produtos),
