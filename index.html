@@ -360,7 +360,7 @@ input.err{border-color:var(--bad)}
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="comum.js?v=20261105a"></script>
+<script src="comum.js?v=20261118a"></script>
 <script>
 (function(){
 const $=s=>document.querySelector(s);
@@ -1159,7 +1159,7 @@ $('#fab').addEventListener('click',()=>abrirForm(null));
 
 /* ---------- login e conexão ---------- */
 function telaLogin(msg,outraConta){$('#app').hidden=true;$('#login').hidden=false;$('#loginMsg').textContent=msg;$('#gentrar').hidden=!!outraConta;$('#lsair').hidden=!outraConta}
-$('#gentrar').addEventListener('click',()=>entrarComGoogle().catch(()=>toast('Não consegui entrar. Tente de novo.')));
+$('#gentrar').addEventListener('click',()=>entrarComGoogle().catch(e=>toast(e&&e.amigavel?e.message:'Não consegui entrar. Tente de novo.')));
 $('#lsair').addEventListener('click',()=>auth.signOut());
 $('#usair').addEventListener('click',()=>auth.signOut());
 let pararUso=null;

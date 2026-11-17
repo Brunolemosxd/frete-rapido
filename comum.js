@@ -125,8 +125,11 @@ function entrarComGoogle() {
   p.setCustomParameters({ prompt: 'select_account' });
   return auth.signInWithPopup(p).catch(e => {
     if (e?.code === 'auth/popup-closed-by-user' || e?.code === 'auth/cancelled-popup-request') return;
-    // alguns navegadores de celular bloqueiam a janelinha; aí vai pela página inteira
-    if (e?.code === 'auth/popup-blocked' || e?.code === 'auth/operation-not-supported-in-this-environment') return auth.signInWithRedirect(p);
+    // Não usar signInWithRedirect: no site github.io com o login em firebaseapp.com, os navegadores de hoje separam a memória
+    // dos dois sites e dá o erro "falta do estado inicial". Melhor pedir para tocar de novo (o 2º toque libera a janelinha).
+    if (e?.code === 'auth/popup-blocked') throw Object.assign(new Error('O celular bloqueou a janela do Google. Toque em "Entrar com Google" de novo.'), { amigavel: true });
+    if (e?.code === 'auth/operation-not-supported-in-this-environment' || e?.code === 'auth/web-storage-unsupported')
+      throw Object.assign(new Error('Este navegador não deixa entrar com o Google. Abra o mural no Google Chrome (fora de aba anônima).'), { amigavel: true });
     throw e;
   });
 }
