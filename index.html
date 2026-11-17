@@ -327,6 +327,8 @@ input.err{border-color:var(--bad)}
 .login .box{width:100%;max-width:380px;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:28px 20px;display:grid;gap:16px;text-align:center}
 .login h1{font-size:34px}
 .login p{margin:0;color:var(--muted)}
+.lemail{text-align:left;display:grid;gap:10px;font-size:15px}.lemail summary{cursor:pointer;color:var(--accent);font-weight:600;text-align:center}
+.lemail[open]{display:grid;gap:10px}.lemail>*+*{margin-top:10px}.lemail input{width:100%}.lemail .btn{width:100%}
 .gbtn{display:flex;align-items:center;justify-content:center;gap:10px;border:1.5px solid var(--line);background:#fff;color:#1f1f1f;border-radius:12px;padding:13px 16px;font-weight:600;font-size:16px}
 .gbtn svg{width:20px;height:20px}
 </style>
@@ -338,6 +340,11 @@ input.err{border-color:var(--bad)}
     <p id="loginMsg">Entre com a sua conta Google para ver o mural.</p>
     <button type="button" class="gbtn" id="gentrar"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.1-.4-4.6H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.8-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.4 2.3-6.2 0-11.5-4.1-13.4-9.9l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg><span>Entrar com Google</span></button>
     <button type="button" class="btn ghost" id="lsair" hidden>Entrar com outra conta</button>
+    <details class="lemail" id="lemail"><summary>Não consegue entrar? Receber um link no e-mail</summary>
+      <p>Digite o seu Gmail. Chega um e-mail com um link: toque nele <b>neste mesmo celular</b> e o mural abre já entrado. Olhe também no Spam.</p>
+      <input type="text" inputmode="email" id="lemailv" autocomplete="email" placeholder="seunome@gmail.com" maxlength="80">
+      <button type="button" class="btn pri" id="lemailbtn">Mandar o link</button>
+      <p id="lemailmsg" role="status"></p></details>
   </div>
 </div>
 <div id="app" hidden>
@@ -360,7 +367,7 @@ input.err{border-color:var(--bad)}
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="comum.js?v=20261118a"></script>
+<script src="comum.js?v=20261118b"></script>
 <script>
 (function(){
 const $=s=>document.querySelector(s);
@@ -1158,7 +1165,10 @@ $('#fab').addEventListener('click',()=>abrirForm(null));
 
 
 /* ---------- login e conexão ---------- */
-function telaLogin(msg,outraConta){$('#app').hidden=true;$('#login').hidden=false;$('#loginMsg').textContent=msg;$('#gentrar').hidden=!!outraConta;$('#lsair').hidden=!outraConta}
+function telaLogin(msg,outraConta){$('#app').hidden=true;$('#login').hidden=false;$('#loginMsg').textContent=msg;$('#gentrar').hidden=!!outraConta;$('#lsair').hidden=!outraConta;$('#lemail').hidden=!!outraConta}
+$('#lemailbtn').addEventListener('click',e=>{const b=e.currentTarget,em=$('#lemailv').value;b.disabled=true;$('#lemailmsg').textContent='Mandando…';
+  mandarLinkEmail(em).then(()=>{$('#lemailmsg').innerHTML=`✓ Link mandado para <b>${esc(em.trim().toLowerCase())}</b>. Abra o Gmail neste celular e toque no link (olhe no Spam também).`})
+    .catch(er=>{$('#lemailmsg').textContent=er&&er.amigavel?er.message:'Não consegui mandar o link. Confira a internet e tente de novo.'}).finally(()=>{b.disabled=false})});
 $('#gentrar').addEventListener('click',()=>entrarComGoogle().catch(e=>toast(e&&e.amigavel?e.message:'Não consegui entrar. Tente de novo.')));
 $('#lsair').addEventListener('click',()=>auth.signOut());
 $('#usair').addEventListener('click',()=>auth.signOut());

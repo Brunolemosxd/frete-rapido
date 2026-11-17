@@ -76,7 +76,10 @@ const QUEM={bruno:{uid:'u-bruno',email:'brunolemosxd@gmail.com',emailVerified:tr
   entregador:{uid:'u-tiago',email:'tiago@gmail.com',emailVerified:true,displayName:'Tiago'},
   vendedor:{uid:'u-ana',email:'ana@gmail.com',emailVerified:true,displayName:'Ana Santos'}};
 const user=QUEM[window.__quem||'bruno'];
-const auth={currentUser:user,onAuthStateChanged(cb){setTimeout(()=>cb(user),0)},signOut:async()=>{},signInWithPopup:async()=>({user}),signInWithRedirect:async()=>{}};
+const auth={currentUser:user,onAuthStateChanged(cb){setTimeout(()=>cb(user),0)},signOut:async()=>{},signInWithPopup:async()=>({user}),signInWithRedirect:async()=>{},
+  // login por link no e-mail: window.__links guarda os pedidos; ?oobCode=... no endereço simula a volta pelo link
+  sendSignInLinkToEmail:async(email,cfg)=>{(window.__links=window.__links||[]).push({email,url:cfg.url})},
+  isSignInWithEmailLink:h=>/oobCode=/.test(h),signInWithEmailLink:async(email)=>{window.__entrouPorLink=email;return {user}}};
 window.firebase={initializeApp(){},
   auth:Object.assign(()=>auth,{GoogleAuthProvider:function(){this.setCustomParameters=()=>{}}}),
   firestore:Object.assign(()=>({collection:c=>query(c,[])}),{FieldValue:{increment:n=>({[INC]:n}),serverTimestamp:()=>Date.now()}})};

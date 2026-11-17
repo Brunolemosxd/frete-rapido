@@ -134,6 +134,35 @@ function entrarComGoogle() {
   });
 }
 
+// ---- Entrar por link no e-mail (para celulares em que a janelinha do Google não volta para o mural) ----
+// Precisa estar ligado no Firebase: Authentication → Método de login → E-mail/senha → "Link do e-mail (login sem senha)".
+const LINK_EMAIL = 'fr_email_link';
+const amigavel = m => Object.assign(new Error(m), { amigavel: true });
+function mandarLinkEmail(email) {
+  email = String(email || '').trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return Promise.reject(amigavel('Confira o e-mail digitado.'));
+  return auth.sendSignInLinkToEmail(email, { url: location.origin + location.pathname, handleCodeInApp: true })
+    .then(() => { try { localStorage.setItem(LINK_EMAIL, email); } catch {} })
+    .catch(e => {
+      if (e?.code === 'auth/operation-not-allowed') throw amigavel('O login por e-mail ainda não foi ligado. Avise o Bruno.');
+      if (e?.code === 'auth/quota-exceeded') throw amigavel('Muitos links pedidos hoje. Tente amanhã ou entre com o Google.');
+      throw e;
+    });
+}
+// quando a pessoa toca no link do e-mail, o mural abre com o código no endereço: termina de entrar aqui
+(async () => {
+  if (!auth.isSignInWithEmailLink || !auth.isSignInWithEmailLink(location.href)) return;
+  let email = '';
+  try { email = localStorage.getItem(LINK_EMAIL) || ''; } catch {}
+  if (!email) email = prompt('Para terminar de entrar, digite o seu Gmail (o mesmo para onde foi o link):') || '';
+  try {
+    if (email) { await auth.signInWithEmailLink(email.trim().toLowerCase(), location.href); try { localStorage.removeItem(LINK_EMAIL); } catch {} }
+  } catch (e) {
+    alert(/expired|invalid-action/.test(e?.code || '') ? 'Esse link já foi usado ou venceu. Peça outro na tela de entrar.'
+      : e?.code === 'auth/invalid-email' ? 'Esse não é o e-mail para onde o link foi. Peça outro na tela de entrar.' : 'Não consegui entrar pelo link. Peça outro na tela de entrar.');
+  } finally { history.replaceState(null, '', location.pathname); }
+})();
+
 // Devolve {uid,email,nome,funcao,admin,perms} ou null quando o Bruno ainda não liberou o e-mail
 async function carregarPerfil(u) {
   if (ehAdmin(u)) return { uid: u.uid, email: emailDe(u), nome: u.displayName || 'Bruno', funcao: 'admin', admin: true, perms: { ...TODAS } };

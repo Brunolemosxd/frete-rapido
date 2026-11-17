@@ -145,6 +145,10 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
 - Login: SÓ `signInWithPopup` (comum.js `entrarComGoogle`). NÃO usar signInWithRedirect: com site em github.io e login em
   firebaseapp.com os navegadores separam a memória e dá "Não foi possível processar a solicitação devido à falta do estado
   inicial" (aconteceu com um vendedor em 18/11). Popup bloqueado = mensagem pedindo para tocar de novo.
+  Plano B (18/11, o Andres no Chrome voltava sempre para a tela de entrar): "Não consegue entrar? Receber um link no e-mail" na
+  tela de entrar do mural (`mandarLinkEmail` no comum.js, e-mail guardado em localStorage `fr_email_link`; ao abrir pelo link,
+  o comum.js termina o login com signInWithEmailLink e limpa o endereço; sem e-mail guardado, pergunta). Precisa do provedor
+  E-mail/senha com "Link do e-mail (login sem senha)" ligado no Firebase (passo do Bruno). Regras: só exigem email_verified (ok).
 - Tema claro/escuro/automático no topo.
 - Ícone e nome na tela de início do celular: "Mural de Fretes", ícone "MF" branco + faixa amarela + 🚚 em fundo azul
   (`mf-32/180/192/512.png`, `manifest.json` com display "standalone": o ícone abre numa janela própria, sem as páginas de outros sites para trás;
