@@ -136,6 +136,10 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   e no apagar) {entregaId, cliente, dia, acao, mudancas:[{campo,antes,depois}], por, porEmail, uid, em}. Compara com a cópia do
   servidor (`servidor`, de cada snapshot), ignora vazio = "não". Regras: cria só em nome próprio, ninguém muda/apaga, só admin lê.
   Entregas novas também gravam `criadoPorEmail` (para o aviso "quem lançou a nota").
+- Painel → Ajustes organizado em blocos que abrem e fecham (`details.sec`, lembra os abertos em localStorage `painel_secs`),
+  em 3 grupos: 🔔 Avisos (✈ Telegram, 👥 Quem recebe cada aviso, 🧪 Testar, 📅 Google Agenda), 🚚 Mural (💬 Mensagem do
+  WhatsApp, 🏪 Loja e entregas, 🗺️ Tabela de fretes, ⚠ Motivos) e ⚙ Sistema (📊 Uso do plano, 🧹 Fotos antigas).
+  Os blocos de avisos têm cada um um botão "Salvar avisos" (`data-avsalvar`, todos salvam tudo de privado/avisos).
 - Tema claro/escuro/automático no topo.
 - Ícone e nome na tela de início do celular: "Mural de Fretes", ícone "MF" branco + faixa amarela + 🚚 em fundo azul
   (`mf-32/180/192/512.png`, `manifest.json` com display "standalone": o ícone abre numa janela própria, sem as páginas de outros sites para trás;

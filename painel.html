@@ -135,6 +135,16 @@ select{font:inherit;font-size:15px;padding:10px 12px;border-radius:12px;border:1
 .tgok{color:var(--ok,#2e9d5b);font-weight:700}
 .avtg details{font-size:14px}
 .avtg a.btn{text-decoration:none}
+.sgrupo{margin:10px 2px 0;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+details.sec{background:var(--surface);border-radius:14px;box-shadow:var(--shadow)}
+details.sec>summary{display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer;list-style:none}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::after{content:'▾';margin-left:auto;color:var(--muted);font-size:18px;transition:transform .15s}
+details.sec[open]>summary::after{transform:rotate(180deg)}
+details.sec[open]>summary{border-bottom:1px solid var(--line)}
+.sico{font-size:24px;width:32px;text-align:center;flex:none}
+.stit{display:grid;gap:2px;min-width:0}.stit small{color:var(--muted);font-size:13px}
+.sbody{padding:14px;display:grid;gap:12px}
 details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:4px 0}
 .login{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
 .login .box{width:100%;max-width:380px;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:28px 20px;display:grid;gap:16px;text-align:center}
@@ -195,49 +205,13 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
     </div>
   </section>
 
-  <section id="t-ajustes" style="display:grid;gap:14px" hidden>
+  <section id="t-ajustes" style="display:grid;gap:10px" hidden>
     <h2>Ajustes</h2>
-    <div class="card">
-      <strong>Tabela de fretes</strong>
-      <p class="muted" style="margin:0">O vendedor escolhe o bairro e o valor vem daqui; ele só consegue ajustar de −50 a +50. Deixe o valor vazio para "a consultar".
-        A flecha é o lado da entrega: <b style="color:#2b6fd6">←</b> Araçá a Terra de Areia, <b style="color:#8a96a3">↑</b> centro, <b style="color:#d63333">→</b> Guará a Tramandaí. Toque nela para trocar.</p>
-      <div id="tlista" style="display:grid;gap:6px"></div>
-      <div class="row"><button type="button" class="btn" id="tadd">+ Bairro</button><span class="sp"></span><button type="button" class="btn pri" id="tsalvar">Salvar tabela</button></div>
-    </div>
-    <div class="card">
-      <strong>Motivos de problema</strong>
-      <p class="muted" style="margin:0">Aparecem como botões quando alguém marca uma entrega com problema.</p>
-      <div class="chips" id="mlista"></div>
-      <div class="row"><input type="text" id="mnovo" maxlength="60" placeholder="Novo motivo" style="flex:1;min-width:0;width:auto"><button type="button" class="btn pri" id="madd">Cadastrar</button></div>
-    </div>
-    <div class="card">
-      <strong>Loja e entregas</strong>
-      <div class="field"><label for="gloja">Nome da loja (vai na mensagem do WhatsApp)</label><input type="text" id="gloja" maxlength="60" autocomplete="off"></div>
-      <div class="field"><label for="gcond">Condomínio: valor mínimo do frete (R$)</label><input type="text" id="gcond" inputmode="numeric" maxlength="4" autocomplete="off" style="max-width:140px"></div>
-      <div class="field"><span class="lbl">Quem carrega o caminhão</span><div class="chips" id="gcarr"></div>
-        <div class="row"><input type="text" id="gcarrnovo" maxlength="30" placeholder="Nome" style="flex:1;min-width:0;width:auto"><button type="button" class="btn" data-add="carregadores">Adicionar</button></div></div>
-      <div class="field"><span class="lbl">Produtos (botões da nova entrega)</span><div class="chips" id="gprod"></div>
-        <div class="row"><input type="text" id="gprodnovo" maxlength="40" placeholder="Produto" style="flex:1;min-width:0;width:auto"><button type="button" class="btn" data-add="produtos">Adicionar</button></div></div>
-      <div class="row"><button type="button" class="btn ghost" id="gpadrao">Voltar ao padrão</button><span class="sp"></span><button type="button" class="btn pri" id="gsalvar">Salvar</button></div>
-    </div>
-    <div class="card">
-      <strong>Mensagem do WhatsApp</strong>
-      <p class="muted" style="margin:0">Aparece já escrita quando alguém toca no botão verde. As palavras entre chaves são trocadas sozinhas:
-        <b>{nome}</b> primeiro nome do cliente · <b>{cliente}</b> nome completo · <b>{apresentacao}</b> "Meu nome é Bruno, freteiro da loja." ·
-        <b>{loja}</b> · <b>{valor}</b> frete a cobrar · <b>{pix}</b> chave Pix · <b>{cobrar}</b> onde entra a parte de cobrança (some quando o frete já está pago).</p>
-      <div class="field"><label for="pixkey">Chave Pix da loja (vazio = a linha do Pix não vai)</label><input type="text" id="pixkey" maxlength="80" autocomplete="off" placeholder="CNPJ, telefone, e-mail ou chave aleatória"></div>
-      <div class="field"><span class="lbl">Pix de cada freteiro (vai na mensagem que ELE mandar; vazio = usa o Pix da loja)</span><div id="pixfret" style="display:grid;gap:8px"></div></div>
-      <div class="field"><label for="mtexto">Mensagem para o cliente</label><textarea id="mtexto" rows="8"></textarea></div>
-      <div class="field"><label for="mcobrar">Parte de cobrança (só quando o frete é para acertar na entrega)</label><textarea id="mcobrar" rows="4"></textarea></div>
-      <div class="field"><label for="moutro">Mensagem para outro contato (ex.: filha, vizinho)</label><textarea id="moutro" rows="8"></textarea></div>
-      <div class="field"><span class="lbl">Como o cliente vai ver (exemplo com frete a cobrar)</span><div class="prev" id="mprev"></div><div class="muted" id="mconta"></div></div>
-      <div class="row"><button type="button" class="btn ghost" id="mpadrao">Voltar ao texto padrão</button><span class="sp"></span><button type="button" class="btn pri" id="msalvar">Salvar</button></div>
-    </div>
-    <div class="card">
-      <strong>Avisos (Telegram e Google Agenda)</strong>
-      <p class="muted" style="margin:0">Escolha quem recebe cada tipo de aviso. Só você vê esta parte. Funciona pelo "robô" ligado na sua conta Google.</p>
-      <div class="field"><span class="lbl">Avisar por</span><div class="chips" id="avcanais"></div></div>
-      <div class="field avtg"><span class="lbl">✈ Telegram</span>
+    <p class="muted" style="margin:0">Toque num assunto para abrir. Cada parte tem o seu botão Salvar.</p>
+    <h3 class="sgrupo">🔔 Avisos</h3>
+    <details class="sec" data-sec="tg"><summary><span class="sico">✈</span><span class="stit"><b>Telegram</b><small>Robô do Telegram e link de cada pessoa</small></span></summary>
+    <div class="sbody">
+      <div class="field avtg">
         <details id="avtgajuda"><summary>Como criar o robô do Telegram (só uma vez)</summary>
           <ol style="margin:6px 0 0;padding-left:20px">
             <li>Instale o <b>Telegram</b> e abra o <a href="https://t.me/BotFather" target="_blank" rel="noopener"><b>@BotFather</b></a> (o robô oficial do Telegram, com selo azul).</li>
@@ -249,34 +223,84 @@ details summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14p
         <input type="text" id="avtgtoken" maxlength="80" autocomplete="off" placeholder="Código do robô (o BotFather manda)">
         <div id="avtgst" class="muted"></div>
         <div id="avtglista" style="display:grid;gap:8px"></div></div>
-      <div class="field"><span class="lbl">1. Pessoas (Gmail de cada uma)</span><div id="avlista" style="display:grid;gap:8px"></div>
+      <div class="row"><span class="sp"></span><button type="button" class="btn pri" data-avsalvar>Salvar avisos</button></div>
+    </div></details>
+    <details class="sec" data-sec="quem"><summary><span class="sico">👥</span><span class="stit"><b>Quem recebe cada aviso</b><small>Pessoas, Gmail, por onde avisar e o que cada um recebe</small></span></summary>
+    <div class="sbody">
+      <div class="field"><span class="lbl">Avisar por</span><div class="chips" id="avcanais"></div></div>
+      <div class="field"><span class="lbl">Pessoas e Gmail (o Gmail é para a Agenda e para saber quem lançou a nota)</span><div id="avlista" style="display:grid;gap:8px"></div>
         <div class="field avcad"><span class="muted">Toque em alguém do cadastro (Painel → Pessoas) para pôr o Gmail dele(a) sem digitar:</span><div class="chips" id="avcad"></div></div>
         <div class="row"><input type="text" id="avnovo" maxlength="30" placeholder="Outra pessoa (ex.: Ana vendedora)" style="flex:1;min-width:0;width:auto"><button type="button" class="btn" id="avadd">+ Pessoa</button></div></div>
-      <div class="field"><span class="lbl">2. O que cada um recebe</span>
+      <div class="field"><span class="lbl">O que cada um recebe</span>
         <p class="muted" style="margin:0">Toque nos nomes para ligar/desligar. Para tirar alguém de todos os avisos, toque no <b>×</b> ao lado do nome (ou desative a pessoa em Pessoas: quem está desativado não recebe nada). No Telegram chega uma mensagem na hora. No Google Agenda a entrega nova fica no dia e turno dela, e os outros avisos apitam na hora (2 alarmes: uns 2 e 10 minutos depois).</p>
         <div id="avregras" style="display:grid;gap:10px"></div></div>
-      <div class="field"><span class="lbl">3. Horários na Agenda</span>
-        <div class="row"><label for="avlemb" style="flex:1">Lembrete antes do turno (minutos)</label><input type="text" id="avlemb" inputmode="numeric" maxlength="3" style="width:80px"></div>
-        <div id="avturnos" style="display:grid;gap:6px"></div></div>
-      <div class="row"><span class="sp"></span><button type="button" class="btn pri" id="avsalvar">Salvar</button></div>
-      <div class="field avteste"><span class="lbl">🔔 Testar o aviso</span>
+      <div class="row"><span class="sp"></span><button type="button" class="btn pri" data-avsalvar>Salvar avisos</button></div>
+    </div></details>
+    <details class="sec" data-sec="teste"><summary><span class="sico">🧪</span><span class="stit"><b>Testar os avisos</b><small>Manda um aviso de teste para ver se chega</small></span></summary>
+    <div class="sbody">
+      <div class="field avteste">
         <p class="muted" style="margin:0">Escolha quem recebe o teste (precisa ter o Telegram ligado ou o Gmail salvo acima) e toque em Enviar. O robô confere a cada 5 minutos:
           em até 5 minutos chega a mensagem no Telegram; na agenda, o aviso "🔔 Teste" apita uns 2 minutos e de novo 10 minutos depois.
           Pessoa nova recebe o teste como convite no Gmail: peça para ela tocar em <b>"Sim"</b> no convite, assim os próximos avisos entram direto na agenda dela.</p>
         <div class="chips" id="avtquem"></div>
         <div class="row"><span id="avtstatus" class="muted" style="flex:1"></span><button type="button" class="btn" id="avtenviar">🔔 Enviar teste</button></div></div>
-    </div>
-    <div class="card">
-      <strong>Uso do plano grátis hoje</strong>
+    </div></details>
+    <details class="sec" data-sec="agenda"><summary><span class="sico">📅</span><span class="stit"><b>Google Agenda</b><small>Lembrete e horário de cada turno</small></span></summary>
+    <div class="sbody">
+      <div class="field"><span class="lbl">Horários dos turnos na Agenda</span>
+        <div class="row"><label for="avlemb" style="flex:1">Lembrete antes do turno (minutos)</label><input type="text" id="avlemb" inputmode="numeric" maxlength="3" style="width:80px"></div>
+        <div id="avturnos" style="display:grid;gap:6px"></div></div>
+      <div class="row"><span class="sp"></span><button type="button" class="btn pri" data-avsalvar>Salvar avisos</button></div>
+    </div></details>
+    <h3 class="sgrupo">🚚 Mural</h3>
+    <details class="sec" data-sec="msg"><summary><span class="sico">💬</span><span class="stit"><b>Mensagem do WhatsApp</b><small>Texto que vai para o cliente e chaves Pix</small></span></summary>
+    <div class="sbody">
+      <p class="muted" style="margin:0">Aparece já escrita quando alguém toca no botão verde. As palavras entre chaves são trocadas sozinhas:
+        <b>{nome}</b> primeiro nome do cliente · <b>{cliente}</b> nome completo · <b>{apresentacao}</b> "Meu nome é Bruno, freteiro da loja." ·
+        <b>{loja}</b> · <b>{valor}</b> frete a cobrar · <b>{pix}</b> chave Pix · <b>{cobrar}</b> onde entra a parte de cobrança (some quando o frete já está pago).</p>
+      <div class="field"><label for="pixkey">Chave Pix da loja (vazio = a linha do Pix não vai)</label><input type="text" id="pixkey" maxlength="80" autocomplete="off" placeholder="CNPJ, telefone, e-mail ou chave aleatória"></div>
+      <div class="field"><span class="lbl">Pix de cada freteiro (vai na mensagem que ELE mandar; vazio = usa o Pix da loja)</span><div id="pixfret" style="display:grid;gap:8px"></div></div>
+      <div class="field"><label for="mtexto">Mensagem para o cliente</label><textarea id="mtexto" rows="8"></textarea></div>
+      <div class="field"><label for="mcobrar">Parte de cobrança (só quando o frete é para acertar na entrega)</label><textarea id="mcobrar" rows="4"></textarea></div>
+      <div class="field"><label for="moutro">Mensagem para outro contato (ex.: filha, vizinho)</label><textarea id="moutro" rows="8"></textarea></div>
+      <div class="field"><span class="lbl">Como o cliente vai ver (exemplo com frete a cobrar)</span><div class="prev" id="mprev"></div><div class="muted" id="mconta"></div></div>
+      <div class="row"><button type="button" class="btn ghost" id="mpadrao">Voltar ao texto padrão</button><span class="sp"></span><button type="button" class="btn pri" id="msalvar">Salvar</button></div>
+    </div></details>
+    <details class="sec" data-sec="loja"><summary><span class="sico">🏪</span><span class="stit"><b>Loja e entregas</b><small>Nome da loja, condomínio, quem carrega e produtos</small></span></summary>
+    <div class="sbody">
+      <div class="field"><label for="gloja">Nome da loja (vai na mensagem do WhatsApp)</label><input type="text" id="gloja" maxlength="60" autocomplete="off"></div>
+      <div class="field"><label for="gcond">Condomínio: valor mínimo do frete (R$)</label><input type="text" id="gcond" inputmode="numeric" maxlength="4" autocomplete="off" style="max-width:140px"></div>
+      <div class="field"><span class="lbl">Quem carrega o caminhão</span><div class="chips" id="gcarr"></div>
+        <div class="row"><input type="text" id="gcarrnovo" maxlength="30" placeholder="Nome" style="flex:1;min-width:0;width:auto"><button type="button" class="btn" data-add="carregadores">Adicionar</button></div></div>
+      <div class="field"><span class="lbl">Produtos (botões da nova entrega)</span><div class="chips" id="gprod"></div>
+        <div class="row"><input type="text" id="gprodnovo" maxlength="40" placeholder="Produto" style="flex:1;min-width:0;width:auto"><button type="button" class="btn" data-add="produtos">Adicionar</button></div></div>
+      <div class="row"><button type="button" class="btn ghost" id="gpadrao">Voltar ao padrão</button><span class="sp"></span><button type="button" class="btn pri" id="gsalvar">Salvar</button></div>
+    </div></details>
+    <details class="sec" data-sec="tabela"><summary><span class="sico">🗺️</span><span class="stit"><b>Tabela de fretes</b><small>Valor de cada bairro e lado da entrega</small></span></summary>
+    <div class="sbody">
+      <p class="muted" style="margin:0">O vendedor escolhe o bairro e o valor vem daqui; ele só consegue ajustar de −50 a +50. Deixe o valor vazio para "a consultar".
+        A flecha é o lado da entrega: <b style="color:#2b6fd6">←</b> Araçá a Terra de Areia, <b style="color:#8a96a3">↑</b> centro, <b style="color:#d63333">→</b> Guará a Tramandaí. Toque nela para trocar.</p>
+      <div id="tlista" style="display:grid;gap:6px"></div>
+      <div class="row"><button type="button" class="btn" id="tadd">+ Bairro</button><span class="sp"></span><button type="button" class="btn pri" id="tsalvar">Salvar tabela</button></div>
+    </div></details>
+    <details class="sec" data-sec="motivos"><summary><span class="sico">⚠</span><span class="stit"><b>Motivos de problema</b><small>Botões que aparecem ao marcar problema</small></span></summary>
+    <div class="sbody">
+      <p class="muted" style="margin:0">Aparecem como botões quando alguém marca uma entrega com problema.</p>
+      <div class="chips" id="mlista"></div>
+      <div class="row"><input type="text" id="mnovo" maxlength="60" placeholder="Novo motivo" style="flex:1;min-width:0;width:auto"><button type="button" class="btn pri" id="madd">Cadastrar</button></div>
+    </div></details>
+    <h3 class="sgrupo">⚙ Sistema</h3>
+    <details class="sec" data-sec="uso"><summary><span class="sico">📊</span><span class="stit"><b>Uso do plano grátis</b><small>Quanto do plano do Firebase foi usado hoje</small></span></summary>
+    <div class="sbody">
       <div id="usoTxt" class="muted">Carregando…</div>
       <div class="barra" id="usoBarra"><i style="width:0"></i></div>
       <p class="muted" style="margin:0">É uma conta feita pelo próprio mural, perto do número real. Zera de madrugada (umas 4 ou 5 da manhã). O número oficial fica em <a href="https://console.firebase.google.com/project/frete-rapido-5516e/usage" target="_blank" rel="noopener">Firebase → Uso</a>.</p>
-    </div>
-    <div class="card">
-      <strong>Fotos antigas</strong>
+    </div></details>
+    <details class="sec" data-sec="fotos"><summary><span class="sico">🧹</span><span class="stit"><b>Fotos antigas</b><small>Apagar fotos com mais de 60 dias</small></span></summary>
+    <div class="sbody">
       <p class="muted" style="margin:0">As fotos com mais de 60 dias são apagadas sozinhas quando você abre o mural ou o painel (uma vez por dia). As entregas continuam; só as fotos grandes somem.</p>
       <div><button type="button" class="btn" id="limpar">Apagar agora as fotos antigas</button></div>
-    </div>
+    </div></details>
   </section>
 </main>
 </div>
@@ -694,7 +718,12 @@ $('#avtenviar').addEventListener('click',()=>{
   db.collection('privado').doc('teste').set({pedidoEm:Date.now(),para,nomes,feitoEm:0,erro:''}).then(()=>toast('Teste pedido. Aguarde até 5 minutos.')).catch(erro)});
 setInterval(()=>{if(aba==='ajustes'&&avTeste.pedidoEm&&!(avTeste.feitoEm>=avTeste.pedidoEm))renderTeste()},30000);
 
-$('#avsalvar').addEventListener('click',()=>salvarAvisos('Avisos salvos. O robô usa na próxima conferida (até 5 min).'));
+document.querySelectorAll('[data-avsalvar]').forEach(b=>b.addEventListener('click',()=>salvarAvisos('Avisos salvos. O robô usa na próxima conferida (até 5 min).')));
+// Ajustes em blocos que abrem e fecham; lembra quais estavam abertos
+{let ab=[];try{ab=JSON.parse(localStorage.getItem('painel_secs')||'[]')}catch{}
+  document.querySelectorAll('details.sec').forEach(d=>{if(ab.includes(d.dataset.sec))d.open=true;
+    d.addEventListener('toggle',()=>{if(d.open)setTimeout(crescerCaixas,0);
+      try{localStorage.setItem('painel_secs',JSON.stringify([...document.querySelectorAll('details.sec[open]')].map(x=>x.dataset.sec)))}catch{}})})}
 // × : tira a pessoa de todos os avisos e salva na hora (ex.: vendedor que saiu da loja)
 $('#avlista').addEventListener('click',e=>{const b=e.target.closest('[data-avx]');if(!b)return;const n=b.dataset.avx;
   if(!confirm(`Tirar ${n} de todos os avisos? O Gmail e o Telegram dele(a) saem desta lista.`))return;
