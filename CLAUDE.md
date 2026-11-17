@@ -130,8 +130,10 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   {Nome: chat id} e responde "✅ Pronto". `telegramPara` manda a mensagem na hora para os marcados na regra com Telegram ligado
   (nova entrega também, com dia e turno; quem fez a mudança e desativados não recebem). Teste manda `nomes` e o robô responde `tg`.
   × de uma pessoa tira também o código e o Telegram dela. Dados do cliente passam pelo Telegram (escolha do Bruno).
-  Instalado em 13/11/2026 ("Projeto sem título" no script.google.com); a versão personalizável (14/11) precisa ser colada lá
-  (Codigo.gs + appsscript.json) e rodar "instalar". Depois disso, mudanças de quem recebe = só no painel.
+  Projeto no script.google.com: "MuralDeFretes" (17/11; os "Projeto sem título" eram cópias e devem ser apagados). Precisa do
+  appsscript.json com os oauthScopes (sem eles: erro 403 ACCESS_TOKEN_SCOPE_INSUFFICIENT) e, ao autorizar, marcar TODAS as caixinhas.
+  Telegram funcionando desde 17/11 (robô @muralfretes_colombo_bot, Bruno ligado e teste chegou). Mudança no Codigo.gs = Bruno cola de
+  novo (link raw do GitHub) e salva; quem recebe = só no painel.
 - Histórico de alterações (painel → Histórico, só o Bruno): o mural grava em `historico` (função `registrar`, chamada no `salvar`
   e no apagar) {entregaId, cliente, dia, acao, mudancas:[{campo,antes,depois}], por, porEmail, uid, em}. Compara com a cópia do
   servidor (`servidor`, de cada snapshot), ignora vazio = "não". Regras: cria só em nome próprio, ninguém muda/apaga, só admin lê.
