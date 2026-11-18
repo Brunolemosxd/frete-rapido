@@ -147,7 +147,12 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
 - Login: SÓ `signInWithPopup` (comum.js `entrarComGoogle`). NÃO usar signInWithRedirect: com site em github.io e login em
   firebaseapp.com os navegadores separam a memória e dá "Não foi possível processar a solicitação devido à falta do estado
   inicial" (aconteceu com um vendedor em 18/11). Popup bloqueado = mensagem pedindo para tocar de novo.
-  O login por link no e-mail (plano B de 18/11) foi TIRADO a pedido do Bruno no mesmo dia: só "Entrar com Google".
+  Plano B (18/11, o Andres no Chrome voltava sempre para a tela de entrar): "Não consegue entrar? Receber um link no e-mail" na
+  tela de entrar do mural (`mandarLinkEmail` no comum.js, e-mail guardado em localStorage `fr_email_link`; ao abrir pelo link,
+  o comum.js termina o login com signInWithEmailLink e limpa o endereço; sem e-mail guardado, pergunta). Precisa do provedor
+  E-mail/senha com "Link do e-mail (login sem senha)" ligado no Firebase (passo do Bruno). Regras: só exigem email_verified (ok).
+  DESLIGADO em 18/11 a pedido do Bruno: `LOGIN_POR_EMAIL = false` no comum.js esconde o botão (código e Firebase ficam prontos;
+  para religar é só pôr true e trocar o ?v=).
 - APK para Android (18/11, para mandar a um vendedor): `MuralDeFretes.apk` na raiz (link
   https://brunolemosxd.github.io/frete-rapido/MuralDeFretes.apk). Projeto em `_apk/` (Gradle, AGP 8.7.3, androidbrowserhelper 2.5.0,
   Trusted Web Activity: abre o mural pelo Chrome, por isso o login do Google funciona; WebView NÃO serve, o Google bloqueia login nela).
