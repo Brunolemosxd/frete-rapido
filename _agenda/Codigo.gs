@@ -82,12 +82,12 @@ function tratarEntrega(cal, cfg, e, reg) {
     telegramPara(cfg, rn, e, '🚚 Nova entrega: ' + (e.cliente || '') + (e.bairro ? ' — ' + e.bairro : '') +
       (e.prioridade ? ' ⬆ PRIORIDADE' : '') + '\n📅 ' + e.data.split('-').reverse().slice(0, 2).join('/') + ' · ' + turnoTxt + '\n\n' + descricao(e));
   }
-  if (!ev && primeiraVez && e.data >= ontem && cfg.canais.agenda && quemNova.length) {
+  // Agenda: SÓ na agenda do Bruno (18/11: os outros recebiam os convites por e-mail; agora eles recebem só pelo Telegram)
+  if (!ev && primeiraVez && e.data >= ontem && cfg.canais.agenda && quemNova.indexOf(cfg.dono) >= 0) {
     const [ini, fim, turnoTxt] = horario(cfg, e);
-    ev = cal.createEvent(tituloEntrega(e, turnoTxt), ini, fim, { description: descricao(e), location: endereco(e),
-      guests: semDono(cfg, quemNova).join(','), sendInvites: semDono(cfg, quemNova).length > 0 });
+    ev = cal.createEvent(tituloEntrega(e, turnoTxt), ini, fim, { description: descricao(e), location: endereco(e) });
     ev.removeAllReminders();
-    if (quemNova.indexOf(cfg.dono) >= 0) ev.addPopupReminder(cfg.lembrete);
+    ev.addPopupReminder(cfg.lembrete);
     ev.setColor(e.prioridade ? CalendarApp.EventColor.RED : CalendarApp.EventColor.BLUE);
   } else if (ev) {
     const [ini, fim, turnoTxt] = horario(cfg, e);
@@ -95,8 +95,6 @@ function tratarEntrega(cal, cfg, e, reg) {
     if (ev.getTitle() !== titulo) ev.setTitle(titulo);
     if (ev.getDescription() !== desc) ev.setDescription(desc);
     if (ev.getStartTime().getTime() !== ini.getTime() || ev.getEndTime().getTime() !== fim.getTime()) ev.setTime(ini, fim);
-    const ja = ev.getGuestList().map(g => g.getEmail().toLowerCase());
-    semDono(cfg, quemNova).filter(m => ja.indexOf(m) < 0).forEach(m => ev.addGuest(m));
     if (e.status === 'entregue') ev.setColor(CalendarApp.EventColor.GREEN);
   }
   if (ev) reg.ev = ev.getId();
@@ -144,11 +142,11 @@ function avisar(cal, cfg, tipo, e, titulo, texto, cor) {
   return quem.length ? eventoNaHora(cal, cfg.dono, quem, titulo, texto, endereco(e), cor) : '';
 }
 function eventoNaHora(cal, dono, quem, titulo, texto, lugar, cor) {
+  if (quem.indexOf(dono) < 0) return ''; // só na agenda do Bruno: ninguém mais é convidado (convite chegava por e-mail)
   const ini = new Date(Date.now() + 10 * 60000), fim = new Date(ini.getTime() + 15 * 60000);
-  const convidados = quem.filter(m => m !== dono);
-  const ev = cal.createEvent(titulo, ini, fim, { description: texto, location: lugar || '', guests: convidados.join(','), sendInvites: convidados.length > 0 });
+  const ev = cal.createEvent(titulo, ini, fim, { description: texto, location: lugar || '' });
   ev.removeAllReminders();
-  if (quem.indexOf(dono) >= 0) { ev.addPopupReminder(8); ev.addPopupReminder(0); }
+  ev.addPopupReminder(8); ev.addPopupReminder(0);
   ev.setColor(cor);
   return ev.getId();
 }
