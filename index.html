@@ -327,6 +327,13 @@ input.err{border-color:var(--bad)}
 .login .box{width:100%;max-width:380px;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:28px 20px;display:grid;gap:16px;text-align:center}
 .login h1{font-size:34px}
 .login p{margin:0;color:var(--muted)}
+.camov{position:fixed;inset:0;z-index:9999;background:#000;display:flex;flex-direction:column}
+.camov video{flex:1;min-height:0;width:100%;object-fit:contain;background:#000}
+.camov .camst{position:absolute;top:40%;left:16px;right:16px;color:#fff;text-align:center;font-size:17px;line-height:1.4}
+.camov .cambar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+.camov .cambar .btn{background:#222;color:#fff;border-color:#444}
+.camclick{width:76px;height:76px;border-radius:50%;border:5px solid #fff;background:#f4c430;flex:none}
+.camclick:disabled{opacity:.4}
 .lemail{text-align:left;display:grid;gap:10px;font-size:15px}.lemail summary{cursor:pointer;color:var(--accent);font-weight:600;text-align:center}
 .lemail[open]{display:grid;gap:10px}.lemail>*+*{margin-top:10px}.lemail input{width:100%}.lemail .btn{width:100%}
 .gbtn{display:flex;align-items:center;justify-content:center;gap:10px;border:1.5px solid var(--line);background:#fff;color:#1f1f1f;border-radius:12px;padding:13px 16px;font-weight:600;font-size:16px}
@@ -361,7 +368,7 @@ input.err{border-color:var(--bad)}
 <button class="fab" id="fab" type="button">+ Nova entrega</button>
 <div id="sheetRoot"></div>
 <div class="toast" id="toast" hidden></div>
-<input type="file" id="file" accept="image/*" capture="environment" hidden>
+<input type="file" id="file" accept="image/*" hidden>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -449,8 +456,32 @@ async function copiar(t,msg){
   if(!ok){const ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();
     try{ok=document.execCommand('copy')}catch{}ta.remove()}
   toast(ok?(msg||'Número copiado. É só colar no WhatsApp.'):'Não consegui copiar. Segure o dedo no texto para copiar.')}
-function pegarFoto(cb){const f=$('#file');f.value='';f.onchange=async()=>{const file=f.files[0];if(!file)return;
-  let b;try{b=await reduzir(file,1600,.8)}catch{toast('Não consegui ler essa foto.');return}cb(b)};f.click()}
+// Câmera DENTRO do mural (18/11): abrir o app da câmera fazia celulares com pouca memória (Moto G35) fecharem o Chrome,
+// e a página recarregava perdendo o que estava preenchido. Aqui a câmera aparece por cima do mural; "Galeria" escolhe uma foto pronta.
+let fecharCamera=null;
+function obterFoto(max,q){return new Promise(res=>{
+  const ov=document.createElement('div');ov.className='camov';
+  ov.innerHTML=`<video playsinline muted autoplay></video><div class="camst">Abrindo a câmera…</div>
+    <div class="cambar"><button type="button" class="btn" data-c="sair">✕ Cancelar</button><button type="button" class="camclick" data-c="tirar" aria-label="Tirar foto" disabled></button><button type="button" class="btn" data-c="gal">🖼️ Galeria</button></div>`;
+  document.body.appendChild(ov);const v=ov.querySelector('video'),st=ov.querySelector('.camst');let stream=null,feito=false;
+  try{history.pushState({frCam:1},'')}catch{}
+  const fim=(b,peloVoltar)=>{if(feito)return;feito=true;fecharCamera=null;stream&&stream.getTracks().forEach(t=>t.stop());ov.remove();
+    if(!peloVoltar&&history.state&&history.state.frCam){voltandoSozinho=true;history.back()}res(b)};
+  fecharCamera=()=>fim(null,true);
+  ov.addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(!b)return;
+    if(b.dataset.c==='sair')return fim(null);
+    if(b.dataset.c==='gal'){const f=$('#file');f.value='';f.onchange=async()=>{const file=f.files[0];if(!file)return;
+      try{fim(await reduzir(file,max,q))}catch{toast('Não consegui ler essa foto.')}};f.click();return}
+    if(!v.videoWidth)return;
+    const k=Math.min(1,max/Math.max(v.videoWidth,v.videoHeight)),c=document.createElement('canvas');
+    c.width=Math.round(v.videoWidth*k);c.height=Math.round(v.videoHeight*k);c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+    c.toBlob(bl=>bl?fim(bl):toast('Não consegui tirar a foto. Tente de novo.'),'image/jpeg',q)});
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){st.textContent='Este celular não abre a câmera aqui. Toque em 🖼️ Galeria.';return}
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1440}},audio:false})
+    .then(sm=>{if(feito){sm.getTracks().forEach(t=>t.stop());return}stream=sm;v.srcObject=sm;st.hidden=true;ov.querySelector('[data-c="tirar"]').disabled=false})
+    .catch(()=>{st.textContent='A câmera não foi liberada. Toque no cadeado 🔒 ao lado do endereço → Permissões → Câmera → Permitir. Ou use a 🖼️ Galeria.'});
+})}
+function pegarFoto(cb){obterFoto(1600,.8).then(b=>{if(b)cb(b)})}
 const condTag=e=>e.condominio?'<span class="tag">🏢 Condomínio</span>':'';
 // o mapa se perde com "ap 302", "bloco B" etc.; vai só rua, número e bairro
 // só rua e número (é o que vai no "Copiar endereço": sem AP e sem bairro)
@@ -791,6 +822,7 @@ async function setStatus(id,status,obs,diaCerto,mesmoAssim){
 let voltandoSozinho=false;
 const sheetAberta=()=>!!document.querySelector('#sheetRoot .scrim');
 window.addEventListener('popstate',()=>{if(voltandoSozinho){voltandoSozinho=false;return}
+  if(fecharCamera){fecharCamera();return}
   if(sheetAberta()){fecharTela();return}
   // voltar no mural sem janela aberta: o 1º toque só avisa; o 2º sai (o navegador não deixa prender a pessoa)
   if(!(history.state&&history.state.frBase)){baseArmada=false;toast('Toque em voltar de novo para sair do mural')}});
@@ -807,7 +839,7 @@ function fecharTela(){pastaAberta=false;$('#sheetRoot').innerHTML='';render()}
 function fechar(){fecharTela();
   // espera um instante: às vezes outra janela abre logo em seguida e aproveita o mesmo passo do histórico
   setTimeout(()=>{if(!sheetAberta()&&history.state&&history.state.frSheet){voltandoSozinho=true;history.back()}},0)}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')fechar()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(fecharCamera){history.back();return}fechar()}});
 
 function abrirAcoes(id){
   const e=entregas.find(x=>x.id===id);if(!e)return;
@@ -1110,8 +1142,8 @@ function abrirForm(ed){
       const l=e.target.closest('[data-l]');if(l){st.itens[+l.dataset.i].local=l.dataset.l;sync();return}
       const qb=e.target.closest('[data-q]');if(qb){const it=st.itens[+qb.dataset.q];it.qtd=Math.max(1,Math.min(99,it.qtd+ +qb.dataset.d));sync();return}
       const d=e.target.closest('[data-del]');if(d){st.itens.splice(+d.dataset.del,1);sync()}});
-    q('#fbtn').addEventListener('click',()=>{const f=$('#file');f.value='';f.onchange=async()=>{const file=f.files[0];if(!file)return;
-      try{fotoBlob=await reduzir(file,1400,.75);q('#fotobox').classList.remove('err');if(fotoPrev&&fotoPrev.startsWith('blob:'))URL.revokeObjectURL(fotoPrev);fotoPrev=URL.createObjectURL(fotoBlob);sync()}catch{toast('Não consegui ler essa foto.')}};f.click()});
+    q('#fbtn').addEventListener('click',()=>obterFoto(1400,.75).then(b=>{if(!b)return;
+      fotoBlob=b;q('#fotobox').classList.remove('err');if(fotoPrev&&fotoPrev.startsWith('blob:'))URL.revokeObjectURL(fotoPrev);fotoPrev=URL.createObjectURL(fotoBlob);sync()}));
     q('#fcancel').addEventListener('click',fechar);
     q('#fsave').addEventListener('click',async()=>{
       if(enviando)return;

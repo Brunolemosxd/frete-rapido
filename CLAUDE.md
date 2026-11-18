@@ -156,6 +156,10 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   então aparece uma barrinha com o endereço no alto. Chave de assinatura NÃO está no repo (era temporária): se gerar APK novo com
   outra chave, a pessoa precisa desinstalar o antigo antes. Como gerar: SDK (platforms;android-34, build-tools;34.0.0) +
   `MF_KEYSTORE=... MF_KEYPASS=... gradle assembleRelease` em `_apk/`. Como o app só abre o site, mudanças no mural chegam sozinhas.
+- Câmera DENTRO do mural (18/11, Moto G35 "bugava" ao tirar foto: abrir o app da câmera fazia o Chrome ser fechado e a página
+  recarregar): `obterFoto(max,q)` abre tela preta com a câmera (getUserMedia, câmera de trás), botão amarelo redondo tira a foto,
+  "🖼️ Galeria" escolhe uma pronta (input #file SEM capture), "✕ Cancelar". Usada no formulário (#fbtn, +Outra foto) e na pasta
+  (`pegarFoto`). Põe um passo no histórico (frCam): o voltar do celular fecha só a câmera. Sem permissão: explica o cadeado 🔒.
 - Tema claro/escuro/automático no topo.
 - Ícone e nome na tela de início do celular: "Mural de Fretes", ícone "MF" branco + faixa amarela + 🚚 em fundo azul
   (`mf-32/180/192/512.png`, `manifest.json` com display "standalone": o ícone abre numa janela própria, sem as páginas de outros sites para trás;
