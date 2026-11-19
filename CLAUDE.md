@@ -82,6 +82,7 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   na lista de carregadores do painel); se já tinha alguém marcado, não muda.
   Marcar "Entregue" numa entrega de dia que já passou pergunta: "✓ Entreguei hoje" (muda `data` para hoje) ou
   "📅 Entreguei no dia DD/MM (esqueci de marcar)" (mantém a data). Assim o Acerto e os Valores ficam no dia certo.
+- Menu ao segurar o cartão (quem pode marcar): "← Dia anterior" e "Dia seguinte →" lado a lado (anterior = data −1, mesmo se cair no passado).
 - Problema: motivo em faixa vermelha grande no topo do cartão; motivos cadastráveis (`config/motivos`).
 - "🚛 Vai vir outra nota do caminhão (não entregar ainda)": caixinha no bloco da nota do formulário (`aguardaCaminhao`).
   No cartão, etiqueta amarela/preta "🚛 AGUARDAR CAMINHÃO / NÃO ENTREGAR" embaixo da foto; no detalhe, faixa amarela no alto.

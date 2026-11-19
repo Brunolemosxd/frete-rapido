@@ -850,7 +850,7 @@ function abrirAcoes(id){
     <button class="btn post" data-a="postit">📝 Colar post-it</button>
     ${podeEditar(e)&&e.aguardaCaminhao?'<button class="btn ok" data-a="chegou">🚛 Chegou a nota do caminhão (liberar)</button>':''}
     ${podeEditar(e)?`<button class="btn ${e.prioridade?'':'bad'}" data-a="prio">${e.prioridade?'Tirar a prioridade':'⬆ Marcar como prioridade'}</button>`:''}
-    ${P.marcar?'<button class="btn" data-a="amanha">Passar para o dia seguinte</button>':''}
+    ${P.marcar?'<div class="row" style="gap:8px"><button class="btn" data-a="ontem" style="flex:1">← Dia anterior</button><button class="btn" data-a="amanha" style="flex:1">Dia seguinte →</button></div>':''}
     ${podeEditar(e)?'<button class="btn" data-a="editar">Editar</button>':''}<button class="btn" data-a="ver">Ver nota e foto</button>
     ${P.apagar?'<button class="btn danger" data-a="apagar">Apagar</button>':''}<button class="btn ghost" data-a="x">Fechar</button></div>`,
   s=>s.addEventListener('click',async ev=>{
@@ -860,6 +860,7 @@ function abrirAcoes(id){
     const a=ev.target.closest('[data-a]')?.dataset.a;if(!a)return;
     if(a==='entregue'||a==='pendente'){fechar();setStatus(id,a)}
     else if(a==='problema')abrirProblema(id);
+    else if(a==='ontem'){fechar();const nd=addDays(e.data,-1);e.data=nd;render();if(await salvar(id,{data:nd,atualizadoEm:Date.now()}))toast('Passada para '+nomeDia(nd).toLowerCase())}
     else if(a==='amanha'){fechar();const nd=addDays(e.data<hoje()?hoje():e.data,1);e.data=nd;render();if(await salvar(id,{data:nd,atualizadoEm:Date.now()}))toast('Passada para '+nomeDia(nd).toLowerCase())}
     else if(a==='postit')abrirPostit(id);
     else if(a==='chegou'){fechar();e.aguardaCaminhao=false;render();if(await salvar(id,{aguardaCaminhao:false,atualizadoEm:Date.now()}))toast('Liberada: a nota do caminhão chegou')}
