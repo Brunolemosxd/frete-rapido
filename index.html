@@ -125,8 +125,10 @@ section.hr h3{color:#6b3fd0;font-size:14px}
 .cam{display:block;width:100%;text-align:center;background:#f4c430;color:#17212b;border:3px solid #17212b;border-radius:7px;padding:3px 2px;font-size:11px;font-weight:900;text-transform:uppercase;line-height:1.15}
 .cam b{display:block;margin-top:2px;background:#c53030;color:#fff;border-radius:4px;padding:2px 1px}
 .camfaixa{background:#f4c430;color:#17212b;border:3px solid #17212b;border-radius:10px;padding:10px 12px;font-family:var(--display);font-weight:700;font-size:20px;text-transform:uppercase;line-height:1.15}
-#fcam{text-align:left}
+#fcam,#fsocam{text-align:left}
 #fcam[aria-pressed="true"]{background:#f4c430;border-color:#17212b;color:#17212b}
+#fsocam[aria-pressed="true"]{background:#f08c2b;border-color:#17212b;color:#17212b}
+.cam.so,.camfaixa.so{background:#f08c2b}
 .fnota{background:#c53030;color:#fff;border-radius:6px;padding:2px 3px;font-size:11px;font-weight:800;text-align:center;line-height:1.15;text-transform:uppercase;width:100%}
 .card.prio .fnota{background:#fff;color:#c53030}
 .chip[data-pag="nota"][aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
@@ -581,7 +583,7 @@ function cardHTML(e){
     <div class="face">
       ${e.status==='problema'?`<div class="probfaixa"><span class="ic" aria-hidden="true">⚠</span><span>${esc(e.obs||'Problema na entrega')}</span></div>`:''}
       ${alertaFaixas(e)}
-      <div class="tcol"><div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>${e.aguardaCaminhao&&e.status!=='entregue'?'<span class="cam">🚛 Aguardar caminhão<b>Não entregar</b></span>':''}${pagamentoDe(e)==='nota'?'<span class="fnota">🧾 Frete na nota</span>':''}${setaHTML(e)}${carr(e)?`<span class="carr">🚚 ${esc(carr(e))}${e.carregadoEm?`<small>${esc(horaCurta(e.carregadoEm))}</small>`:''}</span>`:''}</div>
+      <div class="tcol"><div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>${e.aguardaCaminhao&&e.status!=='entregue'?'<span class="cam">🚛 Aguardar caminhão<b>Não entregar</b></span>':''}${e.soCaminhao&&e.status!=='entregue'?'<span class="cam so">🚛 Nota só no caminhão<b>Não entregar</b></span>':''}${pagamentoDe(e)==='nota'?'<span class="fnota">🧾 Frete na nota</span>':''}${setaHTML(e)}${carr(e)?`<span class="carr">🚚 ${esc(carr(e))}${e.carregadoEm?`<small>${esc(horaCurta(e.carregadoEm))}</small>`:''}</span>`:''}</div>
       <div class="info">
         ${pr?'<div><span class="pill pprio">⬆ Prioridade</span></div>':''}
         ${hr?horaHTML(e):''}
@@ -762,7 +764,7 @@ const servidor=new Map();
 const guardarServidor=lista=>lista.forEach(e=>servidor.set(e.id,JSON.parse(JSON.stringify(e))));
 const NOMES_CAMPO={status:'Situação',obs:'Motivo do problema',data:'Dia',turno:'Turno',hora:'Horário',cliente:'Cliente',fone:'Telefone',contatos:'Outros contatos',
   bairro:'Bairro',endereco:'Endereço',complemento:'AP / quadra e lote',condominio:'Condomínio',frete:'Valor do frete',pagamento:'Como paga o frete',fretePor:'Vendedor que paga',
-  freteAjuste:'Ajuste no frete',ajustePor:'Quem ajustou',prioridade:'Prioridade',aguardaCaminhao:'Aguardar caminhão',carregadoPor:'Quem carregou',
+  freteAjuste:'Ajuste no frete',ajustePor:'Quem ajustou',prioridade:'Prioridade',aguardaCaminhao:'Aguardar caminhão',soCaminhao:'Nota só no caminhão',carregadoPor:'Quem carregou',
   notasLoja:'Notas na loja',notasDeposito:'Notas no depósito',itens:'Produtos',observacao:'Observação',postits:'Post-its',thumb:'Foto da nota',fotosExtras:'Fotos a mais'};
 function valorTxt(k,v){
   if(v===undefined||v===null||v==='')return '—';
@@ -807,8 +809,8 @@ async function salvar(id,dados,novo){
 async function setStatus(id,status,obs,diaCerto,mesmoAssim){
   const e=entregas.find(x=>x.id===id);if(!e)return;
   // esperando outra nota do caminhão: confirma antes de dar como entregue
-  if(status==='entregue'&&e.status!=='entregue'&&e.aguardaCaminhao&&!mesmoAssim){
-    abrirSheet(`<div class="camfaixa">🚛 Esta entrega está esperando outra nota do caminhão</div><p style="margin:0">Marcar <b>${esc(e.cliente||'a entrega')}</b> como entregue mesmo assim?</p>
+  if(status==='entregue'&&e.status!=='entregue'&&(e.aguardaCaminhao||e.soCaminhao)&&!mesmoAssim){
+    abrirSheet(`<div class="camfaixa${e.soCaminhao&&!e.aguardaCaminhao?' so':''}">🚛 ${e.aguardaCaminhao?'Esta entrega está esperando outra nota do caminhão':'A nota desta entrega vai vir só no caminhão'}</div><p style="margin:0">Marcar <b>${esc(e.cliente||'a entrega')}</b> como entregue mesmo assim?</p>
       <div class="actions two"><button type="button" class="btn ghost" data-x>Cancelar</button><button type="button" class="btn ok" data-ok>Entregue mesmo assim</button></div>`,
     s=>s.addEventListener('click',ev=>{if(ev.target.closest('[data-x]'))fechar();if(ev.target.closest('[data-ok]')){fechar();setStatus(id,status,obs,diaCerto,true)}}));
     return}
@@ -865,6 +867,7 @@ function abrirAcoes(id){
     <div class="actions">${P.marcar&&e.status!=='pendente'?'<button class="btn" data-a="pendente">Voltar para pendente</button>':''}
     <button class="btn post" data-a="postit">📝 Colar post-it</button>
     ${podeEditar(e)&&e.aguardaCaminhao?'<button class="btn ok" data-a="chegou">🚛 Chegou a nota do caminhão (liberar)</button>':''}
+    ${podeEditar(e)&&e.soCaminhao?'<button class="btn ok" data-a="chegouso">🚛 A nota chegou no caminhão (liberar)</button>':''}
     ${podeEditar(e)?`<button class="btn ${e.prioridade?'':'bad'}" data-a="prio">${e.prioridade?'Tirar a prioridade':'⬆ Marcar como prioridade'}</button>`:''}
     ${P.marcar?'<div class="row" style="gap:8px"><button class="btn" data-a="ontem" style="flex:1">← Dia anterior</button><button class="btn" data-a="amanha" style="flex:1">Dia seguinte →</button></div>':''}
     ${podeEditar(e)?'<button class="btn" data-a="editar">Editar</button>':''}<button class="btn" data-a="ver">Ver nota e foto</button>
@@ -879,6 +882,7 @@ function abrirAcoes(id){
     else if(a==='ontem'){fechar();const nd=addDays(e.data,-1);e.data=nd;render();if(await salvar(id,{data:nd,atualizadoEm:Date.now()}))toast('Passada para '+nomeDia(nd).toLowerCase())}
     else if(a==='amanha'){fechar();const nd=addDays(e.data<hoje()?hoje():e.data,1);e.data=nd;render();if(await salvar(id,{data:nd,atualizadoEm:Date.now()}))toast('Passada para '+nomeDia(nd).toLowerCase())}
     else if(a==='postit')abrirPostit(id);
+    else if(a==='chegouso'){fechar();e.soCaminhao=false;render();if(await salvar(id,{soCaminhao:false,atualizadoEm:Date.now()}))toast('Liberada: a nota chegou no caminhão')}
     else if(a==='chegou'){fechar();e.aguardaCaminhao=false;render();if(await salvar(id,{aguardaCaminhao:false,atualizadoEm:Date.now()}))toast('Liberada: a nota do caminhão chegou')}
     else if(a==='prio'){fechar();const v=!e.prioridade;e.prioridade=v;render();if(await salvar(id,{prioridade:v,atualizadoEm:Date.now()}))toast(v?'Marcada como prioridade':'Prioridade tirada')}
     else if(a==='editar')abrirForm(e);
@@ -918,6 +922,7 @@ function abrirDetalhe(id){
     <h2>${esc(e.cliente||'Entrega')}</h2>
     ${e.status==='problema'?`<div class="probfaixa"><span class="ic" aria-hidden="true">⚠</span><span>${esc(e.obs||'Problema na entrega')}</span></div>`:''}
     ${e.aguardaCaminhao&&e.status!=='entregue'?'<div class="camfaixa">🚛 Vai vir outra nota do caminhão — NÃO ENTREGAR ainda</div>':''}
+    ${e.soCaminhao&&e.status!=='entregue'?'<div class="camfaixa so">🚛 A nota vai vir só no caminhão — NÃO ENTREGAR ainda</div>':''}
     ${alertaFaixas(e)}
     ${horaHTML(e)}
     <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span>${e.turno==='apos'?'':`<span class="tag">${esc(turnoTxt(e))}</span>`}${localTagHTML(e)}${condTag(e)}${notasTagHTML(e)}${pagTagHTML(e)}</div>
@@ -1009,7 +1014,7 @@ function abrirForm(ed){
   const extras=[],qtdExtrasAntes=+(ed?.fotosExtras)||0;let carregandoExtras=qtdExtrasAntes>0;
   const dChips=[[h,'Hoje'],[addDays(h,1),'Amanhã'],[addDays(h,2),pd(addDays(h,2)).toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')]];
   const R='<span class="req" aria-hidden="true">*</span>';
-  st.notasLoja=+st.notasLoja||0;st.notasDeposito=+st.notasDeposito||0;st.prioridade=!!st.prioridade;st.aguardaCaminhao=!!st.aguardaCaminhao;
+  st.notasLoja=+st.notasLoja||0;st.notasDeposito=+st.notasDeposito||0;st.prioridade=!!st.prioridade;st.aguardaCaminhao=!!st.aguardaCaminhao;st.soCaminhao=!!st.soCaminhao;
   // frete: o valor vem da tabela pelo bairro; o vendedor só ajusta de -50 a +50
   {const aj=ajusteDe(st);st.ajuste=aj.valor;st.ajustePor=aj.por;}
   st.pag=pagamentoDe(st);if(st.pag==='pago')st.pag='pix';st.fretePor=st.fretePor||'';
@@ -1030,6 +1035,7 @@ function abrirForm(ed){
         <div class="cont dep"><span>No depósito</span><div class="step"><button type="button" data-n="notasDeposito" data-d="-1" aria-label="Uma nota a menos no depósito">−</button><b id="ndep">0</b><button type="button" data-n="notasDeposito" data-d="1" aria-label="Uma nota a mais no depósito">+</button></div></div>
       </div></div>
       <div class="chips"><button type="button" class="chip" id="fcam">🚛 Vai vir outra nota do caminhão</button></div>
+      <div class="chips"><button type="button" class="chip" id="fsocam">🚛 Nota vai vir só no caminhão</button></div>
       <div class="field"><span class="lbl">Produtos — toque para pôr na lista</span>
         <div class="prods" id="fprods">${GERAL.produtos.map(p=>`<button type="button" class="prod" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div>
         <div class="row"><input type="text" id="fitem" placeholder="Outro produto" enterkeyhint="done"><button type="button" class="btn" id="fadd">Adicionar</button></div>
@@ -1076,6 +1082,7 @@ function abrirForm(ed){
       q('#fhora').hidden=st.turno!=='apos';
       q('#fsn').setAttribute('aria-pressed',st.semNumero);q('#fsn').textContent=(st.semNumero?'☑':'☐')+' Sem número';q('#fnum').disabled=st.semNumero;if(st.semNumero)q('#fnum').value='';
       q('#fcam').setAttribute('aria-pressed',st.aguardaCaminhao);q('#fcam').textContent=(st.aguardaCaminhao?'☑':'☐')+' 🚛 Vai vir outra nota do caminhão (não entregar ainda)';
+      q('#fsocam').setAttribute('aria-pressed',st.soCaminhao);q('#fsocam').textContent=(st.soCaminhao?'☑':'☐')+' 🚛 Nota vai vir só no caminhão (não entregar ainda)';
       q('#fprio').setAttribute('aria-pressed',st.prioridade);q('#fprio').textContent=(st.prioridade?'☑':'☐')+' ⬆ Prioridade';
       q('#fcond').setAttribute('aria-pressed',st.condominio);q('#fcond').textContent=(st.condominio?'☑':'☐')+' 🏢 É condomínio';
       desenharFrete();
@@ -1101,6 +1108,7 @@ function abrirForm(ed){
       if(antes===1&&st.notasLoja+st.notasDeposito===2)toast('Ponha a foto da outra nota na pasta 📁 do mural.')});
     q('#fprio').addEventListener('click',()=>{st.prioridade=!st.prioridade;sync()});
     q('#fcam').addEventListener('click',()=>{st.aguardaCaminhao=!st.aguardaCaminhao;sync()});
+    q('#fsocam').addEventListener('click',()=>{st.soCaminhao=!st.soCaminhao;sync()});
     // condomínio: tabela até o valor do condomínio (painel, padrão R$ 100) sobe para ele; acima fica a tabela
     function baseFrete(){if(!st.loc)return 0;if(st.loc.valor===null)return st.valorCombinado;return st.condominio&&st.loc.valor<=COND?COND:st.loc.valor}
     function totalFrete(){return st.loc?Math.max(0,baseFrete()+st.ajuste):0}
@@ -1195,7 +1203,7 @@ function abrirForm(ed){
         const fotosExtras=[];for(const x of extras)fotosExtras.push(x.blob?await fotoGrande(x.blob):x.src);
         const ls=new Set(st.itens.map(i=>i.local));
         const dados={cliente:st.cliente,clienteNome:st.clienteNome,clienteSobrenome:st.clienteSobrenome,fone:st.fone,bairro:st.bairro,endereco:st.endereco,rua:st.rua,numero:st.numero,semNumero:st.semNumero,complemento:st.complemento,observacao:st.observacao,freteBase:baseFrete(),freteTabela:st.loc.valor,condominio:st.condominio,freteConsultar:st.loc.valor===null,freteAjuste:st.ajuste,ajustePor:st.ajuste?st.ajustePor:'',frete:totalFrete(),
-          pagamento:st.pag,fretePago:st.pag==='pix'||st.pag==='junto'||st.pag==='nota',fretePor:st.pag==='vendedor'?st.fretePor:'',aMaisPor:'',aMaisValor:0,prioridade:st.prioridade,aguardaCaminhao:st.aguardaCaminhao,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
+          pagamento:st.pag,fretePago:st.pag==='pix'||st.pag==='junto'||st.pag==='nota',fretePor:st.pag==='vendedor'?st.fretePor:'',aMaisPor:'',aMaisValor:0,prioridade:st.prioridade,aguardaCaminhao:st.aguardaCaminhao,soCaminhao:st.soCaminhao,notasLoja:st.notasLoja,notasDeposito:st.notasDeposito,variasNotas:st.notasLoja+st.notasDeposito>1,data:st.data,turno:st.turno,hora:st.turno==='apos'?st.hora:'',
           itens:st.itens.map(i=>({nome:i.nome,local:i.local,qtd:i.qtd})),local:ls.size>1?'ambos':ls.has('deposito')?'deposito':'loja',
           thumb:st.thumb||null,fotoData:st.fotoData||null,contatos:contOk,fotosExtras:fotosExtras.length,atualizadoEm:Date.now()};
         let ok;

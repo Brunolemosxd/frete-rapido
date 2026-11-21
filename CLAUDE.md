@@ -93,6 +93,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
 - "🚛 Vai vir outra nota do caminhão (não entregar ainda)": caixinha no bloco da nota do formulário (`aguardaCaminhao`).
   No cartão, etiqueta amarela/preta "🚛 AGUARDAR CAMINHÃO / NÃO ENTREGAR" embaixo da foto; no detalhe, faixa amarela no alto.
   Marcar entregue pede confirmação; menu ao segurar (quem pode editar): "🚛 Chegou a nota do caminhão (liberar)".
+  "🚛 Nota vai vir só no caminhão" (21/11, `soCaminhao`): segunda caixinha logo embaixo, igual à de cima mas LARANJA
+  (etiqueta "Nota só no caminhão / Não entregar", faixa no detalhe, confirmação ao marcar entregue, "A nota chegou no caminhão (liberar)").
 - Botão "🔎 Consultar" no topo do mural: só para o Bruno (admin) e quem está na lista "Quem carrega" do painel (Tiago),
   pelo primeiro nome (`podeConsultar`). Escolhe uma data (atalhos Ontem/Anteontem/Há 1 semana/Há 1 mês) e o mural abre nela;
   datas com mais de 45 dias são buscadas uma vez (`antigas`). Faixa roxa "🔎 Consultando …" com "Voltar para hoje" quando a data
