@@ -83,6 +83,12 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   Marcar "Entregue" numa entrega de dia que já passou pergunta: "✓ Entreguei hoje" (muda `data` para hoje) ou
   "📅 Entreguei no dia DD/MM (esqueci de marcar)" (mantém a data). Assim o Acerto e os Valores ficam no dia certo.
 - Menu ao segurar o cartão (quem pode marcar): "← Dia anterior" e "Dia seguinte →" lado a lado (anterior = data −1, mesmo se cair no passado).
+- Avisos do dia (21/11): botão "🌦️ Avisos" no topo do mural SÓ para o Bruno (admin) liga/desliga "🌧️ Está chovendo" e
+  "📦 Muitas entregas hoje" (`config/alerta` {chuva:{dia,por,em}, cheio:{...}}; vale só no dia gravado, amanhã desliga sozinho;
+  mural ouve com onSnapshot). Ligado: quem não é admin toca "+ Nova entrega" e vê "Antes de lançar" com o aviso ("Entendi,
+  lançar a entrega" / Cancelar). Entrega lançada para HOJE com aviso ligado grava `alertas:['chuva','cheio']` + `alertaDia`;
+  cartão e detalhe mostram faixa azul com nuvens chovendo (animação CSS) "Lançada com chuva: pode não ser entregue hoje" e/ou
+  faixa laranja "📦 Lançada com muitas entregas no dia…" (some quando entregue ou se mudar de dia). Regras: nada novo.
 - Problema: motivo em faixa vermelha grande no topo do cartão; motivos cadastráveis (`config/motivos`).
 - "🚛 Vai vir outra nota do caminhão (não entregar ainda)": caixinha no bloco da nota do formulário (`aguardaCaminhao`).
   No cartão, etiqueta amarela/preta "🚛 AGUARDAR CAMINHÃO / NÃO ENTREGAR" embaixo da foto; no detalhe, faixa amarela no alto.

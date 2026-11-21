@@ -192,6 +192,21 @@ section.hr h3{color:#6b3fd0;font-size:14px}
   font-family:var(--display);font-weight:700;font-size:22px;line-height:1.1;text-transform:uppercase;letter-spacing:.02em;overflow-wrap:anywhere}
 .probfaixa .ic{font-size:24px;flex:0 0 auto}
 .sheet .probfaixa{font-size:24px;padding:10px 14px}
+/* avisos do dia (chuva / muitas entregas) */
+.alfaixa{flex:1 1 100%;display:flex;gap:8px;align-items:center;border-radius:10px;padding:7px 10px;font-weight:700;font-size:15px;line-height:1.2;overflow-wrap:anywhere}
+.al-chuva.alfaixa{background:linear-gradient(#5b7ea6,#3d5f86);color:#fff}
+.al-cheio.alfaixa{background:#f08c2b;color:#2b1600}
+.alfaixa .nuvem{position:relative;font-size:24px;flex:0 0 auto;width:30px;height:32px;overflow:hidden;text-align:center}
+.alfaixa .nuvem i{position:absolute;left:4px;right:4px;top:16px;bottom:0;pointer-events:none;
+  background:repeating-linear-gradient(105deg,transparent 0 5px,rgba(200,230,255,.95) 5px 6px,transparent 6px 11px);background-size:100% 12px;animation:chuva .6s linear infinite}
+@keyframes chuva{from{background-position:0 0}to{background-position:-2px 12px}}
+@media (prefers-reduced-motion:reduce){.alfaixa .nuvem i{animation:none}}
+.alaviso{border-radius:12px;padding:12px 14px;font-size:17px;line-height:1.35}
+.alaviso.al-chuva{background:#dbe8f7;color:#16324f}.alaviso.al-cheio{background:#fde3c8;color:#4a2400}
+.altog{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:17px}
+.altog b{font-size:13px;padding:4px 8px;border-radius:99px;background:var(--line)}
+.altog.on{border-color:#2f855a}.altog.on b{background:#2f855a;color:#fff}
+#ualerta.on{color:#d97706;font-weight:700}
 textarea{resize:vertical;min-height:80px}
 /* post-it: amarelo nos dois temas, como papel de verdade */
 .postits{display:grid;gap:8px;margin-top:4px}
@@ -359,7 +374,7 @@ input.err{border-color:var(--bad)}
 <header>
   <div class="wrap">
     <div class="top"><h1>Frete <span>Rápido</span></h1><span class="sync" id="sync">Conectando…</span></div>
-    <div class="usr"><span id="unome"></span><button type="button" id="uconsultar" hidden>🔎 Consultar</button><a href="painel.html" id="upainel" hidden>Painel</a><button type="button" data-tema></button><button type="button" id="usair">Sair</button></div>
+    <div class="usr"><span id="unome"></span><button type="button" id="uconsultar" hidden>🔎 Consultar</button><button type="button" id="ualerta" hidden>🌦️ Avisos</button><a href="painel.html" id="upainel" hidden>Painel</a><button type="button" data-tema></button><button type="button" id="usair">Sair</button></div>
     <div class="days" id="days" role="tablist" aria-label="Dias"></div>
   </div>
 </header>
@@ -565,6 +580,7 @@ function cardHTML(e){
     <div class="under"><span class="l">✓ Entregue</span><span class="r">Problema ✕</span></div>
     <div class="face">
       ${e.status==='problema'?`<div class="probfaixa"><span class="ic" aria-hidden="true">⚠</span><span>${esc(e.obs||'Problema na entrega')}</span></div>`:''}
+      ${alertaFaixas(e)}
       <div class="tcol"><div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>${e.aguardaCaminhao&&e.status!=='entregue'?'<span class="cam">🚛 Aguardar caminhão<b>Não entregar</b></span>':''}${pagamentoDe(e)==='nota'?'<span class="fnota">🧾 Frete na nota</span>':''}${setaHTML(e)}${carr(e)?`<span class="carr">🚚 ${esc(carr(e))}${e.carregadoEm?`<small>${esc(horaCurta(e.carregadoEm))}</small>`:''}</span>`:''}</div>
       <div class="info">
         ${pr?'<div><span class="pill pprio">⬆ Prioridade</span></div>':''}
@@ -902,6 +918,7 @@ function abrirDetalhe(id){
     <h2>${esc(e.cliente||'Entrega')}</h2>
     ${e.status==='problema'?`<div class="probfaixa"><span class="ic" aria-hidden="true">⚠</span><span>${esc(e.obs||'Problema na entrega')}</span></div>`:''}
     ${e.aguardaCaminhao&&e.status!=='entregue'?'<div class="camfaixa">🚛 Vai vir outra nota do caminhão — NÃO ENTREGAR ainda</div>':''}
+    ${alertaFaixas(e)}
     ${horaHTML(e)}
     <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span>${e.turno==='apos'?'':`<span class="tag">${esc(turnoTxt(e))}</span>`}${localTagHTML(e)}${condTag(e)}${notasTagHTML(e)}${pagTagHTML(e)}</div>
     ${src?`<div class="photo"><img id="dfoto" src="${esc(src)}" alt="Foto da nota"></div>`:''}
@@ -1183,7 +1200,9 @@ function abrirForm(ed){
           thumb:st.thumb||null,fotoData:st.fotoData||null,contatos:contOk,fotosExtras:fotosExtras.length,atualizadoEm:Date.now()};
         let ok;
         if(ed){ok=await salvar(id,dados)}
-        else{dados.status='pendente';dados.obs='';dados.criadoEm=Date.now();dados.criadoPorUid=me.uid;dados.criadoPorNome=me.nome;dados.criadoPorEmail=me.email;ok=await salvar(id,dados,true)}
+        else{dados.status='pendente';dados.obs='';dados.criadoEm=Date.now();dados.criadoPorUid=me.uid;dados.criadoPorNome=me.nome;dados.criadoPorEmail=me.email;
+          const al=alertasHoje();if(al.length&&dados.data===hoje()){dados.alertas=al;dados.alertaDia=hoje()}
+          ok=await salvar(id,dados,true)}
         // as que sobraram de antes ficam vazias (vendedor não pode apagar foto) e somem na limpeza
         if(ok)for(let i=0;i<Math.max(fotosExtras.length,qtdExtrasAntes);i++){
           try{await db.collection('fotos').doc(id+'__'+(i+1)).set({foto:fotosExtras[i]||'',em:Date.now()})}catch{toast('A entrega foi salva, mas uma das fotos não. Tente de novo.');break}}
@@ -1193,7 +1212,37 @@ function abrirForm(ed){
     });
   });
 }
-$('#fab').addEventListener('click',()=>abrirForm(null));
+$('#fab').addEventListener('click',()=>{
+  const al=alertasHoje();if(me.admin||!al.length)return abrirForm(null);
+  abrirSheet(`<h2>Antes de lançar</h2>${al.map(k=>`<div class="alaviso al-${k}">${ALERTAS[k].aviso}</div>`).join('')}
+    <p class="muted" style="margin:0">Pode lançar normalmente. A entrega fica marcada com esse aviso.</p>
+    <button type="button" class="btn pri" data-ok>Entendi, lançar a entrega</button><button type="button" class="btn" data-x>Cancelar</button>`,
+    sh=>{sh.querySelector('[data-x]').onclick=fechar;sh.querySelector('[data-ok]').onclick=()=>abrirForm(null)})});
+
+/* ---------- avisos do dia (só o Bruno liga: chuva / muitas entregas). config/alerta {chuva:{dia}, cheio:{dia}}; vale só no dia ---------- */
+const ALERTAS={
+  chuva:{nome:'🌧️ Está chovendo',aviso:'🌧️ <b>Está chovendo.</b> Devido à chuva, a entrega pode não ser feita hoje.',faixa:'Lançada com chuva: pode não ser entregue hoje'},
+  cheio:{nome:'📦 Muitas entregas hoje',aviso:'📦 <b>Já tem muitas entregas hoje.</b> A sua entrega pode não ser feita hoje.',faixa:'Lançada com muitas entregas no dia: pode não ser entregue hoje'}};
+let ALERTA={},pararAlerta=null;
+const alertasHoje=()=>Object.keys(ALERTAS).filter(k=>ALERTA[k]&&ALERTA[k].dia===hoje());
+function alertaFaixas(e){
+  if(!Array.isArray(e.alertas)||!e.alertas.length||e.status==='entregue'||e.alertaDia!==e.data)return '';
+  return e.alertas.filter(k=>ALERTAS[k]).map(k=>k==='chuva'
+    ?`<div class="alfaixa al-chuva"><span class="nuvem" aria-hidden="true">🌧️<i></i></span><span>${ALERTAS[k].faixa}</span><span class="nuvem" aria-hidden="true">🌧️<i></i></span></div>`
+    :`<div class="alfaixa al-cheio"><span aria-hidden="true">📦</span><span>${ALERTAS[k].faixa}</span></div>`).join('')}
+function botaoAlerta(){const n=alertasHoje().length;$('#ualerta').textContent=n?`🌦️ Avisos (${n} ligado${n>1?'s':''})`:'🌦️ Avisos';$('#ualerta').classList.toggle('on',!!n)}
+$('#ualerta').addEventListener('click',()=>{
+  const tela=()=>`<h2>🌦️ Avisos de hoje</h2>
+    <p class="muted" style="margin:0">Só você vê este botão. Ligado, quem tocar em "+ Nova entrega" recebe o aviso antes de lançar, e a entrega fica marcada.
+      Vale só para hoje: amanhã desliga sozinho.</p>
+    ${Object.keys(ALERTAS).map(k=>{const on=alertasHoje().includes(k);return `<button type="button" class="btn altog${on?' on':''}" data-al="${k}">${ALERTAS[k].nome}<b>${on?'LIGADO':'desligado'}</b></button>`}).join('')}
+    <button type="button" class="btn" data-x>Fechar</button>`;
+  abrirSheet(tela(),sh=>{sh.addEventListener('click',async ev=>{
+    if(ev.target.closest('[data-x]'))return fechar();
+    const b=ev.target.closest('[data-al]');if(!b)return;const k=b.dataset.al,ligar=!alertasHoje().includes(k);b.disabled=true;
+    try{await db.collection('config').doc('alerta').set({[k]:ligar?{dia:hoje(),por:me.nome,em:Date.now()}:null},{merge:true});
+      ALERTA={...ALERTA,[k]:ligar?{dia:hoje()}:null};botaoAlerta();sh.innerHTML='<div class="grab"></div>'+tela();
+      toast(ligar?'Aviso ligado para hoje.':'Aviso desligado.')}catch(er){b.disabled=false;toast('Não consegui salvar. Confira a internet.')}})})});
 
 
 /* ---------- login e conexão ---------- */
@@ -1205,7 +1254,7 @@ $('#gentrar').addEventListener('click',()=>entrarComGoogle().catch(e=>toast(e&&e
 $('#lsair').addEventListener('click',()=>auth.signOut());
 $('#usair').addEventListener('click',()=>auth.signOut());
 let pararUso=null;
-function desligar(){pararUso&&pararUso();pararUso=null;$('#avuso').hidden=true;pararEntregas&&pararEntregas();pararNotas&&pararNotas();pararEntregas=pararNotas=null;notasDe=null;entregas=[];antigas=[];notasJ=[];loaded=false;me=null;fechar()}
+function desligar(){pararUso&&pararUso();pararUso=null;pararAlerta&&pararAlerta();pararAlerta=null;ALERTA={};$('#avuso').hidden=true;pararEntregas&&pararEntregas();pararNotas&&pararNotas();pararEntregas=pararNotas=null;notasDe=null;entregas=[];antigas=[];notasJ=[];loaded=false;me=null;fechar()}
 auth.onAuthStateChanged(async u=>{
   desligar();
   if(!u){telaLogin('Entre com a sua conta Google para ver o mural.');return}
@@ -1219,7 +1268,8 @@ auth.onAuthStateChanged(async u=>{
   try{const tf=await db.collection('config').doc('fretes').get();const l=tf.exists&&tf.data().lista;TABELA=Array.isArray(l)&&l.length?l:FRETES_PADRAO.map(x=>({...x}))}catch{}
   try{const mg=await db.collection('config').doc('mensagem').get();MSG=mensagemDe(mg.exists?mg.data():null)}catch{}
   try{const ge=await db.collection('config').doc('geral').get();GERAL=geralDe(ge.exists?ge.data():null)}catch{}
-  $('#uconsultar').hidden=!podeConsultar();
+  $('#uconsultar').hidden=!podeConsultar();$('#ualerta').hidden=!me.admin;
+  pararAlerta=db.collection('config').doc('alerta').onSnapshot(d=>{ALERTA=d.exists?d.data():{};botaoAlerta()},()=>{});
   try{const mo=await db.collection('config').doc('motivos').get();const l=mo.exists&&mo.data().lista;MOTIVOS=Array.isArray(l)&&l.length?l:[...MOTIVOS_BASE]}catch{}
   render();
   // só as entregas recentes e futuras; o histórico fica no painel
