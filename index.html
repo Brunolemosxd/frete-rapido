@@ -203,6 +203,7 @@ section.hr h3{color:#6b3fd0;font-size:14px}
   background:repeating-linear-gradient(105deg,transparent 0 5px,rgba(200,230,255,.95) 5px 6px,transparent 6px 11px);background-size:100% 12px;animation:chuva .6s linear infinite}
 @keyframes chuva{from{background-position:0 0}to{background-position:-2px 12px}}
 @media (prefers-reduced-motion:reduce){.alfaixa .nuvem i{animation:none}}
+.domaviso{margin-top:6px;border-radius:12px;padding:10px 12px;background:#fde3c8;color:#4a2400;border:2px solid #f08c2b;font-size:16px;line-height:1.35}
 .alaviso{border-radius:12px;padding:12px 14px;font-size:17px;line-height:1.35}
 .alaviso.al-chuva{background:#dbe8f7;color:#16324f}.alaviso.al-cheio{background:#fde3c8;color:#4a2400}
 .altog{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:17px}
@@ -1055,7 +1056,8 @@ function abrirForm(ed){
     </div>
     <div class="fgrp fg-ent"><div class="fglbl">🚚 Dia e turno da entrega</div>
       <div class="chips"><button type="button" class="chip prio" id="fprio">Prioridade</button></div>
-      <div class="field"><span class="lbl">Dia</span><div class="chips" id="cdia">${dChips.map(([v,t])=>`<button type="button" class="chip" data-v="${v}">${t}</button>`).join('')}<input type="date" id="fdata" style="width:auto;flex:1;min-width:140px"></div></div>
+      <div class="field"><span class="lbl">Dia</span><div class="chips" id="cdia">${dChips.map(([v,t])=>`<button type="button" class="chip" data-v="${v}">${t}</button>`).join('')}<input type="date" id="fdata" style="width:auto;flex:1;min-width:140px"></div>
+        <div class="domaviso" id="fdomingo" hidden>☀️ <b>Domingo:</b> os freteiros fazem as entregas só <b>depois das 15h</b>. Avise o cliente.</div></div>
       <div class="field"><span class="lbl">Turno</span><div class="chips" id="cturno"><button type="button" class="chip" data-v="qualquer">Qualquer turno</button><button type="button" class="chip" data-v="manha">Manhã</button><button type="button" class="chip" data-v="tarde">Tarde</button><button type="button" class="chip" data-v="apos">Depois das…</button></div>
         <input type="time" id="fhora" ${st.turno==='apos'?'':'hidden'}></div>
     </div>
@@ -1078,6 +1080,7 @@ function abrirForm(ed){
     const sync=()=>{
       s.querySelectorAll('#cdia .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.data));
       q('#fdata').value=st.data;
+      const dom=pd(st.data).getDay()===0;if(dom&&q('#fdomingo').hidden)toast('Domingo: as entregas são feitas só depois das 15h.');q('#fdomingo').hidden=!dom;
       s.querySelectorAll('#cturno .chip').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.turno));
       q('#fhora').hidden=st.turno!=='apos';
       q('#fsn').setAttribute('aria-pressed',st.semNumero);q('#fsn').textContent=(st.semNumero?'☑':'☐')+' Sem número';q('#fnum').disabled=st.semNumero;if(st.semNumero)q('#fnum').value='';

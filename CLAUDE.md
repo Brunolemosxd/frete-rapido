@@ -82,6 +82,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   na lista de carregadores do painel); se já tinha alguém marcado, não muda.
   Marcar "Entregue" numa entrega de dia que já passou pergunta: "✓ Entreguei hoje" (muda `data` para hoje) ou
   "📅 Entreguei no dia DD/MM (esqueci de marcar)" (mantém a data). Assim o Acerto e os Valores ficam no dia certo.
+- Domingo (21/11): no formulário, escolhendo um dia que cai no domingo aparece a caixa laranja "☀️ Domingo: os freteiros fazem as
+  entregas só depois das 15h. Avise o cliente." (#fdomingo) + um aviso rápido na hora em que escolhe.
 - Menu ao segurar o cartão (quem pode marcar): "← Dia anterior" e "Dia seguinte →" lado a lado (anterior = data −1, mesmo se cair no passado).
 - Avisos do dia (21/11): botão "🌦️ Avisos" no topo do mural SÓ para o Bruno (admin) liga/desliga "🌧️ Está chovendo" e
   "📦 Muitas entregas hoje" (`config/alerta` {chuva:{dia,por,em}, cheio:{...}}; vale só no dia gravado, amanhã desliga sozinho;
