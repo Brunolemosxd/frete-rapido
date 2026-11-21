@@ -583,7 +583,7 @@ function cardHTML(e){
     <div class="face">
       ${e.status==='problema'?`<div class="probfaixa"><span class="ic" aria-hidden="true">⚠</span><span>${esc(e.obs||'Problema na entrega')}</span></div>`:''}
       ${alertaFaixas(e)}
-      <div class="tcol"><div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>${e.aguardaCaminhao&&e.status!=='entregue'?'<span class="cam">🚛 Aguardar caminhão<b>Não entregar</b></span>':''}${e.soCaminhao&&e.status!=='entregue'?'<span class="cam so">🚛 Nota só no caminhão<b>Não entregar</b></span>':''}${pagamentoDe(e)==='nota'?'<span class="fnota">🧾 Frete na nota</span>':''}${setaHTML(e)}${carr(e)?`<span class="carr">🚚 ${esc(carr(e))}${e.carregadoEm?`<small>${esc(horaCurta(e.carregadoEm))}</small>`:''}</span>`:''}</div>
+      <div class="tcol"><div class="thumb" ${src?`style="background-image:url('${esc(src)}')"`:''}>${src?'':'sem foto'}${e.fotosExtras?`<span class="mais">+${e.fotosExtras}</span>`:''}</div>${e.aguardaCaminhao&&e.status!=='entregue'?'<span class="cam">🚛 Aguardar caminhão<b>Não entregar</b></span>':''}${e.soCaminhao&&e.status!=='entregue'?'<span class="cam so">🚛 Nota vem do caminhão<b>Não entregar</b></span>':''}${pagamentoDe(e)==='nota'?'<span class="fnota">🧾 Frete na nota</span>':''}${setaHTML(e)}${carr(e)?`<span class="carr">🚚 ${esc(carr(e))}${e.carregadoEm?`<small>${esc(horaCurta(e.carregadoEm))}</small>`:''}</span>`:''}</div>
       <div class="info">
         ${pr?'<div><span class="pill pprio">⬆ Prioridade</span></div>':''}
         ${hr?horaHTML(e):''}
@@ -764,7 +764,7 @@ const servidor=new Map();
 const guardarServidor=lista=>lista.forEach(e=>servidor.set(e.id,JSON.parse(JSON.stringify(e))));
 const NOMES_CAMPO={status:'Situação',obs:'Motivo do problema',data:'Dia',turno:'Turno',hora:'Horário',cliente:'Cliente',fone:'Telefone',contatos:'Outros contatos',
   bairro:'Bairro',endereco:'Endereço',complemento:'AP / quadra e lote',condominio:'Condomínio',frete:'Valor do frete',pagamento:'Como paga o frete',fretePor:'Vendedor que paga',
-  freteAjuste:'Ajuste no frete',ajustePor:'Quem ajustou',prioridade:'Prioridade',aguardaCaminhao:'Aguardar caminhão',soCaminhao:'Nota só no caminhão',carregadoPor:'Quem carregou',
+  freteAjuste:'Ajuste no frete',ajustePor:'Quem ajustou',prioridade:'Prioridade',aguardaCaminhao:'Aguardar caminhão',soCaminhao:'Nota vem do caminhão',carregadoPor:'Quem carregou',
   notasLoja:'Notas na loja',notasDeposito:'Notas no depósito',itens:'Produtos',observacao:'Observação',postits:'Post-its',thumb:'Foto da nota',fotosExtras:'Fotos a mais'};
 function valorTxt(k,v){
   if(v===undefined||v===null||v==='')return '—';
@@ -810,7 +810,7 @@ async function setStatus(id,status,obs,diaCerto,mesmoAssim){
   const e=entregas.find(x=>x.id===id);if(!e)return;
   // esperando outra nota do caminhão: confirma antes de dar como entregue
   if(status==='entregue'&&e.status!=='entregue'&&(e.aguardaCaminhao||e.soCaminhao)&&!mesmoAssim){
-    abrirSheet(`<div class="camfaixa${e.soCaminhao&&!e.aguardaCaminhao?' so':''}">🚛 ${e.aguardaCaminhao?'Esta entrega está esperando outra nota do caminhão':'A nota desta entrega vai vir só no caminhão'}</div><p style="margin:0">Marcar <b>${esc(e.cliente||'a entrega')}</b> como entregue mesmo assim?</p>
+    abrirSheet(`<div class="camfaixa${e.soCaminhao&&!e.aguardaCaminhao?' so':''}">🚛 ${e.aguardaCaminhao?'Esta entrega está esperando outra nota do caminhão':'A nota desta entrega vem do caminhão'}</div><p style="margin:0">Marcar <b>${esc(e.cliente||'a entrega')}</b> como entregue mesmo assim?</p>
       <div class="actions two"><button type="button" class="btn ghost" data-x>Cancelar</button><button type="button" class="btn ok" data-ok>Entregue mesmo assim</button></div>`,
     s=>s.addEventListener('click',ev=>{if(ev.target.closest('[data-x]'))fechar();if(ev.target.closest('[data-ok]')){fechar();setStatus(id,status,obs,diaCerto,true)}}));
     return}
@@ -922,7 +922,7 @@ function abrirDetalhe(id){
     <h2>${esc(e.cliente||'Entrega')}</h2>
     ${e.status==='problema'?`<div class="probfaixa"><span class="ic" aria-hidden="true">⚠</span><span>${esc(e.obs||'Problema na entrega')}</span></div>`:''}
     ${e.aguardaCaminhao&&e.status!=='entregue'?'<div class="camfaixa">🚛 Vai vir outra nota do caminhão — NÃO ENTREGAR ainda</div>':''}
-    ${e.soCaminhao&&e.status!=='entregue'?'<div class="camfaixa so">🚛 A nota vai vir só no caminhão — NÃO ENTREGAR ainda</div>':''}
+    ${e.soCaminhao&&e.status!=='entregue'?'<div class="camfaixa so">🚛 Nota vem do caminhão — NÃO ENTREGAR ainda</div>':''}
     ${alertaFaixas(e)}
     ${horaHTML(e)}
     <div class="meta"><span class="pill ${ST[e.status][1]}">${ST[e.status][0]}</span><span class="tag">${esc(nomeDia(e.data))}</span>${e.turno==='apos'?'':`<span class="tag">${esc(turnoTxt(e))}</span>`}${localTagHTML(e)}${condTag(e)}${notasTagHTML(e)}${pagTagHTML(e)}</div>
@@ -1035,7 +1035,7 @@ function abrirForm(ed){
         <div class="cont dep"><span>No depósito</span><div class="step"><button type="button" data-n="notasDeposito" data-d="-1" aria-label="Uma nota a menos no depósito">−</button><b id="ndep">0</b><button type="button" data-n="notasDeposito" data-d="1" aria-label="Uma nota a mais no depósito">+</button></div></div>
       </div></div>
       <div class="chips"><button type="button" class="chip" id="fcam">🚛 Vai vir outra nota do caminhão</button></div>
-      <div class="chips"><button type="button" class="chip" id="fsocam">🚛 Nota vai vir só no caminhão</button></div>
+      <div class="chips"><button type="button" class="chip" id="fsocam">🚛 Nota vem do caminhão</button></div>
       <div class="field"><span class="lbl">Produtos — toque para pôr na lista</span>
         <div class="prods" id="fprods">${GERAL.produtos.map(p=>`<button type="button" class="prod" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div>
         <div class="row"><input type="text" id="fitem" placeholder="Outro produto" enterkeyhint="done"><button type="button" class="btn" id="fadd">Adicionar</button></div>
@@ -1082,7 +1082,7 @@ function abrirForm(ed){
       q('#fhora').hidden=st.turno!=='apos';
       q('#fsn').setAttribute('aria-pressed',st.semNumero);q('#fsn').textContent=(st.semNumero?'☑':'☐')+' Sem número';q('#fnum').disabled=st.semNumero;if(st.semNumero)q('#fnum').value='';
       q('#fcam').setAttribute('aria-pressed',st.aguardaCaminhao);q('#fcam').textContent=(st.aguardaCaminhao?'☑':'☐')+' 🚛 Vai vir outra nota do caminhão (não entregar ainda)';
-      q('#fsocam').setAttribute('aria-pressed',st.soCaminhao);q('#fsocam').textContent=(st.soCaminhao?'☑':'☐')+' 🚛 Nota vai vir só no caminhão (não entregar ainda)';
+      q('#fsocam').setAttribute('aria-pressed',st.soCaminhao);q('#fsocam').textContent=(st.soCaminhao?'☑':'☐')+' 🚛 Nota vem do caminhão';
       q('#fprio').setAttribute('aria-pressed',st.prioridade);q('#fprio').textContent=(st.prioridade?'☑':'☐')+' ⬆ Prioridade';
       q('#fcond').setAttribute('aria-pressed',st.condominio);q('#fcond').textContent=(st.condominio?'☑':'☐')+' 🏢 É condomínio';
       desenharFrete();

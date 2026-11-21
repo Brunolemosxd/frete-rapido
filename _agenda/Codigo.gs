@@ -317,7 +317,7 @@ function descricao(e) {
     'Endereço: ' + endereco(e),
     itens ? 'Produtos: ' + itens : '',
     e.aguardaCaminhao ? '🚛 Aguardando outra nota do caminhão (não entregar ainda)' : '',
-    e.soCaminhao ? '🚛 A nota vai vir só no caminhão (não entregar ainda)' : '',
+    e.soCaminhao ? '🚛 Nota vem do caminhão (não entregar ainda)' : '',
     e.observacao ? 'Obs.: ' + e.observacao : '',
     e.carregadoPor ? 'Quem carregou: ' + e.carregadoPor : '',
     e.criadoPorNome ? 'Lançada por: ' + e.criadoPorNome : ''
