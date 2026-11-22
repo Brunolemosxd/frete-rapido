@@ -206,6 +206,7 @@ section.hr h3{color:#6b3fd0;font-size:14px}
 .normbloco{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
 .normbloco h3{margin:0 0 6px;font-size:17px}
 .normbloco ul{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px;line-height:1.4}
+.normok{background:#e3f4ea;color:#1c4532;border:1px solid #9ae6b4;border-radius:10px;padding:8px 12px;font-size:15px}
 .normvazio{border:2px dashed var(--line);border-radius:12px;padding:18px;text-align:center;color:var(--muted)}
 .domaviso{margin-top:6px;border-radius:12px;padding:10px 12px;background:#fde3c8;color:#4a2400;border:2px solid #f08c2b;font-size:16px;line-height:1.35}
 .alaviso{border-radius:12px;padding:12px 14px;font-size:17px;line-height:1.35}
@@ -1008,7 +1009,7 @@ const NORMAS_LOJA=[
   ['📺','TV',['<b>Não instalamos TV em painel na parede.</b>','Instalamos só <b>no pé</b> da TV, e é <b>cobrado</b>.']]];
 const blocosNormas=l=>l.map(([ic,t,x])=>`<div class="normbloco"><h3>${ic} ${t}</h3><ul>${x.map(y=>`<li>${y}</li>`).join('')}</ul></div>`).join('');
 function normasHTML(aba){
-  if(aba==='loja')return '<p class="muted" style="margin:0">Regras das entregas feitas pela nossa loja.</p>'+blocosNormas(NORMAS_LOJA);
+  if(aba==='loja')return '<p class="muted" style="margin:0">Regras das entregas feitas pela nossa loja.</p><div class="normok">🤝 Normas combinadas com o gerente <b>Jonas</b>.</div>'+blocosNormas(NORMAS_LOJA);
   return '<p class="muted" style="margin:0">Resumo da política de frete do site colombo.com.br.</p>'+blocosNormas(NORMAS_SITE)}
 $('#unormas').addEventListener('click',()=>{let aba='loja';
   const tela=()=>`<h2>📜 Normas de entrega</h2><div class="chips normabas"><button type="button" class="chip" data-na="loja" aria-pressed="${aba==='loja'}">🏪 Nossa loja</button><button type="button" class="chip" data-na="site" aria-pressed="${aba==='site'}">🌐 Site Colombo</button></div>
