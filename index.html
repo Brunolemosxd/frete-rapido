@@ -203,6 +203,10 @@ section.hr h3{color:#6b3fd0;font-size:14px}
   background:repeating-linear-gradient(105deg,transparent 0 5px,rgba(200,230,255,.95) 5px 6px,transparent 6px 11px);background-size:100% 12px;animation:chuva .6s linear infinite}
 @keyframes chuva{from{background-position:0 0}to{background-position:-2px 12px}}
 @media (prefers-reduced-motion:reduce){.alfaixa .nuvem i{animation:none}}
+.normbloco{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.normbloco h3{margin:0 0 6px;font-size:17px}
+.normbloco ul{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px;line-height:1.4}
+.normvazio{border:2px dashed var(--line);border-radius:12px;padding:18px;text-align:center;color:var(--muted)}
 .domaviso{margin-top:6px;border-radius:12px;padding:10px 12px;background:#fde3c8;color:#4a2400;border:2px solid #f08c2b;font-size:16px;line-height:1.35}
 .alaviso{border-radius:12px;padding:12px 14px;font-size:17px;line-height:1.35}
 .alaviso.al-chuva{background:#dbe8f7;color:#16324f}.alaviso.al-cheio{background:#fde3c8;color:#4a2400}
@@ -377,7 +381,7 @@ input.err{border-color:var(--bad)}
 <header>
   <div class="wrap">
     <div class="top"><h1>Frete <span>Rápido</span></h1><span class="sync" id="sync">Conectando…</span></div>
-    <div class="usr"><span id="unome"></span><button type="button" id="uconsultar" hidden>🔎 Consultar</button><button type="button" id="ualerta" hidden>🌦️ Avisos</button><a href="painel.html" id="upainel" hidden>Painel</a><button type="button" data-tema></button><button type="button" id="usair">Sair</button></div>
+    <div class="usr"><span id="unome"></span><button type="button" id="unormas">📜 Normas</button><button type="button" id="uconsultar" hidden>🔎 Consultar</button><button type="button" id="ualerta" hidden>🌦️ Avisos</button><a href="painel.html" id="upainel" hidden>Painel</a><button type="button" data-tema></button><button type="button" id="usair">Sair</button></div>
     <div class="days" id="days" role="tablist" aria-label="Dias"></div>
   </div>
 </header>
@@ -971,6 +975,34 @@ function abrirPostit(id){
 
 /* ---------- 🔎 consultar uma data (só o Bruno e os freteiros da lista "Quem carrega") ---------- */
 function podeConsultar(){return !!me&&(me.admin||GERAL.carregadores.some(c=>primeiroNome(c)===primeiroNome(me.nome)))}
+/* ---------- 📜 Normas de entrega (todos veem). Aba "Site" = resumo da política do colombo.com.br; aba "Nossa loja" vem depois ---------- */
+const NORMAS_SITE=[
+  ['🏠','Até onde vai a entrega',['O frete pago vale <b>até o endereço</b> (porta ou térreo).',
+    'Prédio <b>sem elevador</b>, ou escada com <b>risco</b> para o entregador ou o produto: a transportadora <b>não é obrigada a subir</b>. O produto fica na <b>portaria ou no térreo</b>.',
+    '<b>Levar para dentro de casa, subir escada ou içar</b> é responsabilidade do cliente.',
+    'Antes de comprar, o cliente confere se o produto <b>passa</b> por portas, elevador, escada e corredor.',
+    'Não entregam em <b>caixa postal</b> nem em lugar onde só se chega de barco ou avião.']],
+  ['📅','Agendamento',['O cliente escolhe o <b>dia e o turno</b> (manhã ou tarde) na compra. <b>Depois não dá para mudar.</b>',
+    '<b>Não entregam</b> em fim de semana, feriado, rodízio de veículos ou trânsito bloqueado: o cliente é chamado para reagendar.',
+    '<b>Cliente ausente</b>, endereço errado ou mudança de endereço: o cliente procura o <b>SAC</b>.']],
+  ['📦','Na hora de receber',['Abrir e <b>conferir na frente do entregador</b>: embalagem, voltagem, cor e quantidade de volumes (móveis).',
+    'Se algo estiver errado: <b>recusar</b> e escrever o motivo <b>no verso da nota</b> ou do comprovante.',
+    '<b>Depois de assinar</b> o recebimento, o estado do produto é responsabilidade do cliente.']],
+  ['🔧','Montagem de móveis',['<b>Grátis</b> nas cidades com loja física, em <b>15 a 20 dias úteis</b>. Pedir em até <b>3 meses</b> da compra.',
+    'Se o <b>cliente abrir a embalagem</b>, perde a montagem grátis.',
+    'O montador <b>não leva o móvel</b> de um lugar para outro. Precisa de um adulto em casa e espaço livre.',
+    'Pés de <b>cama box, estofado, poltrona e balcão de pia</b> são colocados pelo próprio cliente.']],
+  ['ℹ️','Vale para quê',['Compras pelo <b>site e televendas</b>, com produto <b>vendido e entregue pela Colombo</b>.',
+    'Preços e trocas do site <b>não valem para as lojas físicas</b>. Produtos de <b>parceiros (marketplace)</b> têm regras próprias.']]];
+function normasHTML(aba){
+  if(aba==='loja')return '<div class="normvazio">📝 As normas da nossa loja ainda vão ser escritas pelo Bruno.</div>';
+  return '<p class="muted" style="margin:0">Resumo da política de frete do site colombo.com.br.</p>'+NORMAS_SITE.map(([ic,t,l])=>`<div class="normbloco"><h3>${ic} ${t}</h3><ul>${l.map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('')}
+$('#unormas').addEventListener('click',()=>{let aba='site';
+  const tela=()=>`<h2>📜 Normas de entrega</h2><div class="chips normabas"><button type="button" class="chip" data-na="site" aria-pressed="${aba==='site'}">🌐 Site Colombo</button><button type="button" class="chip" data-na="loja" aria-pressed="${aba==='loja'}">🏪 Nossa loja</button></div>
+    ${normasHTML(aba)}<button type="button" class="btn" data-x>Fechar</button>`;
+  abrirSheet(tela(),sh=>sh.addEventListener('click',ev=>{if(ev.target.closest('[data-x]'))return fechar();
+    const b=ev.target.closest('[data-na]');if(b){aba=b.dataset.na;sh.innerHTML='<div class="grab"></div>'+tela()}}))});
+
 $('#uconsultar').addEventListener('click',()=>{
   const h=hoje(),atalhos=[[addDays(h,-1),'Ontem'],[addDays(h,-2),'Anteontem'],[addDays(h,-7),'Há 1 semana'],[addDays(h,-30),'Há 1 mês']];
   abrirSheet(`<h2>🔎 Consultar uma data</h2><p style="margin:0;color:var(--muted)">Mostra no mural as entregas do dia escolhido.</p>

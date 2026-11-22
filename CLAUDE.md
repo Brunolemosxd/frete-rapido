@@ -175,6 +175,9 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   recarregar): `obterFoto(max,q)` abre tela preta com a câmera (getUserMedia, câmera de trás), botão amarelo redondo tira a foto,
   "🖼️ Galeria" escolhe uma pronta (input #file SEM capture), "✕ Cancelar". Usada no formulário (#fbtn, +Outra foto) e na pasta
   (`pegarFoto`). Põe um passo no histórico (frCam): o voltar do celular fecha só a câmera. Sem permissão: explica o cadeado 🔒.
+- "📜 Normas" no topo do mural (TODOS veem, 22/11): janela com abas "🌐 Site Colombo" (resumo da política de frete do
+  colombo.com.br em `NORMAS_SITE`: até onde vai a entrega, agendamento, na hora de receber, montagem, vale para quê) e
+  "🏪 Nossa loja" (ainda vazio: o Bruno vai dizer como serão as normas da loja).
 - Tema claro/escuro/automático no topo.
 - Ícone e nome na tela de início do celular: "Mural de Fretes", ícone "MF" branco + faixa amarela + 🚚 em fundo azul
   (`mf-32/180/192/512.png`, `manifest.json` com display "standalone": o ícone abre numa janela própria, sem as páginas de outros sites para trás;
