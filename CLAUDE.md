@@ -82,6 +82,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   na lista de carregadores do painel); se já tinha alguém marcado, não muda.
   Marcar "Entregue" numa entrega de dia que já passou pergunta: "✓ Entreguei hoje" (muda `data` para hoje) ou
   "📅 Entreguei no dia DD/MM (esqueci de marcar)" (mantém a data). Assim o Acerto e os Valores ficam no dia certo.
+- Embaixo do campo "AP ou quadra e lote" (22/11): caixa azul fixa (.apdica) orientando o vendedor a perguntar se é elevador ou
+  escada (R$ 20 por andar por item, pago antes; sofá grande/side by side/risco não sobem; anotar na Observação).
 - Prioridade no formulário (22/11): marcando "⬆ Prioridade" aparece a caixa vermelha (#fprioaviso) "📞 Ligue para o freteiro para ver
   se ele vai conseguir colocar essa entrega na frente das outras. Caso contrário, a prioridade será ignorada." + aviso rápido.
 - Domingo (21/11): no formulário, escolhendo um dia que cai no domingo aparece a caixa laranja "☀️ Domingo: os freteiros fazem as

@@ -214,6 +214,7 @@ section.hr h3{color:#6b3fd0;font-size:14px}
 .normok{background:#e3f4ea;color:#1c4532;border:1px solid #9ae6b4;border-radius:10px;padding:8px 12px;font-size:15px}
 .normvazio{border:2px dashed var(--line);border-radius:12px;padding:18px;text-align:center;color:var(--muted)}
 .domaviso.prioaviso{background:#fbe7e7;color:#5c1414;border-color:#c53030}
+.apdica{margin-top:6px;border-radius:12px;padding:10px 12px;background:#dbe8f7;color:#16324f;border:1px solid #9cbce0;font-size:15px;line-height:1.4}
 .domaviso{margin-top:6px;border-radius:12px;padding:10px 12px;background:#fde3c8;color:#4a2400;border:2px solid #f08c2b;font-size:16px;line-height:1.35}
 .alaviso{border-radius:12px;padding:12px 14px;font-size:17px;line-height:1.35}
 .alaviso.al-chuva{background:#dbe8f7;color:#16324f}.alaviso.al-cheio{background:#fde3c8;color:#4a2400}
@@ -1109,7 +1110,8 @@ function abrirForm(ed){
         <div class="chips"><button type="button" class="chip" id="fcond">É condomínio</button></div></div>
       <div class="field"><label for="fend">Rua ${R} — só o nome, sem número</label><input type="text" id="fend" autocomplete="off" autocapitalize="words" placeholder="Ex.: Rua das Tulipas" required></div>
       <div class="field"><label for="fnum">Número ${R}</label><div class="row"><input type="text" id="fnum" inputmode="numeric" autocomplete="off" placeholder="Ex.: 3252" maxlength="6" style="flex:0 1 140px"><button type="button" class="chip" id="fsn">☐ Sem número</button></div></div>
-      <div class="field"><label for="fcomp">AP ou quadra e lote (opcional)</label><input type="text" id="fcomp" autocomplete="off" placeholder="Ex.: Ap 302, Bloco B · Quadra 5, Lote 12" maxlength="80"></div>
+      <div class="field"><label for="fcomp">AP ou quadra e lote (opcional)</label><input type="text" id="fcomp" autocomplete="off" placeholder="Ex.: Ap 302, Bloco B · Quadra 5, Lote 12" maxlength="80">
+        <div class="apdica">🏢 <b>Apartamento ou sobrado?</b> Pergunte ao cliente se a entrega vai ser por <b>elevador ou escada</b>. Por escada: <b>R$ 20 por andar, por item</b>, pago antes de subir. Sofá grande, side by side e produtos de risco <b>não sobem por escada</b>. Se precisar, ponha na Observação.</div></div>
     </div>
     <div class="fgrp fg-ent"><div class="fglbl">🚚 Dia e turno da entrega</div>
       <div class="chips"><button type="button" class="chip prio" id="fprio">Prioridade</button></div>
