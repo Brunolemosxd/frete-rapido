@@ -994,11 +994,21 @@ const NORMAS_SITE=[
     'Pés de <b>cama box, estofado, poltrona e balcão de pia</b> são colocados pelo próprio cliente.']],
   ['ℹ️','Vale para quê',['Compras pelo <b>site e televendas</b>, com produto <b>vendido e entregue pela Colombo</b>.',
     'Preços e trocas do site <b>não valem para as lojas físicas</b>. Produtos de <b>parceiros (marketplace)</b> têm regras próprias.']]];
+// normas da nossa loja (ditadas pelo Bruno em 22/11; ele vai acrescentando)
+const NORMAS_LOJA=[
+  ['🪜','Entrega por escada',['Antes de subir, o cliente <b>assina o canhoto</b> confirmando que recebeu o produto <b>em perfeitas condições</b>.',
+    'O cliente <b>paga antes de subir</b>: <b>R$ 20 por andar, por item</b>.',
+    'Se o produto chegar lá em cima <b>avariado</b>, a Colombo <b>não se responsabiliza</b>.']],
+  ['↩️','Devolução',['Se o cliente quiser devolver, paga o <b>frete de ida e o de volta</b> (dois fretes).']],
+  ['🗑️','Descarte',['Descarte de qualquer produto é <b>cobrado no local</b>. Não dá para passar o valor antes: depende da situação do produto.']],
+  ['📦','Embalagens',['<b>Não levamos embora</b> as embalagens dos clientes.']],
+  ['✍️','Quem recebe',['<b>Não entregamos</b> sem ter alguém para <b>assinar</b>.']]];
+const blocosNormas=l=>l.map(([ic,t,x])=>`<div class="normbloco"><h3>${ic} ${t}</h3><ul>${x.map(y=>`<li>${y}</li>`).join('')}</ul></div>`).join('');
 function normasHTML(aba){
-  if(aba==='loja')return '<div class="normvazio">📝 As normas da nossa loja ainda vão ser escritas pelo Bruno.</div>';
-  return '<p class="muted" style="margin:0">Resumo da política de frete do site colombo.com.br.</p>'+NORMAS_SITE.map(([ic,t,l])=>`<div class="normbloco"><h3>${ic} ${t}</h3><ul>${l.map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('')}
-$('#unormas').addEventListener('click',()=>{let aba='site';
-  const tela=()=>`<h2>📜 Normas de entrega</h2><div class="chips normabas"><button type="button" class="chip" data-na="site" aria-pressed="${aba==='site'}">🌐 Site Colombo</button><button type="button" class="chip" data-na="loja" aria-pressed="${aba==='loja'}">🏪 Nossa loja</button></div>
+  if(aba==='loja')return '<p class="muted" style="margin:0">Regras das entregas feitas pela nossa loja.</p>'+blocosNormas(NORMAS_LOJA);
+  return '<p class="muted" style="margin:0">Resumo da política de frete do site colombo.com.br.</p>'+blocosNormas(NORMAS_SITE)}
+$('#unormas').addEventListener('click',()=>{let aba='loja';
+  const tela=()=>`<h2>📜 Normas de entrega</h2><div class="chips normabas"><button type="button" class="chip" data-na="loja" aria-pressed="${aba==='loja'}">🏪 Nossa loja</button><button type="button" class="chip" data-na="site" aria-pressed="${aba==='site'}">🌐 Site Colombo</button></div>
     ${normasHTML(aba)}<button type="button" class="btn" data-x>Fechar</button>`;
   abrirSheet(tela(),sh=>sh.addEventListener('click',ev=>{if(ev.target.closest('[data-x]'))return fechar();
     const b=ev.target.closest('[data-na]');if(b){aba=b.dataset.na;sh.innerHTML='<div class="grab"></div>'+tela()}}))});
