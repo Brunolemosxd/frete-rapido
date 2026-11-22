@@ -179,7 +179,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   colombo.com.br em `NORMAS_SITE`: até onde vai a entrega, agendamento, na hora de receber, montagem, vale para quê) e
   "🏪 Nossa loja" (`NORMAS_LOJA`, abre primeiro): escada (assina canhoto antes, paga R$ 20 por andar por item antes de subir,
   avaria lá em cima a Colombo não responde), devolução = 2 fretes, descarte cobrado no local, não levamos embalagens, só entrega
-  com alguém para assinar. O Bruno vai acrescentando.
+  com alguém para assinar; montar/desmontar para passar só pago e se souber, máquina de lavar não; TV só no pé (cobrado),
+  nunca painel na parede. O Bruno vai acrescentando.
 - Tema claro/escuro/automático no topo.
 - Ícone e nome na tela de início do celular: "Mural de Fretes", ícone "MF" branco + faixa amarela + 🚚 em fundo azul
   (`mf-32/180/192/512.png`, `manifest.json` com display "standalone": o ícone abre numa janela própria, sem as páginas de outros sites para trás;

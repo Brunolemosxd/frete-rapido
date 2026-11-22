@@ -1002,7 +1002,10 @@ const NORMAS_LOJA=[
   ['↩️','Devolução',['Se o cliente quiser devolver, paga o <b>frete de ida e o de volta</b> (dois fretes).']],
   ['🗑️','Descarte',['Descarte de qualquer produto é <b>cobrado no local</b>. Não dá para passar o valor antes: depende da situação do produto.']],
   ['📦','Embalagens',['<b>Não levamos embora</b> as embalagens dos clientes.']],
-  ['✍️','Quem recebe',['<b>Não entregamos</b> sem ter alguém para <b>assinar</b>.']]];
+  ['✍️','Quem recebe',['<b>Não entregamos</b> sem ter alguém para <b>assinar</b>.']],
+  ['🔩','Montar e desmontar',['<b>Não desmontamos nem montamos</b> produtos para passar na casa do cliente. Só se o cliente <b>pagar</b>, e se o freteiro <b>souber fazer</b> (combinar antes).',
+    '<b>Não fazemos</b> montagem nem desmontagem de <b>máquina de lavar</b>.']],
+  ['📺','TV',['<b>Não instalamos TV em painel na parede.</b>','Instalamos só <b>no pé</b> da TV, e é <b>cobrado</b>.']]];
 const blocosNormas=l=>l.map(([ic,t,x])=>`<div class="normbloco"><h3>${ic} ${t}</h3><ul>${x.map(y=>`<li>${y}</li>`).join('')}</ul></div>`).join('');
 function normasHTML(aba){
   if(aba==='loja')return '<p class="muted" style="margin:0">Regras das entregas feitas pela nossa loja.</p>'+blocosNormas(NORMAS_LOJA);
