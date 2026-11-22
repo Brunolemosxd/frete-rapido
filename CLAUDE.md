@@ -178,7 +178,7 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
 - "📜 Normas" no topo do mural (TODOS veem, 22/11; botão amarelo destacado e letras grandes, 18px): janela com abas "🌐 Site Colombo" (resumo da política de frete do
   colombo.com.br em `NORMAS_SITE`: até onde vai a entrega, agendamento, na hora de receber, montagem, vale para quê) e
   "🏪 Nossa loja" (`NORMAS_LOJA`, abre primeiro): escada (assina canhoto antes, paga R$ 20 por andar por item antes de subir,
-  avaria lá em cima a Colombo não responde), devolução por insatisfação ou por não passar no elevador = 2 fretes, descarte cobrado no local, não levamos embalagens, só entrega
+  avaria lá em cima a Colombo não responde; NÃO sobe por escada sofá muito grande/pesado, side by side ou produto de risco), devolução por insatisfação ou por não passar no elevador = 2 fretes, descarte cobrado no local, não levamos embalagens, só entrega
   com alguém para assinar (outra pessoa recebe = cliente faz Pix antes ou deixa o dinheiro, senão não entrega); só entrega
   depois que o cliente atende o celular; montar/desmontar para passar só pago e se souber, máquina de lavar não; TV só no pé (cobrado),
   nunca painel na parede; itens grandes (sofá, cama, side by side) = vendedor orienta o cliente antes da compra; mesa de
