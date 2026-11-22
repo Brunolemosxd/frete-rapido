@@ -180,7 +180,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   "🏪 Nossa loja" (`NORMAS_LOJA`, abre primeiro): escada (assina canhoto antes, paga R$ 20 por andar por item antes de subir,
   avaria lá em cima a Colombo não responde), devolução = 2 fretes, descarte cobrado no local, não levamos embalagens, só entrega
   com alguém para assinar; montar/desmontar para passar só pago e se souber, máquina de lavar não; TV só no pé (cobrado),
-  nunca painel na parede. Faixa verde "🤝 Normas combinadas com o gerente Jonas" no alto da aba. O Bruno vai acrescentando.
+  nunca painel na parede; itens grandes (sofá, cama, side by side) = vendedor orienta o cliente antes da compra; mesa de
+  mostruário = vendedor tira o tampo do pé antes. Faixa verde "🤝 Normas combinadas com o gerente Jonas" no alto da aba. O Bruno vai acrescentando.
 - Tema claro/escuro/automático no topo.
 - Ícone e nome na tela de início do celular: "Mural de Fretes", ícone "MF" branco + faixa amarela + 🚚 em fundo azul
   (`mf-32/180/192/512.png`, `manifest.json` com display "standalone": o ícone abre numa janela própria, sem as páginas de outros sites para trás;

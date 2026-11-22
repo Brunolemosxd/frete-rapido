@@ -1006,7 +1006,9 @@ const NORMAS_LOJA=[
   ['✍️','Quem recebe',['<b>Não entregamos</b> sem ter alguém para <b>assinar</b>.']],
   ['🔩','Montar e desmontar',['<b>Não desmontamos nem montamos</b> produtos para passar na casa do cliente. Só se o cliente <b>pagar</b>, e se o freteiro <b>souber fazer</b> (combinar antes).',
     '<b>Não fazemos</b> montagem nem desmontagem de <b>máquina de lavar</b>.']],
-  ['📺','TV',['<b>Não instalamos TV em painel na parede.</b>','Instalamos só <b>no pé</b> da TV, e é <b>cobrado</b>.']]];
+  ['📺','TV',['<b>Não instalamos TV em painel na parede.</b>','Instalamos só <b>no pé</b> da TV, e é <b>cobrado</b>.']],
+  ['🛋️','Itens grandes (responsabilidade do vendedor)',['<b>Sofás, camas, geladeira side by side</b> e outros itens grandes: o <b>vendedor</b> deve <b>orientar o cliente antes da compra</b> (se vai passar por portas, escada, elevador e corredor).',
+    '<b>Mesa de mostruário:</b> o <b>vendedor</b> é responsável por <b>tirar o tampo do pé da mesa</b> antes, para ela entrar na casa do cliente.']]];
 const blocosNormas=l=>l.map(([ic,t,x])=>`<div class="normbloco"><h3>${ic} ${t}</h3><ul>${x.map(y=>`<li>${y}</li>`).join('')}</ul></div>`).join('');
 function normasHTML(aba){
   if(aba==='loja')return '<p class="muted" style="margin:0">Regras das entregas feitas pela nossa loja.</p><div class="normok">🤝 Normas combinadas com o gerente <b>Jonas</b>.</div>'+blocosNormas(NORMAS_LOJA);
