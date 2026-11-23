@@ -134,6 +134,9 @@ section.hr h3{color:#6b3fd0;font-size:14px}
 .chip[data-pag="nota"][aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
 .items{font-size:14px;color:var(--muted);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .obs{font-size:13px;color:var(--bad)}
+/* observação da nota: vermelha e sempre inteira (nunca corta com "...") */
+.obsnota{flex:1 1 100%;background:#fbe7e7;color:#9b1c1c;border:2px solid #c53030;border-radius:10px;padding:7px 10px;font-size:15px;font-weight:600;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere}
+.obsnota b{color:#c53030}
 .end{font-size:14px;line-height:1.3;color:var(--fg);overflow-wrap:anywhere}
 .end b{font-weight:600}
 .end .bai2{font-weight:700;color:var(--accent)}
@@ -613,7 +616,7 @@ function cardHTML(e){
           <div class="meta">${itens?'':localTagHTML(e)}${notasTagHTML(e)}</div>
           ${itens?`<div class="gitens">${itens}</div>`:''}
         </div>
-        ${e.observacao?`<div class="items">Obs.: ${esc(e.observacao)}</div>`:''}
+        ${e.observacao?`<div class="obsnota"><b>📝 Obs.:</b> ${esc(e.observacao)}</div>`:''}
         ${(e.postits||[]).length?`<div class="postits">${e.postits.map(p=>`<div class="postit">${esc(p.texto)}</div>`).join('')}</div>`:''}
         ${fe?`<div class="meta">${V&&e.frete?`<span class="tag">${real(e.frete)}</span>`:''}${V&&ajusteTxt(e)?`<span class="tag">${esc(ajusteTxt(e))}</span>`:''}${pagTagHTML(e,true)}</div>`:valorHTML(e,V)}
         ${nm||e.criadoEm?`<div class="meta">${[nm?'por '+esc(nm):'',lancadaTxt(e)].filter(Boolean).join(' · ')}</div>`:''}
@@ -949,7 +952,7 @@ function abrirDetalhe(id){
     ${V&&e.frete?`<div><span class="lbl">Valor do frete</span><br><b>${real(e.frete)}</b>${e.freteBase!==undefined&&ajusteDe(e).valor?` <span class="hint">(${e.freteConsultar?'combinado':e.condominio&&e.freteBase!==e.freteTabela?'condomínio':'tabela'} ${real(e.freteBase)} ${ajusteDe(e).valor>0?'+':'−'} ${real(Math.abs(ajusteDe(e).valor))} de ${esc(ajusteDe(e).por)})</span>`:''}</div>`:''}
     <div><span class="lbl">Pagamento do frete</span><br>${{entrega:'Cobrar na entrega'+(e.frete?' — '+real(e.frete):''),pix:'Já pago no Pix',junto:'Dinheiro junto com a nota',nota:'<b style="color:var(--bad)">🧾 Frete na nota</b>',vendedor:'Por conta do vendedor '+esc(e.fretePor||''),pago:'Já pago'}[pagamentoDe(e)]}</div>
     ${its.length?`<div><span class="lbl">Produtos</span><ul>${its.map(i=>`<li>${esc(qtdNome(i))}${i.local?' — '+locHTML(i.local):''}</li>`).join('')}</ul></div>`:''}
-    ${e.observacao?`<div><span class="lbl">Observação</span><br>${esc(e.observacao)}</div>`:''}
+    ${e.observacao?`<div class="obsnota"><b>📝 Observação:</b> ${esc(e.observacao)}</div>`:''}
     ${e.criadoPorNome?`<div><span class="lbl">Lançada por</span><br>${esc(e.criadoPorNome)}</div>`:''}
     ${(e.postits||[]).length?`<div><span class="lbl">Post-its</span><div class="postits">${e.postits.map((p,i)=>`<div class="postit full"><div class="tx">${esc(p.texto)}<div class="pm">${esc([quando(p.em),p.porNome].filter(Boolean).join(' · '))}</div></div><button type="button" data-rm="${i}" aria-label="Tirar post-it">×</button></div>`).join('')}</div></div>`:''}
 </div>

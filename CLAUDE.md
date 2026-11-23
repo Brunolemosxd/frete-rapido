@@ -82,6 +82,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   na lista de carregadores do painel); se já tinha alguém marcado, não muda.
   Marcar "Entregue" numa entrega de dia que já passou pergunta: "✓ Entreguei hoje" (muda `data` para hoje) ou
   "📅 Entreguei no dia DD/MM (esqueci de marcar)" (mantém a data). Assim o Acerto e os Valores ficam no dia certo.
+- Observação da nota (23/11): caixa VERMELHA (.obsnota) "📝 Obs.: …" no cartão e no detalhe, SEMPRE inteira (sem cortar com "...",
+  quebra linha, mantém as linhas digitadas).
 - Embaixo do campo "AP ou quadra e lote" (22/11): caixa azul fixa (.apdica) orientando o vendedor a perguntar se é elevador ou
   escada (R$ 20 por andar por item, pago antes; sofá grande/side by side/risco não sobem; anotar na Observação).
 - Prioridade no formulário (22/11): marcando "⬆ Prioridade" aparece a caixa vermelha (#fprioaviso) "📞 Ligue para o freteiro para ver
