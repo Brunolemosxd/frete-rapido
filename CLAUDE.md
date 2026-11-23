@@ -184,7 +184,8 @@ Explicar sempre em linguagem simples, passo a passo, e sempre mandar os links de
   "🏪 Nossa loja" (`NORMAS_LOJA`, abre primeiro): escada (assina canhoto antes, paga R$ 20 por andar por item antes de subir,
   avaria lá em cima a Colombo não responde; NÃO sobe por escada sofá muito grande/pesado, side by side ou produto de risco), devolução por insatisfação ou por não passar no elevador = 2 fretes, descarte cobrado no local, não levamos embalagens, só entrega
   com alguém para assinar (outra pessoa recebe = cliente faz Pix antes ou deixa o dinheiro, senão não entrega); só entrega
-  depois que o cliente atende o celular; montar/desmontar para passar só pago e se souber, máquina de lavar não; TV só no pé (cobrado),
+  depois que o cliente atende o celular; montar/desmontar para passar só pago e se souber, máquina de lavar não; não tiramos móveis do lugar (só o produto da loja) nem passamos por cima de
+  bancadas/risco; TV só no pé (cobrado),
   nunca painel na parede; itens grandes (sofá, cama, side by side) = vendedor orienta o cliente antes da compra; mesa de
   mostruário = vendedor tira o tampo do pé antes. Faixa verde "🤝 Normas combinadas com o gerente Jonas" no alto da aba. O Bruno vai acrescentando.
 - Tema claro/escuro/automático no topo.
